@@ -28,8 +28,8 @@ messaging.onBackgroundMessage((payload) => {
 
     const options = {
         body,
-        icon:         '/icon-192.png',
-        badge:        '/icon-192.png',
+        icon:         'icon-192.png',
+        badge:        'icon-192.png',
         tag:          'pccc-eval-reminder', // Gộp các thông báo cùng loại
         renotify:     true,                 // Rung lại dù tag trùng
         requireInteraction: true,           // Không tự đóng — buộc người dùng phải click
@@ -50,7 +50,7 @@ self.addEventListener('notificationclick', (event) => {
                 if ('focus' in client) return client.focus();
             }
             // Chưa có → mở tab mới
-            return clients.openWindow('/');
+            return clients.openWindow('./');
         })
     );
 });
