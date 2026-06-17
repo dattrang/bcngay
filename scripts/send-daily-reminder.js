@@ -6,17 +6,32 @@
 
 const admin = require('firebase-admin');
 
-// Đọc Service Account từ GitHub Secrets (biến môi trường)
+// Đọc Service Account từ GitHub Secrets
+// Secret được lưu dạng Base64 để tránh lỗi private_key bị gãy dòng
 if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
     console.error('❌ Thiếu biến môi trường FIREBASE_SERVICE_ACCOUNT!');
     process.exit(1);
 }
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-// Xử lý lỗi thoát chuỗi (escape string) thường gặp trên GitHub Actions
-if (serviceAccount.private_key) {
-    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+let serviceAccount;
+try {
+    // Thử giải mã Base64 trước
+    const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf8');
+    serviceAccount = JSON.parse(decoded);
+    console.log('✅ Đọc Service Account thành công (Base64).');
+} catch (e1) {
+    // Nếu không phải Base64 thì thử đọc JSON thẳng
+    try {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        // Sửa private_key nếu bị escape
+        if (serviceAccount.private_key) {
+            serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+        }
+        console.log('✅ Đọc Service Account thành công (JSON).');
+    } catch (e2) {
+        console.error('❌ Không thể đọc FIREBASE_SERVICE_ACCOUNT:', e2.message);
+        process.exit(1);
+    }
 }
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
