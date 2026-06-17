@@ -2231,7 +2231,7 @@
             window.toggleMultiStaff = function () {
                 const list = document.getElementById('multi-staff-list');
                 list.style.display = list.style.display === 'none' ? 'block' : 'none';
-                if (list.style.display === 'block' && list.innerHTML.trim() === '') {
+                if (list.style.display === 'block' && !list.querySelector('input')) {
                     renderMultiStaffList();
                 }
             }
