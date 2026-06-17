@@ -2535,8 +2535,9 @@
                 const updates = {};
                 updates[`staffBindings/${staff}`] = null;
                 updates[`deviceBindings/${fp}`] = null;
+                updates[`fcmTokens/${staff}`] = null; // Xóa token để ngừng nhận thông báo
                 await update(ref(db), updates);
-                showToast('Đã gỡ liên kết thành công!');
+                showToast('Đã gỡ liên kết thiết bị và hủy nhận thông báo thành công!');
                 loadDeviceBindings();
             } catch (e) {
                 showToast('Lỗi khi gỡ liên kết', 'error');
