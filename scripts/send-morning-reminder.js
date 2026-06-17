@@ -63,15 +63,22 @@ async function main() {
             staffNames.push(staff);
             messages.push({
                 token,
-                data: {
+                notification: {
                     title: '⏰ Nhắc nhở lập chương trình ngày',
-                    body: `Đ/c ${staff} chưa lập chương trình công tác cho ngày hôm nay!`,
-                    link: APP_URL,
-                    tag: 'pccc-morning-reminder',
-                    staff,
-                    date: todayStr
+                    body: `Đ/c ${staff} chưa lập chương trình công tác cho ngày hôm nay!`
                 },
-                webpush: { fcmOptions: { link: APP_URL } }
+                webpush: {
+                    notification: { 
+                        icon: 'icon-192.png',
+                        badge: 'icon-192.png',
+                        vibrate: [300, 100, 300, 100, 300],
+                        requireInteraction: true, 
+                        tag: 'pccc-morning-reminder', 
+                        renotify: true 
+                    },
+                    fcmOptions: { link: APP_URL }
+                },
+                data: { staff, type: 'morning_reminder', date: todayStr }
             });
         }
     }
@@ -82,13 +89,19 @@ async function main() {
         const more = staffNames.length > 3 ? ` và ${staffNames.length - 3} người khác` : '';
         messages.push({
             token: adminToken,
-            data: {
+            notification: {
                 title: `📊 Báo cáo sáng ${todayStr}`,
-                body: `Có ${staffWithoutTasksCount} người chưa lập kế hoạch: ${preview}${more}`,
-                link: APP_URL,
-                tag: 'pccc-admin-morning'
+                body: `Có ${staffWithoutTasksCount} người chưa lập kế hoạch: ${preview}${more}`
             },
-            webpush: { fcmOptions: { link: APP_URL } }
+            webpush: {
+                notification: { 
+                    icon: 'icon-192.png',
+                    badge: 'icon-192.png',
+                    requireInteraction: true,
+                    tag: 'pccc-admin-morning'
+                },
+                fcmOptions: { link: APP_URL }
+            }
         });
     }
 

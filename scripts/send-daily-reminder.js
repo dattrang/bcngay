@@ -94,17 +94,22 @@ async function main() {
         }
         messages.push({
             token,
-            // DATA-ONLY: không có trường notification — tránh Firebase SDK tự hiển thị bị lặp
-            data: {
+            notification: {
                 title: '⏰ Nhắc nhở đánh giá cuối ngày',
-                body: `Đ/c ${staff} còn ${count} công việc chưa đánh giá kết quả hôm nay!`,
-                link: APP_URL,
-                tag: 'pccc-eval-reminder',
-                staff,
-                count: String(count),
-                date: todayStr
+                body: `Đ/c ${staff} còn ${count} công việc chưa đánh giá kết quả hôm nay!`
             },
-            webpush: { fcmOptions: { link: APP_URL } }
+            webpush: {
+                notification: { 
+                    icon: 'icon-192.png',
+                    badge: 'icon-192.png',
+                    vibrate: [300, 100, 300, 100, 300],
+                    requireInteraction: true, 
+                    tag: 'pccc-eval-reminder', 
+                    renotify: true 
+                },
+                fcmOptions: { link: APP_URL }
+            },
+            data: { staff, count: String(count), date: todayStr }
         });
     }
 
@@ -116,13 +121,19 @@ async function main() {
         const more = staffNames.length > 3 ? ` và ${staffNames.length - 3} người khác` : '';
         messages.push({
             token: adminToken,
-            data: {
+            notification: {
                 title: `📊 Báo cáo cuối ngày ${todayStr}`,
-                body: `Còn ${totalPending} việc chưa đánh giá: ${preview}${more}`,
-                link: APP_URL,
-                tag: 'pccc-admin-report'
+                body: `Còn ${totalPending} việc chưa đánh giá: ${preview}${more}`
             },
-            webpush: { fcmOptions: { link: APP_URL } }
+            webpush: {
+                notification: { 
+                    icon: 'icon-192.png',
+                    badge: 'icon-192.png',
+                    requireInteraction: true,
+                    tag: 'pccc-admin-report'
+                },
+                fcmOptions: { link: APP_URL }
+            }
         });
     }
 

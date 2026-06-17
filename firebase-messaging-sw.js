@@ -7,6 +7,16 @@
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
 
+// Bắt buộc trình duyệt cập nhật SW mới ngay lập tức
+self.addEventListener('install', (event) => {
+    self.skipWaiting();
+});
+
+// Bắt buộc clients dùng SW mới
+self.addEventListener('activate', (event) => {
+    event.waitUntil(clients.claim());
+});
+
 firebase.initializeApp({
     apiKey: "AIzaSyDH4I0_aM5bQXNlICEajcBaeAUdrxa_grc",
     authDomain: "baocaongay-78245.firebaseapp.com",
@@ -23,31 +33,37 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[SW] Nhận background message:', payload);
 
-    // Với Data-only message, payload.notification sẽ luôn undefined.
-    // Đọc thông tin từ payload.data và tự hiển thị — đây là cách duy nhất không bị lặp.
-    const d     = payload.data || {};
-    const title = d.title || '🔔 Nhắc nhở Công tác PCCC';
-    const body  = d.body  || 'Bạn có công việc cần chú ý!';
-    const link  = d.link  || './';
-    const tag   = d.tag   || 'pccc-reminder';
+    // Nếu có payload.notification, Firebase SDK sẽ TỰ ĐỘNG hiển thị.
+    // Chúng ta KHÔNG GỌI showNotification nữa để tránh bị lặp 2 thông báo.
+    if (!payload.notification) {
+        const d = payload.data || {};
+        const title = d.title || '🔔 Nhắc nhở Công tác PCCC';
+        const body  = d.body  || 'Bạn có công việc cần chú ý!';
+        const link  = d.link  || './';
+        const tag   = d.tag   || 'pccc-reminder';
 
-    const options = {
-        body,
-        icon:               'icon-192.png',
-        badge:              'icon-192.png',
-        tag,
-        renotify:           true,
-        requireInteraction: true,
-        vibrate:            [300, 100, 300, 100, 300],
-        data:               { url: link }
-    };
+        const options = {
+            body,
+            icon:               'icon-192.png',
+            badge:              'icon-192.png',
+            tag,
+            renotify:           true,
+            requireInteraction: true,
+            vibrate:            [300, 100, 300, 100, 300],
+            data:               { url: link }
+        };
 
-    return self.registration.showNotification(title, options);
+        return self.registration.showNotification(title, options);
+    }
 });
 
 // Khi người dùng click vào thông báo → mở/focus tab app
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+    
+    // Đọc URL đích
+    const targetUrl = event.notification.data?.url || event.notification.data?.FCM_MSG?.notification?.click_action || './';
+
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
             // Nếu đã có tab app đang mở → focus vào đó
@@ -55,7 +71,7 @@ self.addEventListener('notificationclick', (event) => {
                 if ('focus' in client) return client.focus();
             }
             // Chưa có → mở tab mới
-            return clients.openWindow(event.notification.data?.url || './');
+            return clients.openWindow(targetUrl);
         })
     );
 });
