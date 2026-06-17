@@ -23,23 +23,26 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[SW] Nhận background message:', payload);
 
-    // Firebase SDK tự động hiển thị thông báo nếu có payload.notification.
-    // Chỉ tự gọi showNotification nếu đây là Data-only message.
-    if (!payload.notification) {
-        const title = '🔔 Nhắc nhở Công tác PCCC';
-        const body  = payload.data?.message || 'Bạn có công việc cần chú ý!';
-        const options = {
-            body,
-            icon:         'icon-192.png',
-            badge:        'icon-192.png',
-            tag:          'pccc-eval-reminder',
-            renotify:     true,
-            requireInteraction: true,
-            vibrate:      [300, 100, 300, 100, 300],
-            data:         payload.data || {}
-        };
-        return self.registration.showNotification(title, options);
-    }
+    // Với Data-only message, payload.notification sẽ luôn undefined.
+    // Đọc thông tin từ payload.data và tự hiển thị — đây là cách duy nhất không bị lặp.
+    const d     = payload.data || {};
+    const title = d.title || '🔔 Nhắc nhở Công tác PCCC';
+    const body  = d.body  || 'Bạn có công việc cần chú ý!';
+    const link  = d.link  || './';
+    const tag   = d.tag   || 'pccc-reminder';
+
+    const options = {
+        body,
+        icon:               'icon-192.png',
+        badge:              'icon-192.png',
+        tag,
+        renotify:           true,
+        requireInteraction: true,
+        vibrate:            [300, 100, 300, 100, 300],
+        data:               { url: link }
+    };
+
+    return self.registration.showNotification(title, options);
 });
 
 // Khi người dùng click vào thông báo → mở/focus tab app
@@ -52,7 +55,7 @@ self.addEventListener('notificationclick', (event) => {
                 if ('focus' in client) return client.focus();
             }
             // Chưa có → mở tab mới
-            return clients.openWindow('./');
+            return clients.openWindow(event.notification.data?.url || './');
         })
     );
 });

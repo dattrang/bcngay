@@ -94,15 +94,17 @@ async function main() {
         }
         messages.push({
             token,
-            notification: {
+            // DATA-ONLY: không có trường notification — tránh Firebase SDK tự hiển thị bị lặp
+            data: {
                 title: '⏰ Nhắc nhở đánh giá cuối ngày',
-                body: `Đ/c ${staff} còn ${count} công việc chưa đánh giá kết quả hôm nay!`
+                body: `Đ/c ${staff} còn ${count} công việc chưa đánh giá kết quả hôm nay!`,
+                link: APP_URL,
+                tag: 'pccc-eval-reminder',
+                staff,
+                count: String(count),
+                date: todayStr
             },
-            webpush: {
-                notification: { requireInteraction: true, tag: 'pccc-eval-reminder', renotify: true },
-                fcmOptions: { link: APP_URL }
-            },
-            data: { staff, count: String(count), date: todayStr }
+            webpush: { fcmOptions: { link: APP_URL } }
         });
     }
 
@@ -114,14 +116,13 @@ async function main() {
         const more = staffNames.length > 3 ? ` và ${staffNames.length - 3} người khác` : '';
         messages.push({
             token: adminToken,
-            notification: {
+            data: {
                 title: `📊 Báo cáo cuối ngày ${todayStr}`,
-                body: `Còn ${totalPending} việc chưa đánh giá: ${preview}${more}`
+                body: `Còn ${totalPending} việc chưa đánh giá: ${preview}${more}`,
+                link: APP_URL,
+                tag: 'pccc-admin-report'
             },
-            webpush: {
-                notification: { requireInteraction: true },
-                fcmOptions: { link: APP_URL }
-            }
+            webpush: { fcmOptions: { link: APP_URL } }
         });
     }
 

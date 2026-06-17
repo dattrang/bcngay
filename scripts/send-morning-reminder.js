@@ -63,15 +63,15 @@ async function main() {
             staffNames.push(staff);
             messages.push({
                 token,
-                notification: {
+                data: {
                     title: '⏰ Nhắc nhở lập chương trình ngày',
-                    body: `Đ/c ${staff} chưa lập chương trình công tác cho ngày hôm nay!`
+                    body: `Đ/c ${staff} chưa lập chương trình công tác cho ngày hôm nay!`,
+                    link: APP_URL,
+                    tag: 'pccc-morning-reminder',
+                    staff,
+                    date: todayStr
                 },
-                webpush: {
-                    notification: { requireInteraction: true, tag: 'pccc-morning-reminder', renotify: true },
-                    fcmOptions: { link: APP_URL }
-                },
-                data: { staff, type: 'morning_reminder', date: todayStr }
+                webpush: { fcmOptions: { link: APP_URL } }
             });
         }
     }
@@ -82,14 +82,13 @@ async function main() {
         const more = staffNames.length > 3 ? ` và ${staffNames.length - 3} người khác` : '';
         messages.push({
             token: adminToken,
-            notification: {
+            data: {
                 title: `📊 Báo cáo sáng ${todayStr}`,
-                body: `Có ${staffWithoutTasksCount} người chưa lập kế hoạch: ${preview}${more}`
+                body: `Có ${staffWithoutTasksCount} người chưa lập kế hoạch: ${preview}${more}`,
+                link: APP_URL,
+                tag: 'pccc-admin-morning'
             },
-            webpush: {
-                notification: { requireInteraction: true },
-                fcmOptions: { link: APP_URL }
-            }
+            webpush: { fcmOptions: { link: APP_URL } }
         });
     }
 
