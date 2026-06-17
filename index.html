@@ -1827,9 +1827,10 @@
             }
 
             try {
-                // 1. Đăng ký Service Worker (bỏ dấu / ở đầu để tương thích với GitHub Pages)
-                const swReg = await navigator.serviceWorker.register('firebase-messaging-sw.js');
-                console.log('[FCM] Service Worker đã đăng ký:', swReg.scope);
+                // 1. Đăng ký Service Worker
+                await navigator.serviceWorker.register('firebase-messaging-sw.js');
+                const swReg = await navigator.serviceWorker.ready;
+                console.log('[FCM] Service Worker đã sẵn sàng:', swReg.scope);
 
                 // 2. Xin quyền thông báo (chỉ hiện dialog 1 lần)
                 const permission = await Notification.requestPermission();
