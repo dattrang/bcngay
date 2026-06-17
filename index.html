@@ -1706,6 +1706,24 @@
         </div>
     </div>
 
+    <!-- Morning Alert Banner -->
+    <div id="morning-alert"
+        style="display:none; position:fixed; top:0; left:0; right:0; z-index:10001; background:linear-gradient(135deg,#0284c7,#38bdf8); color:white; padding:12px 20px; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <i class="fas fa-calendar-plus" style="font-size:1.3rem;"></i>
+            <span><strong>⏰ Nhắc nhở buổi sáng:</strong> Bạn chưa lập chương trình công tác cho ngày hôm nay!</span>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button
+                onclick="document.querySelector('.nav-btn[data-tab=\'dang-ky\']').click(); document.getElementById('morning-alert').style.display='none';"
+                style="background:white;color:#0284c7;border:none;padding:6px 14px;border-radius:6px;font-weight:600;cursor:pointer;"><i
+                    class="fas fa-edit"></i> Lập kế hoạch</button>
+            <button onclick="document.getElementById('morning-alert').style.display='none';"
+                style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.5);padding:6px 14px;border-radius:6px;cursor:pointer;">Bỏ
+                qua</button>
+        </div>
+    </div>
+
     <script type="module">
         // FIREBASE SETUP
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -4615,6 +4633,42 @@
             // Kiểm tra mỗi 60 giây
             setInterval(checkAlert, 60000);
         }
+
+        // ============= MORNING ALERT (09:00–09:30) =============
+        function setupMorningAlert() {
+            let alertShownToday = null;
+
+            const checkMorningAlert = async () => {
+                const now = new Date();
+                const h = now.getHours(), m = now.getMinutes();
+                const todayStr = getTodayYMD();
+
+                // Chỉ chạy trong khung 09:00 - 09:30
+                if (!(h === 9 && m <= 30)) return;
+                if (alertShownToday === todayStr) return;
+                if (window.IS_ADMIN || !window.DEVICE_USER) return; // Admin không cần bị nhắc
+
+                try {
+                    const snap = await get(child(ref(db), `keHoachNgay/${todayStr}`));
+                    let hasTasks = false;
+                    if (snap.exists()) {
+                        const tasks = Object.values(snap.val());
+                        hasTasks = tasks.some(t => t.nguoiPhuTrach === window.DEVICE_USER);
+                    }
+                    if (!hasTasks) {
+                        alertShownToday = todayStr;
+                        document.getElementById('morning-alert').style.display = 'flex';
+                    }
+                } catch (e) { /* Silent fail */ }
+            };
+
+            setTimeout(checkMorningAlert, 4000);
+            setInterval(checkMorningAlert, 60000);
+        }
+
+        // Khởi động các alert timer
+        setupEndOfDayAlert();
+        setupMorningAlert();
     </script>
 </body>
 
