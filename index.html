@@ -1843,7 +1843,7 @@
                 const token = await getToken(messaging, {
                     // ← Dán VAPID Key từ Firebase Console vào đây:
                     // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
-                    vapidKey: 'BFAKjeAEMbXW0HCkpDz-x1lVuq8oCs6taRjTvME_v9sSpipcRhKb_Pwnu6b3YCv9WF8odYXFW0rRroqdFnF6z3A',
+                    vapidKey: 'pBEAw8qMTxyQVJdgJatMJq4CbTYkoq_EWpqpRkzfkS4',
                     serviceWorkerRegistration: swReg
                 });
 
@@ -3211,7 +3211,7 @@
             renderRegTable();
         }
 
-        window.switchAndJumpToEval = function(taskId, event) {
+        window.switchAndJumpToEval = function (taskId, event) {
             if (event) {
                 if (event.target.closest('.btn') || event.target.tagName === 'BUTTON' || event.target.tagName === 'I') return;
             }
@@ -3221,10 +3221,10 @@
                 showToast('Vui lòng bấm Đồng bộ (đám mây) để đưa việc lên hệ thống trước khi Đánh giá!', 'warning');
                 return;
             }
-            
+
             const evalBtn = document.querySelector('.nav-btn[data-tab="danh-gia"]');
             if (evalBtn) evalBtn.click();
-            
+
             setTimeout(() => {
                 const el = document.getElementById(`eval-wrap-${taskId}`);
                 if (el) {
