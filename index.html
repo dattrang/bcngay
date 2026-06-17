@@ -1847,12 +1847,12 @@
                     serviceWorkerRegistration: swReg
                 });
 
-                if (token && window.DEVICE_USER) {
+                if (token && DEVICE_USER) {
                     // 4. Lưu token vào Firebase theo tên cán bộ
                     await update(ref(db), {
-                        [`fcmTokens/${window.DEVICE_USER}`]: token
+                        [`fcmTokens/${DEVICE_USER}`]: token
                     });
-                    console.log(`[FCM] Đã lưu token cho ${window.DEVICE_USER}`);
+                    console.log(`[FCM] Đã lưu token cho ${DEVICE_USER}`);
                 }
 
                 // 5. Xử lý thông báo khi tab ĐANG MỞ (foreground)
