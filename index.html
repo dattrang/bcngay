@@ -1839,11 +1839,13 @@
                     return;
                 }
 
-                // 3. Lấy FCM token
+                // 3. Lấy FCM token (hủy subscription cũ nếu có để tránh lỗi VAPID key không khớp)
                 const messaging = getMessaging();
+                try {
+                    const existingSub = await swReg.pushManager.getSubscription();
+                    if (existingSub) await existingSub.unsubscribe();
+                } catch (_) { }
                 const token = await getToken(messaging, {
-                    // ← Dán VAPID Key từ Firebase Console vào đây:
-                    // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
                     vapidKey: 'pBEAw8qMTxyQVJdgJatMJq4CbTYkoq_EWpqpRkzfkS4',
                     serviceWorkerRegistration: swReg
                 });
