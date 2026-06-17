@@ -1843,7 +1843,7 @@
                 const token = await getToken(messaging, {
                     // ← Dán VAPID Key từ Firebase Console vào đây:
                     // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Generate key pair
-                    vapidKey: 'BFAKjeAEMbXW0HCkpDz-x1lVuq8oCs6taRjTvME_v9sSpipcRhKb_Pwnu6b3YCv9WF8odYXFW0rRroqdFnF6z3A',
+                    vapidKey: 'pBEAw8qMTxyQVJdgJatMJq4CbTYkoq_EWpqpRkzfkS4',
                     serviceWorkerRegistration: swReg
                 });
 
@@ -1880,12 +1880,14 @@
                 if (snap.exists()) {
                     const data = snap.val();
                     if (data[today]) {
-                        const tTasks = Object.values(data[today]);
+                        let tTasks = Object.values(data[today]);
+                        if (!IS_ADMIN) tTasks = tTasks.filter(t => t.nguoiPhuTrach === DEVICE_USER);
                         todayTotal = tTasks.length;
                         todayDone = tTasks.filter(t => t.danhGia && t.danhGia.thoiDiemDanhGia).length;
                     }
                     if (data[yDateStr]) {
-                        const yTasks = Object.values(data[yDateStr]);
+                        let yTasks = Object.values(data[yDateStr]);
+                        if (!IS_ADMIN) yTasks = yTasks.filter(t => t.nguoiPhuTrach === DEVICE_USER);
                         yestLate = yTasks.filter(t => !t.danhGia || !t.danhGia.thoiDiemDanhGia || (t.danhGia.ketQua === 'Chưa thực hiện')).length;
                     }
                 }
@@ -1906,8 +1908,8 @@
                     try {
                         const parsed = JSON.parse(localData);
                         if (parsed && parsed.length > 0) {
-                            tempRegTasks = parsed;
-                            hasLocalUnsynced = parsed.some(t => !t.isSynced);
+                            tempRegTasks = IS_ADMIN ? parsed : parsed.filter(t => t.nguoiPhuTrach === DEVICE_USER);
+                            hasLocalUnsynced = tempRegTasks.some(t => !t.isSynced);
                             if (hasLocalUnsynced) showToast('Đã khôi phục công việc chưa lưu từ bộ nhớ tạm.');
                         }
                     } catch (e) { }
@@ -1919,7 +1921,8 @@
 
                 const snap = await get(child(ref(db), `keHoachNgay/${dateStr}`));
                 if (snap.exists()) {
-                    const serverTasks = Object.values(snap.val()).map(t => ({ ...t, isSynced: true }));
+                    let serverTasks = Object.values(snap.val()).map(t => ({ ...t, isSynced: true }));
+                    if (!IS_ADMIN) serverTasks = serverTasks.filter(t => t.nguoiPhuTrach === DEVICE_USER);
                     if (hasLocalUnsynced) {
                         const localMap = {};
                         tempRegTasks.forEach(t => localMap[t.id] = t);
@@ -2143,6 +2146,14 @@
                 // Lock inputs
                 const regStaff = document.getElementById('reg-phutrach');
                 regStaff.value = DEVICE_USER; regStaff.disabled = true;
+
+                const multiStaffBtn = document.getElementById('multi-staff-btn');
+                if (multiStaffBtn) {
+                    multiStaffBtn.innerText = DEVICE_USER;
+                    multiStaffBtn.style.pointerEvents = 'none';
+                    multiStaffBtn.style.opacity = '0.6';
+                    multiStaffBtn.style.background = '#e9ecef';
+                }
 
                 const evalStaff = document.getElementById('eval-filter-staff');
                 evalStaff.value = DEVICE_USER; evalStaff.disabled = true;
@@ -3237,6 +3248,7 @@
                     for (let key in data) {
                         let t = data[key];
                         if (t.isPhatSinh || t.tenCongViec.startsWith('[Chuyển tiếp]')) continue;
+                        if (!IS_ADMIN && t.nguoiPhuTrach !== DEVICE_USER) continue;
                         if (tempRegTasks.some(existing => existing.tenCongViec === t.tenCongViec && existing.nguoiPhuTrach === t.nguoiPhuTrach)) continue;
                         if (todayTasks.some(existing => existing.tenCongViec === t.tenCongViec && existing.nguoiPhuTrach === t.nguoiPhuTrach)) continue;
 
@@ -3295,6 +3307,8 @@
                         task.id = task.id || k;
                         return task;
                     });
+
+                    if (!IS_ADMIN) tasksArr = tasksArr.filter(t => t.nguoiPhuTrach === DEVICE_USER);
 
                     // Sort: Chuyển tiếp lên đầu
                     tasksArr.sort((a, b) => {
@@ -4156,7 +4170,8 @@
         window.generateDashboard = async function () {
             const startStr = document.getElementById('rpt-start').value;
             const endStr = document.getElementById('rpt-end').value;
-            const fStaff = document.getElementById('rpt-filter-staff').value;
+            let fStaff = document.getElementById('rpt-filter-staff').value;
+            if (!IS_ADMIN) fStaff = DEVICE_USER;
             const fType = document.getElementById('rpt-filter-type').value;
             const fGroup = document.getElementById('rpt-filter-group') ? document.getElementById('rpt-filter-group').value : '';
 
