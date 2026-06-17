@@ -1,0 +1,33 @@
+name: Nhắc nhở Lập kế hoạch Buổi sáng
+
+on:
+  schedule:
+    # Chạy lúc 09:00 giờ Việt Nam (UTC+7) = 02:00 UTC
+    - cron: '0 2 * * 1-6'  # Thứ 2 đến Thứ 7 (bỏ Chủ nhật)
+  workflow_dispatch:         # Cho phép chạy thủ công từ GitHub UI để test
+
+jobs:
+  send-reminder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: scripts/package.json
+
+      - name: Cài đặt dependencies
+        run: npm install
+        working-directory: scripts
+
+      - name: Gửi thông báo nhắc nhở sáng
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          APP_URL: ${{ secrets.APP_URL }}
+        run: node scripts/send-morning-reminder.js
