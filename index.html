@@ -3182,7 +3182,7 @@
             tempRegTasks.forEach((t, i) => {
                 let badgeClass = t.mucDoUuTien === 'Cao' ? 'badge-high' : (t.mucDoUuTien === 'Thấp' ? 'badge-low' : 'badge-medium');
                 tbody.innerHTML += `
-                    <tr>
+                    <tr style="cursor:pointer;" onclick="switchAndJumpToEval('${t.id}', event)" title="Nhấn để chuyển sang Đánh giá">
                         <td>${i + 1}</td>
                         <td>
                             <strong>${t.tenCongViec}</strong> ${t.isSynced ? '<i class="fas fa-check-circle" style="color:var(--success); font-size:0.85rem;" title="Đã đồng bộ lên hệ thống"></i>' : '<i class="fas fa-exclamation-circle" style="color:var(--warning); font-size:0.85rem;" title="Chưa đồng bộ"></i>'}<br>
@@ -3210,6 +3210,41 @@
             deletedRegTaskIds.push(id);
             renderRegTable();
         }
+
+        window.switchAndJumpToEval = function(taskId, event) {
+            if (event) {
+                if (event.target.closest('.btn') || event.target.tagName === 'BUTTON' || event.target.tagName === 'I') return;
+            }
+            const task = tempRegTasks.find(t => t.id === taskId);
+            if (!task) return;
+            if (!task.isSynced) {
+                showToast('Vui lòng bấm Đồng bộ (đám mây) để đưa việc lên hệ thống trước khi Đánh giá!', 'warning');
+                return;
+            }
+            
+            const evalBtn = document.querySelector('.nav-btn[data-tab="danh-gia"]');
+            if (evalBtn) evalBtn.click();
+            
+            setTimeout(() => {
+                const el = document.getElementById(`eval-wrap-${taskId}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.style.boxShadow = '0 0 15px rgba(21, 101, 192, 0.5)';
+                    el.style.transform = 'scale(1.02)';
+                    el.style.transition = 'all 0.3s ease';
+                    setTimeout(() => {
+                        el.style.boxShadow = '';
+                        el.style.transform = '';
+                    }, 2000);
+                    const form = document.getElementById(`eval-form-${taskId}`);
+                    if (form && !form.classList.contains('active')) {
+                        toggleEvalForm(taskId);
+                    }
+                } else {
+                    showToast('Vui lòng chọn đúng Ngày đánh giá để xem công việc này.', 'warning');
+                }
+            }, 300);
+        };
 
         window.syncSingleRegTask = async function (id) {
             const task = tempRegTasks.find(t => t.id === id);
@@ -3595,7 +3630,7 @@
 
             const showSubreason = pct < 100 && dg.ketQua && dg.ketQua !== 'Chưa thực hiện' && dg.ketQua !== 'Chuyển sang ngày khác';
             const showTransfer = dg.ketQua === 'Chuyển sang ngày khác';
-            const showInline = dg.ketQua === 'Hoàn thành một phần';
+            const showInline = true; // Luôn hiển thị ô nhập Thực tế
 
             const isApproved = dg.daDuyet === true;
             const duyetBadge = isApproved
@@ -3744,7 +3779,7 @@
                 if (progEl) progEl.value = 100;
                 if (resEl) resEl.value = 'Hoàn thành';
                 if (thucTeEl) thucTeEl.value = chiTieu;
-                if (inlineDiv) inlineDiv.style.display = 'none';
+                if (inlineDiv) inlineDiv.style.display = 'flex';
                 if (subRow) subRow.style.display = 'none';
                 if (transRow) transRow.style.display = 'none';
             } else if (action === 'part') {
@@ -3763,7 +3798,7 @@
                 if (progEl) progEl.value = 0;
                 if (resEl) resEl.value = 'Chưa thực hiện';
                 if (thucTeEl) thucTeEl.value = 0;
-                if (inlineDiv) inlineDiv.style.display = 'none';
+                if (inlineDiv) inlineDiv.style.display = 'flex';
                 if (subRow) subRow.style.display = 'none';
                 if (transRow) transRow.style.display = 'none';
             } else if (action === 'move') {
@@ -3771,7 +3806,7 @@
                 if (progEl) progEl.value = 0;
                 if (resEl) resEl.value = 'Chuyển sang ngày khác';
                 if (thucTeEl) thucTeEl.value = 0;
-                if (inlineDiv) inlineDiv.style.display = 'none';
+                if (inlineDiv) inlineDiv.style.display = 'flex';
                 if (subRow) subRow.style.display = 'none';
                 if (transRow) transRow.style.display = 'flex';
                 const form = document.getElementById(`eval-form-${id}`);
