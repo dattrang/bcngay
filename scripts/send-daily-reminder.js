@@ -14,6 +14,10 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
+// Xử lý lỗi thoát chuỗi (escape string) thường gặp trên GitHub Actions
+if (serviceAccount.private_key) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+}
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
     databaseURL: "https://baocaongay-78245-default-rtdb.asia-southeast1.firebasedatabase.app"
