@@ -23,21 +23,23 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
     console.log('[SW] Nhận background message:', payload);
 
-    const title = payload.notification?.title || '🔔 Nhắc nhở Công tác PCCC';
-    const body  = payload.notification?.body  || 'Bạn có công việc chưa đánh giá!';
-
-    const options = {
-        body,
-        icon:         'icon-192.png',
-        badge:        'icon-192.png',
-        tag:          'pccc-eval-reminder', // Gộp các thông báo cùng loại
-        renotify:     true,                 // Rung lại dù tag trùng
-        requireInteraction: true,           // Không tự đóng — buộc người dùng phải click
-        vibrate:      [300, 100, 300, 100, 300],
-        data:         payload.data || {}
-    };
-
-    return self.registration.showNotification(title, options);
+    // Firebase SDK tự động hiển thị thông báo nếu có payload.notification.
+    // Chỉ tự gọi showNotification nếu đây là Data-only message.
+    if (!payload.notification) {
+        const title = '🔔 Nhắc nhở Công tác PCCC';
+        const body  = payload.data?.message || 'Bạn có công việc cần chú ý!';
+        const options = {
+            body,
+            icon:         'icon-192.png',
+            badge:        'icon-192.png',
+            tag:          'pccc-eval-reminder',
+            renotify:     true,
+            requireInteraction: true,
+            vibrate:      [300, 100, 300, 100, 300],
+            data:         payload.data || {}
+        };
+        return self.registration.showNotification(title, options);
+    }
 });
 
 // Khi người dùng click vào thông báo → mở/focus tab app
