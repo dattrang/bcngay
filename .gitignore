@@ -1,0 +1,15 @@
+# Node.js
+node_modules/
+
+# Firebase Service Account (Tối mật - KHÔNG BAO GIỜ PUSH LÊN GITHUB)
+baocaongay-78245-firebase-adminsdk-fbsvc-3daef61ec5.json
+*.json
+
+# Nhưng vẫn cho phép package.json và firebase.json
+!package.json
+!package-lock.json
+!firebase.json
+
+# Các file hệ thống khác
+.DS_Store
+Thumbs.db

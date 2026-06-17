@@ -1,0 +1,33 @@
+name: Nhắc nhở Đánh giá Cuối ngày
+
+on:
+  schedule:
+    # Chạy lúc 17:00 giờ Việt Nam (UTC+7) = 10:00 UTC
+    - cron: '0 10 * * 1-6'  # Thứ 2 đến Thứ 7 (bỏ Chủ nhật)
+  workflow_dispatch:         # Cho phép chạy thủ công từ GitHub UI để test
+
+jobs:
+  send-reminder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/package.json
+
+      - name: Cài đặt dependencies
+        run: npm install
+        working-directory: scripts
+
+      - name: Gửi thông báo nhắc nhở
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          APP_URL: ${{ secrets.APP_URL }}
+        run: node scripts/send-daily-reminder.js

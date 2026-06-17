@@ -1,0 +1,9 @@
+{
+  "name": "pccc-reminder-script",
+  "version": "1.0.0",
+  "description": "Script gửi nhắc nhở đánh giá cuối ngày qua FCM",
+  "main": "send-daily-reminder.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0"
+  }
+}
