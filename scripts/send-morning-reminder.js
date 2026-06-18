@@ -45,7 +45,15 @@ async function main() {
     });
 
     const staffSnap = await db.ref('danhMucCanBo').get();
-    const allStaffs = staffSnap.exists() ? staffSnap.val() : [];
+    const allStaffsData = staffSnap.exists() ? staffSnap.val() : {};
+    
+    // Xử lý trường hợp Firebase trả về Object thay vì Array (nếu danh sách bị xoá phần tử ở giữa)
+    let allStaffs = [];
+    if (Array.isArray(allStaffsData)) {
+        allStaffs = allStaffsData.filter(Boolean);
+    } else {
+        allStaffs = Object.values(allStaffsData).filter(Boolean);
+    }
 
     const tokensSnap = await db.ref('fcmTokens').get();
     const tokens = tokensSnap.exists() ? tokensSnap.val() : {};
@@ -56,6 +64,7 @@ async function main() {
 
     // Thống kê dựa trên TỔNG SỐ cán bộ trong danh mục (bất kể có dùng App hay không)
     allStaffs.forEach(s => {
+        if (!s || !s.ten) return;
         if (!staffWithTasks.has(s.ten)) {
             staffWithoutTasksCount++;
             staffNames.push(s.ten);
