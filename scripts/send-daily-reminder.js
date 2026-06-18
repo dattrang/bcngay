@@ -70,11 +70,6 @@ async function main() {
     const totalPending = Object.values(pendingByStaff).reduce((a, b) => a + b, 0);
     console.log(`📊 Tổng công việc chưa đánh giá: ${totalPending} của ${Object.keys(pendingByStaff).length} cán bộ`);
 
-    if (totalPending === 0) {
-        console.log('✅ Tất cả công việc đã được đánh giá! Không gửi thông báo.');
-        process.exit(0);
-    }
-
     // Lấy FCM tokens từ Firebase
     const tokensSnap = await db.ref('fcmTokens').get();
     if (!tokensSnap.exists()) {
@@ -116,14 +111,23 @@ async function main() {
     // Gửi báo cáo tổng hợp cho Admin
     const adminToken = tokens['Admin'];
     if (adminToken) {
-        const staffNames = Object.keys(pendingByStaff);
-        const preview = staffNames.slice(0, 3).join(', ');
-        const more = staffNames.length > 3 ? ` và ${staffNames.length - 3} người khác` : '';
+        let adminTitle = `📊 Báo cáo cuối ngày ${todayStr}`;
+        let adminBody = '';
+
+        if (totalPending > 0) {
+            const staffNames = Object.keys(pendingByStaff);
+            const preview = staffNames.slice(0, 3).join(', ');
+            const more = staffNames.length > 3 ? ` và ${staffNames.length - 3} người khác` : '';
+            adminBody = `Còn ${totalPending} việc chưa đánh giá: ${preview}${more}`;
+        } else {
+            adminBody = `Tuyệt vời! 100% công việc hôm nay đã được đánh giá kết quả.`;
+        }
+
         messages.push({
             token: adminToken,
             notification: {
-                title: `📊 Báo cáo cuối ngày ${todayStr}`,
-                body: `Còn ${totalPending} việc chưa đánh giá: ${preview}${more}`
+                title: adminTitle,
+                body: adminBody
             },
             webpush: {
                 notification: { 

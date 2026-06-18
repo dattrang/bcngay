@@ -44,54 +44,67 @@ async function main() {
         if (t.nguoiPhuTrach) staffWithTasks.add(t.nguoiPhuTrach);
     });
 
-    const tokensSnap = await db.ref('fcmTokens').get();
-    if (!tokensSnap.exists()) {
-        console.log('⚠️ Chưa có FCM token nào được đăng ký.');
-        process.exit(0);
-    }
+    const staffSnap = await db.ref('danhMucCanBo').get();
+    const allStaffs = staffSnap.exists() ? staffSnap.val() : [];
 
-    const tokens = tokensSnap.val();
+    const tokensSnap = await db.ref('fcmTokens').get();
+    const tokens = tokensSnap.exists() ? tokensSnap.val() : {};
+
     const messages = [];
     let staffWithoutTasksCount = 0;
     const staffNames = [];
 
-    for (const [staff, token] of Object.entries(tokens)) {
-        if (staff === 'Admin') continue;
-        
-        if (!staffWithTasks.has(staff)) {
+    // Thống kê dựa trên TỔNG SỐ cán bộ trong danh mục (bất kể có dùng App hay không)
+    allStaffs.forEach(s => {
+        if (!staffWithTasks.has(s.ten)) {
             staffWithoutTasksCount++;
-            staffNames.push(staff);
-            messages.push({
-                token,
-                notification: {
-                    title: '⏰ Nhắc nhở lập chương trình ngày',
-                    body: `Đ/c ${staff} chưa lập chương trình công tác cho ngày hôm nay!`
-                },
-                webpush: {
-                    notification: { 
-                        icon: 'icon-192.png',
-                        badge: 'icon-192.png',
-                        vibrate: [300, 100, 300, 100, 300],
-                        requireInteraction: true, 
-                        tag: 'pccc-morning-reminder', 
-                        renotify: true 
+            staffNames.push(s.ten);
+            
+            // Nếu cán bộ này có token FCM -> Gửi thông báo cá nhân
+            const token = tokens[s.ten];
+            if (token) {
+                messages.push({
+                    token,
+                    notification: {
+                        title: '⏰ Nhắc nhở lập chương trình ngày',
+                        body: `Đ/c ${s.ten} chưa lập chương trình công tác cho ngày hôm nay!`
                     },
-                    fcmOptions: { link: APP_URL }
-                },
-                data: { staff, type: 'morning_reminder', date: todayStr }
-            });
+                    webpush: {
+                        notification: { 
+                            icon: 'icon-192.png',
+                            badge: 'icon-192.png',
+                            vibrate: [300, 100, 300, 100, 300],
+                            requireInteraction: true, 
+                            tag: 'pccc-morning-reminder', 
+                            renotify: true 
+                        },
+                        fcmOptions: { link: APP_URL }
+                    },
+                    data: { staff: s.ten, type: 'morning_reminder', date: todayStr }
+                });
+            }
         }
-    }
+    });
 
+    // Luôn gửi báo cáo cho Admin dù có người thiếu hay không
     const adminToken = tokens['Admin'];
-    if (adminToken && staffWithoutTasksCount > 0) {
-        const preview = staffNames.slice(0, 3).join(', ');
-        const more = staffNames.length > 3 ? ` và ${staffNames.length - 3} người khác` : '';
+    if (adminToken) {
+        let adminTitle = `📊 Báo cáo sáng ${todayStr}`;
+        let adminBody = '';
+
+        if (staffWithoutTasksCount > 0) {
+            const preview = staffNames.slice(0, 3).join(', ');
+            const more = staffNames.length > 3 ? ` và ${staffNames.length - 3} người khác` : '';
+            adminBody = `Có ${staffWithoutTasksCount} người chưa lập kế hoạch: ${preview}${more}`;
+        } else {
+            adminBody = `Tuyệt vời! 100% cán bộ (${allStaffs.length} người) đã lập kế hoạch hôm nay.`;
+        }
+
         messages.push({
             token: adminToken,
             notification: {
-                title: `📊 Báo cáo sáng ${todayStr}`,
-                body: `Có ${staffWithoutTasksCount} người chưa lập kế hoạch: ${preview}${more}`
+                title: adminTitle,
+                body: adminBody
             },
             webpush: {
                 notification: { 
@@ -106,7 +119,7 @@ async function main() {
     }
 
     if (messages.length === 0) {
-        console.log('✅ Tất cả mọi người đều đã lập kế hoạch! Không gửi thông báo.');
+        console.log('⚠️ Không có token hợp lệ nào để gửi thông báo.');
         process.exit(0);
     }
 

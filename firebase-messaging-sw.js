@@ -38,19 +38,19 @@ messaging.onBackgroundMessage((payload) => {
     if (!payload.notification) {
         const d = payload.data || {};
         const title = d.title || '🔔 Nhắc nhở Công tác PCCC';
-        const body  = d.body  || 'Bạn có công việc cần chú ý!';
-        const link  = d.link  || './';
-        const tag   = d.tag   || 'pccc-reminder';
+        const body = d.body || 'Bạn có công việc cần chú ý!';
+        const link = d.link || './';
+        const tag = d.tag || 'pccc-reminder';
 
         const options = {
             body,
-            icon:               'icon-192.png',
-            badge:              'icon-192.png',
+            icon: 'icon-192.png',
+            badge: 'icon-192.png',
             tag,
-            renotify:           true,
+            renotify: true,
             requireInteraction: true,
-            vibrate:            [300, 100, 300, 100, 300],
-            data:               { url: link }
+            vibrate: [300, 100, 300, 100, 300],
+            data: { url: link }
         };
 
         return self.registration.showNotification(title, options);
@@ -60,7 +60,7 @@ messaging.onBackgroundMessage((payload) => {
 // Khi người dùng click vào thông báo → mở/focus tab app
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
-    
+
     // Đọc URL đích
     const targetUrl = event.notification.data?.url || event.notification.data?.FCM_MSG?.notification?.click_action || './';
 
