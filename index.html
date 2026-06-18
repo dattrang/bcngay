@@ -4643,8 +4643,8 @@
                 const h = now.getHours(), m = now.getMinutes();
                 const todayStr = getTodayYMD();
 
-                // Chỉ chạy trong khung 09:00 - 09:30
-                if (!(h === 9 && m <= 30)) return;
+                // Chỉ chạy trong khung 09:00 - 09:55
+                if (!(h === 9 && m <= 55)) return;
                 if (alertShownToday === todayStr) return;
                 if (window.IS_ADMIN || !window.DEVICE_USER) return; // Admin không cần bị nhắc
 
