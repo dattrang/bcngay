@@ -8,7 +8,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
     <style>
         :root {
@@ -1104,8 +1104,8 @@
             <div
                 style="background:#fffcf0; border-left:4px solid var(--warning); padding:10px; margin-top:10px; margin-bottom:15px; border-radius:4px;">
                 <p style="font-size:0.85rem; color:#856404; margin:0;"><i class="fas fa-info-circle"></i> Công việc phát
-                    sinh sẽ được tự động đánh dấu <strong>100% Hoàn thành</strong> (Kết quả: Khối lượng đã làm) trên hệ
-                    thống ngay sau khi lưu.</p>
+                    sinh sẽ xuất hiện trong danh sách <strong>Đánh Giá Kết Quả</strong> — cán bộ cần tự điền kết quả
+                    thực hiện sau khi hoàn thành.</p>
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
@@ -1811,14 +1811,19 @@
                     <div class="card" id="nvxn-admin-panel" style="display:none;">
                         <div class="card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                             <h3><i class="fas fa-bolt"></i> Đồng bộ tự động từ "Quản Lý Công Việc"</h3>
-                            <button type="button" class="btn btn-outline btn-sm" id="btn-nvxn-reload"><i
-                                    class="fas fa-sync"></i> Đồng bộ lại ngay</button>
+                            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                                <button type="button" class="btn btn-outline btn-sm" id="btn-nvxn-reload"><i
+                                        class="fas fa-sync"></i> Đồng bộ lại ngay</button>
+                                <button type="button" class="btn btn-warning btn-sm" id="btn-nvxn-resync-kpi"
+                                    onclick="nvxnResyncKpiFromQlcv()"><i class="fas fa-sliders-h"></i> Cập nhật chỉ tiêu
+                                    từ QLCV</button>
+                            </div>
                         </div>
                         <p style="font-size:0.85rem;color:var(--gray);">Hệ thống <strong>tự động</strong> kéo mọi nhiệm
                             vụ bên QLCV đã có "Hạn hoàn thành" và chưa xong sang đây mỗi khi có người mở app — không cần
-                            chọn/bấm gì thêm. Mặc định mỗi việc là chế độ "tích 1 lần" (hiện trước hạn 5 ngày). Bấm "✏️
-                            Tùy chỉnh" trên từng thẻ bên dưới để đổi Số lượng (chia nhỏ theo ngày), Hiện trước bao nhiêu
-                            ngày, hoặc đặt Lặp lại. Nút "Đồng bộ lại ngay" chỉ để ép quét lại sớm, không bắt buộc.</p>
+                            chọn/bấm gì thêm. Số lượng chỉ tiêu được lấy từ trường <strong>kpiValue</strong> bên QLCV.
+                            Nút <strong>"Cập nhật chỉ tiêu từ QLCV"</strong> để đồng bộ lại số lượng cho các nhiệm vụ đã
+                            tạo trước đây (khi còn hardcode = 1).</p>
                         <div id="nvxn-sync-status" style="font-size:0.8rem;color:var(--gray);margin-top:6px;"></div>
                     </div>
 
@@ -2337,7 +2342,6 @@
                             if (sTypeEval) sTypeEval.appendChild(new Option(c, c));
                         });
 
-                        setupAutocomplete('reg-phutrach', false);
                         setupAutocomplete('eval-filter-staff', true);
                         setupAutocomplete('rpt-filter-staff', true);
                         setupAutocomplete('ps-nguoi', false);
@@ -2390,7 +2394,7 @@
                                     const y = new Date();
                                     y.setDate(y.getDate() - 1);
                                     document.getElementById('eval-date').value = formatLocalYMD(y);
-                                    nvxnSyncDailyEntries();
+                                    // [FIX] bỏ nvxnSyncDailyEntries() thừa ở đây — đã chạy lúc khởi động, không cần trigger lại mỗi lần mở tab
                                 } else if (btn.dataset.tab === 'dang-ky') {
                                     nvxnSyncDailyEntries().then(loadTodayTasks);
                                 } else if (btn.dataset.tab === 'bao-cao' && !document.getElementById('rpt-end').value) {
@@ -3490,7 +3494,7 @@
                                 let count = 0;
                                 for (let key in data) {
                                     let t = data[key];
-                                    if (t.isPhatSinh || t.tenCongViec.startsWith('[Chuyển tiếp]')) continue;
+                                    if (t.isPhatSinh || t.tenCongViec.startsWith('[Chuyển tiếp]') || t.nvxnLinkId) continue; // [FIX] bỏ qua task phát sinh, chuyển tiếp, và task Dài ngày (NVXN tự sinh lại)
                                     if (!IS_ADMIN && t.nguoiPhuTrach !== DEVICE_USER) continue;
                                     if (tempRegTasks.some(existing => existing.tenCongViec === t.tenCongViec && existing.nguoiPhuTrach === t.nguoiPhuTrach)) continue;
                                     if (todayTasks.some(existing => existing.tenCongViec === t.tenCongViec && existing.nguoiPhuTrach === t.nguoiPhuTrach)) continue;
@@ -4754,7 +4758,7 @@
                             showToast('Chỉ Admin mới có thể thực hiện hành động này!', 'error');
                             return;
                         }
-                        if (!confirm('Chốt tất cả công việc quá hạn (3 ngày trước đến hôm qua) chưa có đánh giá thành "Chưa thực hiện"?\n\nLưu ý: Hành động này không thể hoàn tác!')) return;
+                        if (!confirm('Chốt tất cả công việc quá hạn (7 ngày trước đến hôm qua) chưa có đánh giá thành "Chưa thực hiện"?\n\nLưu ý: Hành động này không thể hoàn tác!')) return;
                         showLoader(true);
                         try {
                             const endDate = new Date(); endDate.setDate(endDate.getDate() - 1);
@@ -4983,14 +4987,23 @@
                             const todayStr = getTodayYMD();
                             const updates = {};
                             let count = 0;
+
+                            // [FIX] Prefetch toàn bộ nhiemVuDaiHan 1 lần thay vì đọc tuần tự trong vòng lặp
+                            const existingNvxnSnap = await get(child(ref(db), 'nhiemVuDaiHan'));
+                            const existingNvxnKeys = new Set(existingNvxnSnap.exists() ? Object.keys(existingNvxnSnap.val()) : []);
+
                             for (const t of tasksArr) {
                                 const assignees = t.assignees || [];
                                 for (const pid of assignees) {
                                     const p = personsArr.find(pp => pp.id === pid);
                                     if (!p) continue;
                                     const detKey = `nvxn_auto_${t.id}_${pid}`;
-                                    const existed = await get(child(ref(db), `nhiemVuDaiHan/${detKey}`));
-                                    if (existed.exists()) continue; // đã từng tạo (kể cả từng bị Admin hủy) → không tạo lại
+                                    if (existingNvxnKeys.has(detKey)) continue; // đã từng tạo (kể cả từng bị Admin hủy) → không tạo lại
+
+                                    // [FIX] Lấy số lượng chỉ tiêu từ kpiValue của QLCV (mặc định 1)
+                                    const qlcvQty = Math.max(1, Math.round(parseFloat(t.kpiValue) || 1));
+                                    const qlcvDvt = qlcvQty > 1 ? 'Lần' : 'Lần'; // Có thể mở rộng từ KPI template nếu cần
+
                                     updates[`nhiemVuDaiHan/${detKey}`] = {
                                         id: detKey,
                                         qlcvTaskId: t.id,
@@ -4998,13 +5011,13 @@
                                         nguoiPhuTrach: p.name,
                                         ngayBatDau: todayStr,
                                         hanHoanThanh: t.due,
-                                        tongSoLuong: 1,
-                                        dvt: 'Lần',
+                                        tongSoLuong: qlcvQty,  // [FIX] Dùng kpiValue thay vì hardcode 1
+                                        dvt: qlcvDvt,
                                         soNgayHienTruoc: 5,
                                         lapLai: 'khong',
                                         active: true,
                                         trangThai: 'dang_thuc_hien',
-                                        lichSu: [{ thoiGian: new Date().toLocaleString('vi-VN'), hanhDong: `Tự động đồng bộ từ QLCV — hạn ${formatDMY(t.due)}` }],
+                                        lichSu: [{ thoiGian: new Date().toLocaleString('vi-VN'), hanhDong: `Tự động đồng bộ từ QLCV — hạn ${formatDMY(t.due)} — chỉ tiêu: ${qlcvQty} ${qlcvDvt}` }],
                                         syncedBy: 'Hệ thống (tự động)',
                                         syncedAt: Date.now()
                                     };
@@ -5018,6 +5031,127 @@
                             nvxnAutoSyncing = false;
                         }
                     }
+
+                    // ── Đồng bộ lại chỉ tiêu (kpiValue) từ QLCV vào nhiemVuDaiHan đã tạo sẵn ──
+                    // Dùng khi các record cũ bị hardcode tongSoLuong = 1, cần cập nhật lại từ QLCV
+                    window.nvxnResyncKpiFromQlcv = async function () {
+                        if (!IS_ADMIN) { showToast('Chỉ Admin mới có thể thực hiện!', 'error'); return; }
+                        if (!confirm('Quét toàn bộ "Nhiệm vụ dài ngày" có liên kết QLCV và cập nhật lại Số lượng chỉ tiêu từ kpiValue bên QLCV?\n\nCác nhiệm vụ đã Admin tùy chỉnh thủ công sẽ BỊ GHI ĐÈ nếu kpiValue thay đổi.')) return;
+
+                        showLoader(true);
+                        try {
+                            // 1. Tải song song: tasks QLCV + danh sách nhiemVuDaiHan hiện tại
+                            const [tasksSnap, personsSnap, nvxnSnap] = await Promise.all([
+                                get(child(ref(dbQlcv), 'qlcv_tasks')),
+                                get(child(ref(dbQlcv), 'qlcv_persons')),
+                                get(child(ref(db), 'nhiemVuDaiHan'))
+                            ]);
+
+                            if (!nvxnSnap.exists()) {
+                                showToast('Không có nhiệm vụ dài ngày nào để cập nhật.', 'warning');
+                                showLoader(false);
+                                return;
+                            }
+
+                            // 2. Build lookup QLCV tasks: id → task
+                            const qlcvTasksMap = {};
+                            if (tasksSnap.exists()) {
+                                Object.entries(tasksSnap.val()).forEach(([k, v]) => {
+                                    if (v) qlcvTasksMap[k] = { id: k, ...v };
+                                });
+                            }
+
+                            // 3. Build lookup persons: id → person
+                            const personsArr = personsSnap.exists()
+                                ? Object.values(personsSnap.val()).filter(Boolean)
+                                : [];
+                            const personById = (pid) => personsArr.find(pp => pp.id === pid);
+
+                            // 4. Quét từng nhiemVuDaiHan, tìm những cái cần cập nhật
+                            const updates = {};
+                            let countQty = 0, countName = 0, countDeadline = 0;
+                            const logTime = new Date().toLocaleString('vi-VN');
+
+                            Object.entries(nvxnSnap.val()).forEach(([nvxnId, nvxnTask]) => {
+                                if (!nvxnTask || !nvxnTask.qlcvTaskId) return;
+                                const qlcvTask = qlcvTasksMap[nvxnTask.qlcvTaskId];
+                                if (!qlcvTask) return; // Task đã xóa bên QLCV → bỏ qua
+
+                                const changes = [];
+
+                                // ── Cập nhật số lượng chỉ tiêu ──
+                                const newQty = Math.max(1, Math.round(parseFloat(qlcvTask.kpiValue) || 1));
+                                const oldQty = nvxnTask.tongSoLuong || 1;
+                                if (newQty !== oldQty) {
+                                    updates[`nhiemVuDaiHan/${nvxnId}/tongSoLuong`] = newQty;
+                                    updates[`nhiemVuDaiHan/${nvxnId}/dvt`] = newQty > 1 ? 'Lần' : 'Lần';
+                                    // Nếu chuyển từ qty=1 sang qty>1 → đổi sang chế độ chia nhỏ
+                                    // (tongSoLuong > 1 tự động kích hoạt chế độ chia nhỏ trong nvxnIsQtyMode)
+                                    changes.push(`Cập nhật chỉ tiêu: ${oldQty} → ${newQty} Lần`);
+                                    countQty++;
+                                }
+
+                                // ── Cập nhật tên nếu bên QLCV đổi ──
+                                const newTitle = qlcvTask.title || '(Không có tên)';
+                                if (newTitle !== nvxnTask.tenCongViec) {
+                                    updates[`nhiemVuDaiHan/${nvxnId}/tenCongViec`] = newTitle;
+                                    changes.push(`Đổi tên: "${nvxnTask.tenCongViec}" → "${newTitle}"`);
+                                    countName++;
+                                }
+
+                                // ── Cập nhật hạn hoàn thành nếu bên QLCV đổi ──
+                                if (qlcvTask.due && qlcvTask.due !== nvxnTask.hanHoanThanh) {
+                                    updates[`nhiemVuDaiHan/${nvxnId}/hanHoanThanh`] = qlcvTask.due;
+                                    // Nếu task đang hoan_thanh nhưng QLCV chưa done → mở lại
+                                    if (nvxnTask.trangThai === 'hoan_thanh' && qlcvTask.status !== 'done') {
+                                        updates[`nhiemVuDaiHan/${nvxnId}/trangThai`] = 'dang_thuc_hien';
+                                    }
+                                    changes.push(`Đổi hạn: ${formatDMY(nvxnTask.hanHoanThanh)} → ${formatDMY(qlcvTask.due)}`);
+                                    countDeadline++;
+                                }
+
+                                // ── Cập nhật trạng thái nếu QLCV đã done ──
+                                if (qlcvTask.status === 'done' && nvxnTask.trangThai !== 'hoan_thanh') {
+                                    updates[`nhiemVuDaiHan/${nvxnId}/trangThai`] = 'hoan_thanh';
+                                    changes.push('QLCV đã Done → đánh dấu hoàn thành');
+                                }
+
+                                // Ghi lịch sử nếu có thay đổi
+                                if (changes.length > 0) {
+                                    const hist = nvxnTask.lichSu || [];
+                                    hist.push({ thoiGian: logTime, hanhDong: `[Đồng bộ QLCV] ${changes.join(' | ')}` });
+                                    updates[`nhiemVuDaiHan/${nvxnId}/lichSu`] = hist;
+                                }
+                            });
+
+                            const totalChanged = countQty + countName + countDeadline;
+                            if (totalChanged === 0) {
+                                showToast('Tất cả đã đồng bộ, không có gì thay đổi.', 'warning');
+                                showLoader(false);
+                                return;
+                            }
+
+                            await update(ref(db), updates);
+
+                            // Re-sync daily entries để áp dụng chỉ tiêu mới ngay hôm nay
+                            await nvxnSyncDailyEntries();
+                            await loadNVXNTasks();
+                            await renderNVXNList();
+                            nvxnUpdateSyncStatusLine();
+
+                            let msg = `Đã cập nhật: `;
+                            const parts = [];
+                            if (countQty > 0) parts.push(`${countQty} chỉ tiêu`);
+                            if (countName > 0) parts.push(`${countName} tên`);
+                            if (countDeadline > 0) parts.push(`${countDeadline} hạn`);
+                            showToast(msg + parts.join(', ') + ' từ QLCV!', 'success');
+
+                        } catch (e) {
+                            console.error('[NVDN] Lỗi đồng bộ chỉ tiêu QLCV:', e);
+                            showToast('Lỗi khi cập nhật!', 'error');
+                        }
+                        showLoader(false);
+                    };
 
                     async function loadNVXNTasks() {
                         try {
@@ -5061,6 +5195,10 @@
                             const todayStr = getTodayYMD();
                             const updates = {};
 
+                            // [FIX] Prefetch toàn bộ keHoachNgay/{today} 1 lần thay vì đọc tuần tự trong vòng lặp
+                            const todayPlanSnap = await get(child(ref(db), `keHoachNgay/${todayStr}`));
+                            const todayPlanKeys = new Set(todayPlanSnap.exists() ? Object.keys(todayPlanSnap.val()) : []);
+
                             for (const task of nvxnTasks) {
                                 if (task.trangThai === 'hoan_thanh') continue;
 
@@ -5088,8 +5226,7 @@
                                     }
 
                                     const detId = nvxnDailyId(task.id, todayStr);
-                                    const existed = await get(child(ref(db), `keHoachNgay/${todayStr}/${detId}`));
-                                    if (existed.exists()) continue;
+                                    if (todayPlanKeys.has(detId)) continue; // [FIX] check local thay vì gọi Firebase
 
                                     // daysLeft tối thiểu 1 → nếu đã quá hạn, dồn hết phần còn thiếu vào hôm nay
                                     // và NĂM SAU VẪN TIẾP TỤC sinh việc (vì remaining vẫn >0 cho tới khi đủ).
@@ -5123,8 +5260,7 @@
                                     // daysUntil < 0 (quá hạn) luôn lọt qua điều kiện trên → TIẾP TỤC hiện liên tục mỗi ngày
 
                                     const detId = nvxnDailyId(task.id, todayStr);
-                                    const existed = await get(child(ref(db), `keHoachNgay/${todayStr}/${detId}`));
-                                    if (existed.exists()) continue;
+                                    if (todayPlanKeys.has(detId)) continue; // [FIX] check local thay vì gọi Firebase
 
                                     const overdue = daysUntil < 0;
                                     updates[`keHoachNgay/${todayStr}/${detId}`] = {
