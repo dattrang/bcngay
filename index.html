@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -5990,7 +5990,7 @@
                             <th title="Vượt số lượng chỉ tiêu (>100%)">⭐ Vượt CT</th>
                             <th title="Nhiệm vụ dài ngày hoàn thành trước hạn">🏁 HT sớm</th>
                             <th title="Công việc phát sinh đã hoàn thành">⚡ Phát sinh</th>
-                            <th title="Tỷ lệ hoàn thành (có trọng số ưu tiên)">% HT</th>
+                            <th title="Điểm tổng = Chất lượng + Thưởng khối lượng - Phạt">Điểm</th>
                             <th title="Ưu tiên Cao: hoàn thành / tổng">Ưu tiên Cao</th>
                             <th>Xếp loại</th>
                             ${IS_ADMIN ? '<th>Chi tiết</th>' : ''}
@@ -6017,7 +6017,7 @@
                                 <td class="pst-num pst-good">${kq.htSomDaiNgay || 0}</td>
                                 <td class="pst-num" style="color:#0369a1;">${kq.phatSinhHT || 0}</td>
                                 <td>
-                                    <div style="font-weight:700;color:${clr};">${pct}%</div>
+                                    <div style="font-weight:700;color:${clr};">${pct}</div>
                                     ${mkBar(pct, clr)}
                                 </td>
                                 <td style="color:${kq.uuTienCaoTotal > 0 && (kq.uuTienCaoHT || 0) < kq.uuTienCaoTotal ? '#dc2626' : '#16a34a'}; font-weight:600;">${prioHigh}</td>
@@ -6038,7 +6038,7 @@
                             <td class="pst-star">${tot.vuotChiTieu}</td>
                             <td class="pst-good">${tot.htSomDaiNgay}</td>
                             <td style="color:#0369a1;">${tot.phatSinhHT}</td>
-                            <td style="font-weight:700;color:${kqColor(totPct)};">${totPct}%</td>
+                            <td style="font-weight:700;color:${kqColor(totPct)};">—</td>
                             <td>—</td><td>—</td>${IS_ADMIN ? '<td></td>' : ''}
                         </tr>`;
 
@@ -6051,7 +6051,7 @@
                             🔒 Tự chốt = hệ thống tự đóng lúc 12h hôm sau &nbsp;·&nbsp;
                             ⭐ Vượt CT = thực tế &gt; chỉ tiêu &nbsp;·&nbsp;
                             🏁 HT sớm = NVXN xong trước hạn &nbsp;·&nbsp;
-                            % HT = trung bình có trọng số ưu tiên (Cao×3, TB×2, Thấp×1)
+                            Điểm = Điểm Chất lượng + Thưởng khối lượng (HT/Vượt/Sớm/PS) - Phạt (Không HT)
                         </div>`;
                         document.getElementById('pst-summary').innerHTML = html;
                     }
@@ -6340,7 +6340,22 @@
                             // Gộp với ketQua cũ (giữ diemAdmin, nhanXet)
                             const ketQua = JSON.parse(JSON.stringify(ph.ketQua || {}));
                             for (const [name, st] of Object.entries(staffMap)) {
-                                const diemAuto = st.sumW > 0 ? Math.round(st.sumWP / st.sumW * 10) / 10 : 0;
+                                // 1. Điểm Chất lượng (Max 100)
+                                const diemChatLuong = st.sumW > 0 ? (st.sumWP / st.sumW) : 0;
+                                
+                                // 2. Điểm thưởng khối lượng
+                                const thuongHT = st.htDungHan * 0.5;
+                                const thuongVuot = st.vuotChiTieu * 1.0;
+                                const thuongSom = st.htSomDaiNgay * 1.0;
+                                const thuongPS = st.phatSinhHT * 0.5;
+                                const diemThuong = thuongHT + thuongVuot + thuongSom + thuongPS;
+                                
+                                // 3. Điểm phạt
+                                const diemPhat = st.chuaThucHien * 1.0;
+
+                                // Tổng hợp (Làm tròn 1 chữ số thập phân)
+                                const diemAuto = Math.max(0, Math.round((diemChatLuong + diemThuong - diemPhat) * 10) / 10);
+
                                 const old = ketQua[name] || {};
                                 const diemCuoi = old.diemAdmin !== undefined ? old.diemAdmin : diemAuto;
                                 ketQua[name] = {
