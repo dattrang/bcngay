@@ -652,6 +652,99 @@
             border-color: #c4b5fd;
         }
 
+        /* ── Đánh giá chi tiết cán bộ ── */
+        .detail-staff-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .detail-staff-table th {
+            background: #f1f5f9;
+            padding: 8px 10px;
+            text-align: center;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+            white-space: nowrap;
+        }
+
+        .detail-staff-table td {
+            padding: 7px 10px;
+            border-bottom: 1px solid var(--border);
+            vertical-align: middle;
+        }
+
+        .detail-staff-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .detail-staff-table td:first-child {
+            font-weight: 600;
+        }
+
+        .dsr-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            min-width: 22px;
+            text-align: center;
+        }
+
+        .dsr-vuot {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .dsr-som {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .dsr-phatsinh {
+            background: #e0f2fe;
+            color: #075985;
+        }
+
+        .dsr-cham {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .dsr-binh {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .autolock-notice {
+            display: none;
+            position: fixed;
+            bottom: 70px;
+            right: 20px;
+            background: #d32f2f;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            z-index: 9999;
+            font-size: 0.9rem;
+            max-width: 320px;
+            animation: slideInRight 0.4s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                transform: translateX(100%);
+                opacity: 0
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1
+            }
+        }
+
         .eval-inline-input {
             display: flex;
             align-items: center;
@@ -1804,6 +1897,28 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- ═══ Đánh giá chi tiết cán bộ ═══ -->
+                    <div class="card" style="margin-top:0;">
+                        <div class="card-header" style="justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                            <h3><i class="fas fa-user-check" style="color:var(--primary);"></i> Đánh giá chi tiết cán bộ
+                            </h3>
+                            <button type="button" class="btn btn-primary btn-sm"
+                                onclick="generateDetailedStaffReport()">
+                                <i class="fas fa-chart-bar"></i> Xem báo cáo
+                            </button>
+                        </div>
+                        <p style="font-size:0.85rem;color:var(--gray);margin-bottom:12px;">
+                            Phân tích chi tiết từng cán bộ theo khoảng thời gian đang chọn.
+                            Hệ thống tự động <strong>chốt số liệu lúc 12:00 ngày hôm sau</strong> — nếu cán bộ không
+                            đánh giá trước thời điểm đó sẽ bị ghi <em>"Chưa thực hiện"</em>.
+                        </p>
+                        <div id="detail-staff-report-container">
+                            <div style="padding:20px;text-align:center;color:var(--gray);font-size:0.9rem;">
+                                Bấm <strong>"Xem báo cáo"</strong> để tải dữ liệu.
+                            </div>
+                        </div>
+                    </div>
                 </section>
 
                 <!-- Tab Nhiệm Vụ Dài Ngày (đồng bộ từ trang Quản Lý Công Việc) -->
@@ -1884,6 +1999,15 @@
                             style="background:rgba(255,255,255,0.2);color:white;border:1px solid rgba(255,255,255,0.5);padding:6px 14px;border-radius:6px;cursor:pointer;">Bỏ
                             qua</button>
                     </div>
+                </div>
+
+                <!-- Auto-lock notice (12:00 ngày hôm sau) -->
+                <div id="autolock-notice" class="autolock-notice">
+                    <div style="font-weight:700; margin-bottom:4px;"><i class="fas fa-lock"></i> Tự động chốt số liệu
+                    </div>
+                    <div id="autolock-notice-msg" style="font-size:0.85rem; line-height:1.5;"></div>
+                    <button onclick="document.getElementById('autolock-notice').style.display='none';"
+                        style="margin-top:8px; background:rgba(255,255,255,0.25); color:white; border:1px solid rgba(255,255,255,0.5); padding:4px 12px; border-radius:6px; cursor:pointer; font-size:0.85rem;">Đóng</button>
                 </div>
 
                 <script type="module">
@@ -2379,6 +2503,7 @@
                         // Thay bằng nút "Chốt quá hạn" trong tab Quản trị (chỉ Admin).
                         setupEndOfDayAlert(); // Nhắc nhở đánh giá lúc 17:00–17:30
                         setupMorningAlert();  // Nhắc nhở lập kế hoạch lúc 09:00–09:55
+                        setupNoonAutoLock();  // Tự động chốt số liệu lúc 12:00 ngày hôm sau
 
                         // Nav Tabs
                         const navBtns = document.querySelectorAll('.nav-btn');
@@ -4869,6 +4994,292 @@
                         setTimeout(checkMorningAlert, 4000);
                         setInterval(checkMorningAlert, 60000);
                     }
+
+                    // ============= TỰ ĐỘNG CHỐT SỐ LIỆU LÚC 12:00 NGÀY HÔM SAU =============
+                    // Quy tắc: Ngày X đến 12:00 ngày X+1, nếu cán bộ chưa đánh giá → tự động
+                    // ghi "Chưa thực hiện" và đánh dấu tuDongChot = true để báo cáo phân biệt.
+                    function setupNoonAutoLock() {
+                        let lockedForDate = null; // Ngày đã được chốt hôm nay (yyyy-mm-dd của hôm qua)
+
+                        const checkNoonLock = async () => {
+                            const now = new Date();
+                            const h = now.getHours();
+                            // Chỉ chạy từ 12:00 trở đi
+                            if (h < 12) return;
+
+                            const todayStr = getTodayYMD();
+                            const yd = new Date(now); yd.setDate(yd.getDate() - 1);
+                            const yesterdayStr = formatLocalYMD(yd);
+
+                            // Đã chốt ngày hôm qua trong phiên này rồi → bỏ qua
+                            if (lockedForDate === yesterdayStr) return;
+
+                            try {
+                                const snap = await get(child(ref(db), `keHoachNgay/${yesterdayStr}`));
+                                if (!snap.exists()) { lockedForDate = yesterdayStr; return; }
+
+                                const allTasks = snap.val();
+                                const updates = {};
+                                let count = 0;
+                                const logTime = new Date().toLocaleString('vi-VN');
+
+                                for (const [k, t] of Object.entries(allTasks)) {
+                                    if (!t || t.danhGia?.thoiDiemDanhGia) continue; // Đã đánh giá rồi → bỏ qua
+                                    updates[`keHoachNgay/${yesterdayStr}/${k}/danhGia`] = {
+                                        ketQua: 'Chưa thực hiện',
+                                        tiLeHoanThanh: 0,
+                                        soLuongThucTe: 0,
+                                        lyDoKhongDat: 'Hệ thống tự động chốt (quá 12:00 ngày hôm sau)',
+                                        nguyenNhanKhachQuan: false,
+                                        nguyenNhanChuQuan: true,
+                                        baiHocKinhNghiem: '',
+                                        chuyenSangNgay: '',
+                                        thoiDiemDanhGia: Date.now(),
+                                        lichSu: [{ thoiGian: logTime, hanhDong: `Tự động chốt lúc 12:00 ngày hôm sau (${DEVICE_USER || 'hệ thống'})` }],
+                                        daChuyenTiep: false,
+                                        daDuyet: false,
+                                        tuDongChot: true  // Flag để báo cáo phân biệt với cán bộ chủ động đánh giá
+                                    };
+                                    count++;
+                                }
+
+                                lockedForDate = yesterdayStr;
+
+                                if (count > 0) {
+                                    await update(ref(db), updates);
+                                    // Hiện thông báo cho người dùng
+                                    const notice = document.getElementById('autolock-notice');
+                                    const msg = document.getElementById('autolock-notice-msg');
+                                    if (notice && msg) {
+                                        msg.textContent = `Đã tự động chốt ${count} công việc ngày ${formatDMY(yesterdayStr)} thành "Chưa thực hiện" (quá 12:00 ngày hôm sau).`;
+                                        notice.style.display = 'block';
+                                        setTimeout(() => { notice.style.display = 'none'; }, 10000);
+                                    }
+                                    // Reload nếu đang xem ngày hôm qua
+                                    const evalDateEl = document.getElementById('eval-date');
+                                    if (evalDateEl && evalDateEl.value === yesterdayStr) {
+                                        await loadTasksForEval();
+                                    }
+                                }
+                            } catch (e) {
+                                console.error('[AutoLock] Lỗi tự động chốt:', e);
+                            }
+                        };
+
+                        setTimeout(checkNoonLock, 5000);      // Kiểm tra 5 giây sau khi load
+                        setInterval(checkNoonLock, 60000);    // Lặp mỗi phút
+                    }
+
+                    // ============= BÁO CÁO CHI TIẾT CÁN BỘ =============
+                    window.generateDetailedStaffReport = async function () {
+                        const container = document.getElementById('detail-staff-report-container');
+                        if (!container) return;
+                        container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);">⏳ Đang tải dữ liệu...</div>';
+
+                        // Lấy filter từ panel báo cáo
+                        const startStr = document.getElementById('rpt-start')?.value || getTodayYMD();
+                        const endStr = document.getElementById('rpt-end')?.value || getTodayYMD();
+                        const fStaff = document.getElementById('rpt-filter-staff')?.value || '';
+                        const fGroup = document.getElementById('rpt-filter-group')?.value || '';
+
+                        try {
+                            const q = query(ref(db, 'keHoachNgay'), orderByKey(), startAt(startStr), endAt(endStr));
+                            const snap = await get(q);
+
+                            if (!snap.exists()) {
+                                container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);">Không có dữ liệu trong khoảng thời gian này.</div>';
+                                return;
+                            }
+
+                            // ── Phân loại từng task ──
+                            // Ưu tiên: vuot > hoan_thanh_som > phat_sinh > binh_thuong > cham_muon
+                            const classifyTask = (t, dStr) => {
+                                const dg = t.danhGia || {};
+                                const chiTieu = t.chiTieu || 100;
+                                const soThucTe = parseFloat(dg.soLuongThucTe) || 0;
+                                const tiLe = parseInt(dg.tiLeHoanThanh) || 0;
+                                const ketQua = dg.ketQua || '';
+                                const isDone = ketQua === 'Hoàn thành' || tiLe >= 100;
+                                const tuDongChot = dg.tuDongChot === true;
+
+                                // Chưa đánh giá → chưa chốt → bỏ qua thống kê
+                                if (!dg.thoiDiemDanhGia) return null;
+
+                                // 1. Quá hạn (không hoàn thành + tự động chốt hoặc từ ngày trước)
+                                if (!isDone) {
+                                    const daysLate = Math.ceil((Date.now() - new Date(dStr).getTime()) / 86400000);
+                                    return {
+                                        cat: 'cham',
+                                        daysLate,
+                                        tuDongChot,
+                                        chiTieuDat: 0,
+                                        chiTieuVuot: 0
+                                    };
+                                }
+
+                                // 2. Vượt chỉ tiêu (thực tế > chỉ tiêu)
+                                if (soThucTe > chiTieu || tiLe > 100) {
+                                    const vuotSoLuong = Math.max(0, soThucTe - chiTieu);
+                                    return { cat: 'vuot', vuotSoLuong, chiTieuDat: chiTieu, chiTieuVuot: vuotSoLuong };
+                                }
+
+                                // 3. Hoàn thành sớm — nhiệm vụ dài ngày (nvxnLinkId + hoàn thành trước hạn)
+                                if (t.nvxnLinkId && isDone) {
+                                    const han = t.hanHoanThanh || '';
+                                    const isSom = han && dStr < han;
+                                    if (isSom) return { cat: 'hoan_thanh_som', chiTieuDat: chiTieu, chiTieuVuot: 0 };
+                                }
+
+                                // 4. Phát sinh và hoàn thành
+                                if (t.isPhatSinh && isDone) {
+                                    return { cat: 'phat_sinh', chiTieuDat: chiTieu, chiTieuVuot: 0 };
+                                }
+
+                                // 5. Hoàn thành bình thường
+                                return { cat: 'binh_thuong', chiTieuDat: chiTieu, chiTieuVuot: 0 };
+                            };
+
+                            // ── Tổng hợp theo cán bộ ──
+                            const allData = snap.val();
+                            const staffMap = {}; // staffName → stats
+
+                            const ensureStaff = (name) => {
+                                if (!staffMap[name]) staffMap[name] = {
+                                    name,
+                                    vuot: 0, vuotTongSL: 0,       // Vượt chỉ tiêu
+                                    hoan_thanh_som: 0,              // HT sớm dài ngày
+                                    phat_sinh: 0,                   // Phát sinh HT
+                                    cham: 0, chamNgay: 0, chamTuDong: 0, // Chậm/Quá hạn
+                                    binh_thuong: 0,                 // HT bình thường
+                                    total: 0, totalDone: 0
+                                };
+                                return staffMap[name];
+                            };
+
+                            for (const [dStr, dayData] of Object.entries(allData)) {
+                                for (const t of Object.values(dayData)) {
+                                    if (!t || !t.nguoiPhuTrach) continue;
+                                    const name = t.nguoiPhuTrach;
+                                    if (fStaff && fStaff !== '-- Tất cả --' && name !== fStaff) continue;
+                                    if (fGroup) {
+                                        const s = STAFFS.find(x => x.ten === name);
+                                        if (!s || s.nhom !== fGroup) continue;
+                                    }
+
+                                    const cls = classifyTask(t, dStr);
+                                    if (!cls) continue; // Chưa đánh giá
+
+                                    const st = ensureStaff(name);
+                                    st.total++;
+                                    if (cls.cat !== 'cham') st.totalDone++;
+
+                                    switch (cls.cat) {
+                                        case 'vuot':
+                                            st.vuot++;
+                                            st.vuotTongSL += cls.chiTieuVuot;
+                                            st.binh_thuong++; // cũng tính là hoàn thành
+                                            break;
+                                        case 'hoan_thanh_som': st.hoan_thanh_som++; st.binh_thuong++; break;
+                                        case 'phat_sinh': st.phat_sinh++; st.binh_thuong++; break;
+                                        case 'cham':
+                                            st.cham++;
+                                            st.chamNgay += cls.daysLate;
+                                            if (cls.tuDongChot) st.chamTuDong++;
+                                            break;
+                                        default: st.binh_thuong++; break;
+                                    }
+                                }
+                            }
+
+                            const rows = Object.values(staffMap).sort((a, b) => {
+                                // Sắp xếp: ít cham → nhiều vuot → tên
+                                if (a.cham !== b.cham) return a.cham - b.cham;
+                                return b.vuot - a.vuot;
+                            });
+
+                            if (rows.length === 0) {
+                                container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);">Không có cán bộ nào phù hợp bộ lọc.</div>';
+                                return;
+                            }
+
+                            // ── Render bảng ──
+                            const badge = (val, cls, zeroGray = true) => {
+                                if (zeroGray && val === 0) return `<span class="dsr-badge dsr-binh">0</span>`;
+                                return `<span class="dsr-badge ${cls}">${val}</span>`;
+                            };
+
+                            let html = `
+                            <div style="overflow-x:auto;">
+                            <table class="detail-staff-table">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align:left;">Cán bộ</th>
+                                        <th title="Hoàn thành vượt số lượng chỉ tiêu">⭐ Vượt chỉ tiêu</th>
+                                        <th title="Nhiệm vụ dài ngày hoàn thành trước hạn cuối">🏁 HT sớm (dài ngày)</th>
+                                        <th title="Công việc phát sinh đã hoàn thành">⚡ Phát sinh HT</th>
+                                        <th title="Không hoàn thành, chậm / bị tự động chốt">⏰ Chậm/Quá hạn</th>
+                                        <th title="Trong đó số bị hệ thống tự chốt lúc 12:00">🔒 Bị tự chốt</th>
+                                        <th>HT / Tổng</th>
+                                        <th>% HT</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+                            for (const s of rows) {
+                                const pct = s.total > 0 ? Math.round(s.totalDone / s.total * 100) : 0;
+                                const pctColor = pct >= 90 ? '#16a34a' : pct >= 70 ? '#1976D2' : pct >= 50 ? '#ed6c02' : '#d32f2f';
+                                const avgCham = s.cham > 0 ? ` (tb ${Math.round(s.chamNgay / s.cham)} ngày)` : '';
+                                const vuotLabel = s.vuot > 0
+                                    ? `<span class="dsr-badge dsr-vuot">${s.vuot}</span>${s.vuotTongSL > 0 ? `<span style="font-size:0.75rem;color:#92400e;margin-left:3px;">+${s.vuotTongSL}</span>` : ''}`
+                                    : `<span class="dsr-badge dsr-binh">0</span>`;
+
+                                html += `<tr>
+                                    <td style="white-space:nowrap;">${s.name}</td>
+                                    <td style="text-align:center;">${vuotLabel}</td>
+                                    <td style="text-align:center;">${badge(s.hoan_thanh_som, 'dsr-som')}</td>
+                                    <td style="text-align:center;">${badge(s.phat_sinh, 'dsr-phatsinh')}</td>
+                                    <td style="text-align:center;">${s.cham > 0 ? `<span class="dsr-badge dsr-cham">${s.cham}</span><span style="font-size:0.75rem;color:#991b1b;margin-left:3px;">${avgCham}</span>` : badge(0, 'dsr-cham')}</td>
+                                    <td style="text-align:center;">${s.chamTuDong > 0 ? `<span class="dsr-badge dsr-cham">${s.chamTuDong}</span>` : '<span style="color:#94a3b8;font-size:0.8rem;">—</span>'}</td>
+                                    <td style="text-align:center;"><strong>${s.totalDone}</strong>/${s.total}</td>
+                                    <td style="text-align:center;font-weight:700;color:${pctColor};">${pct}%</td>
+                                </tr>`;
+                            }
+
+                            // Hàng tổng cộng
+                            const totals = rows.reduce((acc, s) => ({
+                                vuot: acc.vuot + s.vuot, som: acc.som + s.hoan_thanh_som,
+                                ps: acc.ps + s.phat_sinh, cham: acc.cham + s.cham,
+                                tuChot: acc.tuChot + s.chamTuDong,
+                                done: acc.done + s.totalDone, total: acc.total + s.total
+                            }), { vuot: 0, som: 0, ps: 0, cham: 0, tuChot: 0, done: 0, total: 0 });
+                            const totalPct = totals.total > 0 ? Math.round(totals.done / totals.total * 100) : 0;
+
+                            html += `<tr style="background:#f8fafc;font-weight:700;border-top:2px solid var(--border);">
+                                <td>TỔNG</td>
+                                <td style="text-align:center;"><span class="dsr-badge dsr-vuot">${totals.vuot}</span></td>
+                                <td style="text-align:center;"><span class="dsr-badge dsr-som">${totals.som}</span></td>
+                                <td style="text-align:center;"><span class="dsr-badge dsr-phatsinh">${totals.ps}</span></td>
+                                <td style="text-align:center;"><span class="dsr-badge dsr-cham">${totals.cham}</span></td>
+                                <td style="text-align:center;"><span class="dsr-badge dsr-cham">${totals.tuChot}</span></td>
+                                <td style="text-align:center;">${totals.done}/${totals.total}</td>
+                                <td style="text-align:center;color:${totalPct >= 80 ? '#16a34a' : totalPct >= 60 ? '#ed6c02' : '#d32f2f'};">${totalPct}%</td>
+                            </tr>`;
+
+                            html += `</tbody></table></div>`;
+                            html += `<div style="font-size:0.8rem;color:var(--gray);margin-top:8px;">
+                                Khoảng thời gian: <strong>${formatDMY(startStr)}</strong> → <strong>${formatDMY(endStr)}</strong> · 
+                                Chỉ tính các task <strong>đã đánh giá</strong>. 
+                                Cột "HT sớm" chỉ áp dụng nhiệm vụ dài ngày (NVXN). 
+                                "Bị tự chốt" = cán bộ không đánh giá trước 12:00 ngày hôm sau.
+                            </div>`;
+
+                            container.innerHTML = html;
+
+                        } catch (e) {
+                            console.error('[DetailReport] Lỗi:', e);
+                            container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--danger);">Lỗi khi tải dữ liệu. Vui lòng thử lại.</div>';
+                        }
+                    };
 
                     /* ══════════════════════════════════════════════════════════
                        NHIỆM VỤ DÀI NGÀY — TỰ ĐỘNG đồng bộ từ "Quản Lý Công Việc"
