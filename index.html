@@ -5786,17 +5786,7 @@
                     // Firebase node: giaiDoan/{id}
                     // ══════════════════════════════════════════
 
-                    const XEPULOAI_RULES = [
-                        { min: 90, label: 'Xuất sắc', cls: 'xl-xuat-sac' },
-                        { min: 80, label: 'Tốt', cls: 'xl-tot' },
-                        { min: 70, label: 'Khá', cls: 'xl-kha' },
-                        { min: 50, label: 'Trung bình', cls: 'xl-tb' },
-                        { min: 0, label: 'Yếu', cls: 'xl-yeu' }
-                    ];
-                    function getXepLoai(diem) {
-                        const rule = XEPULOAI_RULES.find(r => diem >= r.min);
-                        return rule || XEPULOAI_RULES[XEPULOAI_RULES.length - 1];
-                    }
+                    // (Đã bỏ xếp loại)
 
                     window.openPhaseModal = function (id = null) {
                         document.getElementById('phase-edit-id').value = id || '';
@@ -5873,15 +5863,14 @@
                                 const ketQua = ph.ketQua || {};
                                 const staffCount = Object.keys(ketQua).length;
                                 const hasSelf = ketQua[DEVICE_USER];
-                                const selfScore = hasSelf ? ketQua[DEVICE_USER].diem : null;
-                                const selfXL = selfScore !== null ? getXepLoai(selfScore) : null;
+                                const selfScore = hasSelf ? (ketQua[DEVICE_USER].diemCuoiCung ?? ketQua[DEVICE_USER].diemTuDong) : null;
 
                                 html += `<div class="phase-card">
                                     <div class="phase-card-header">
                                         <div>
                                             <div class="phase-title">${ph.ten}</div>
                                             <div class="phase-meta"><i class="far fa-calendar"></i> ${formatDMY(ph.tuNgay)} → ${formatDMY(ph.denNgay)}${ph.moTa ? ' · ' + ph.moTa : ''}</div>
-                                            ${!IS_ADMIN && selfScore !== null ? `<div style="margin-top:6px;">Kết quả của bạn: <strong>${selfScore}%</strong> — <span class="phase-xep-loai ${selfXL.cls}">${selfXL.label}</span></div>` : ''}
+                                            ${!IS_ADMIN && selfScore !== null ? `<div style="margin-top:6px;">Kết quả của bạn: <strong style="font-size:1.1em;color:var(--primary);">${selfScore} điểm</strong></div>` : ''}
                                             ${IS_ADMIN ? `<div style="margin-top:4px;font-size:0.8rem;color:var(--gray);">${staffCount} cán bộ đã có kết quả</div>` : ''}
                                         </div>
                                         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start;">
@@ -5968,7 +5957,7 @@
                             return a;
                         }, { tongCV: 0, htDungHan: 0, htMotPhan: 0, chuaThucHien: 0, vuotChiTieu: 0, htSomDaiNgay: 0, phatSinhHT: 0, tuDongChot: 0 });
 
-                        const mkBar = (pct, color) => `<div class="ph-mini-bar"><div class="ph-mini-bar-fill" style="width:${Math.min(pct, 100)}%;background:${color};"></div></div>`;
+
                         const kqColor = (pct) => pct >= 0 ? '#16a34a' : '#dc2626';
 
                         let html = `
@@ -6563,7 +6552,6 @@
                             const personsArr = personsSnap.exists()
                                 ? Object.values(personsSnap.val()).filter(Boolean)
                                 : [];
-                            const personById = (pid) => personsArr.find(pp => pp.id === pid);
 
                             // 4. Quét từng nhiemVuDaiHan, tìm những cái cần cập nhật
                             const updates = {};
