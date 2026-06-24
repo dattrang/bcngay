@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -5610,6 +5610,17 @@
                             const todayPlanSnap = await get(child(ref(db), `keHoachNgay/${todayStr}`));
                             const todayPlanKeys = new Set(todayPlanSnap.exists() ? Object.keys(todayPlanSnap.val()) : []);
 
+                            // [FIX] Tính toán tiến độ song song để tránh N+1 query làm chậm lúc đăng nhập
+                            const progressPromises = nvxnTasks.map(t => {
+                                if (t.trangThai !== 'hoan_thanh' && nvxnIsQtyMode(t) && t.ngayBatDau <= todayStr) {
+                                    return nvxnDerivedProgress(t).then(prog => ({ id: t.id, daHoanThanh: prog }));
+                                }
+                                return Promise.resolve({ id: t.id, daHoanThanh: 0 });
+                            });
+                            const progressResults = await Promise.all(progressPromises);
+                            const progressMap = {};
+                            progressResults.forEach(r => progressMap[r.id] = r.daHoanThanh);
+
                             for (const task of nvxnTasks) {
                                 if (task.trangThai === 'hoan_thanh') continue;
 
@@ -5617,7 +5628,7 @@
                                     // ── CHIA NHỎ THEO NGÀY (Số lượng > 1) ──
                                     if (task.ngayBatDau > todayStr) continue;
 
-                                    const daHoanThanh = await nvxnDerivedProgress(task);
+                                    const daHoanThanh = progressMap[task.id];
                                     const remaining = Math.max(0, task.tongSoLuong - daHoanThanh);
 
                                     if (remaining <= 0) {
