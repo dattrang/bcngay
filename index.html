@@ -4751,6 +4751,7 @@
                             const sel = document.getElementById(`eval-res-${id}`);
                             const prog = document.getElementById(`eval-prog-${id}`);
                             const thucteEl = document.getElementById(`eval-thucte-${id}`);
+                            const reasonEl = document.getElementById(`eval-reason-${id}`);
 
                             if (sel && prog) {
                                 ketQua = sel.value;
@@ -4759,6 +4760,20 @@
                             if (thucteEl) {
                                 thucte = thucteEl.value;
                             }
+                            
+                            let lyDo = t.danhGia?.lyDoKhongDat || '';
+                            if (reasonEl) {
+                                lyDo = reasonEl.value;
+                            }
+                            
+                            let ghiChuText = '';
+                            if (t.ghiChu && lyDo) {
+                                ghiChuText = ` [Ghi chú: ${t.ghiChu} | Lý do: ${lyDo}]`;
+                            } else if (t.ghiChu) {
+                                ghiChuText = ` [Ghi chú: ${t.ghiChu}]`;
+                            } else if (lyDo) {
+                                ghiChuText = ` [Lý do: ${lyDo}]`;
+                            }
 
                             total++;
                             if (ketQua === 'Hoàn thành' || parseInt(tienDo) >= 100) done++;
@@ -4766,7 +4781,7 @@
                             let icon = parseInt(tienDo) >= 100 ? '✅' : (parseInt(tienDo) > 0 ? '⏳' : '❌');
                             const chiTieu = t.chiTieu || 100;
                             const dvt = t.dvt || '%';
-                            const taskStr = `${icon} ${t.tenCongViec} (Đạt: ${thucte}/${chiTieu} ${dvt} - ${tienDo}%)`;
+                            const taskStr = `${icon} ${t.tenCongViec} (Đạt: ${thucte}/${chiTieu} ${dvt} - ${tienDo}%)${ghiChuText}`;
 
                             if (t.isPhatSinh) {
                                 psTasks.push(`   + [Đ/c ${t.nguoiPhuTrach}] ${taskStr}`);
@@ -6309,13 +6324,13 @@
                             for (const [name, st] of Object.entries(staffMap)) {
                                 // 1. Điểm Cơ bản theo khối lượng (Tích lũy từ 0, mỗi 100% = 1 điểm x trọng số)
                                 const diemCoBan = st.sumWP / 100;
-                                
+
                                 // 2. Điểm thưởng khối lượng (Chỉ thưởng những cái đặc biệt, việc HT đã tính ở Cơ bản)
                                 const thuongVuot = st.vuotChiTieu * 1.0;
                                 const thuongSom = st.htSomDaiNgay * 1.0;
                                 const thuongPS = st.phatSinhHT * 0.5;
                                 const diemThuong = thuongVuot + thuongSom + thuongPS;
-                                
+
                                 // 3. Điểm phạt
                                 const diemPhat = st.chuaThucHien * 1.0;
 
