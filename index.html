@@ -882,6 +882,187 @@
             border-bottom: 1px solid #f1f5f9;
         }
 
+        /* ── Phase score modal tabs ── */
+        .phase-view-tab {
+            transition: color .15s, border-color .15s;
+        }
+
+        .phase-view-tab:hover {
+            color: var(--dark) !important;
+        }
+
+        .phase-view-tab.active {
+            border-bottom-color: var(--primary) !important;
+            color: var(--primary) !important;
+            background: #f0f7ff !important;
+        }
+
+        /* ── Phase summary table ── */
+        .phase-summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+
+        .phase-summary-table th {
+            background: #1e293b;
+            color: white;
+            padding: 9px 8px;
+            text-align: center;
+            white-space: nowrap;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        .phase-summary-table th:first-child {
+            text-align: left;
+            min-width: 100px;
+        }
+
+        .phase-summary-table td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            text-align: center;
+        }
+
+        .phase-summary-table td:first-child {
+            font-weight: 600;
+            text-align: left;
+        }
+
+        .phase-summary-table tr:hover td {
+            background: #f8fafc;
+        }
+
+        .phase-summary-table tr.totals-row td {
+            background: #f1f5f9;
+            font-weight: 700;
+            border-top: 2px solid #cbd5e1;
+        }
+
+        .pst-num {
+            font-weight: 700;
+        }
+
+        .pst-good {
+            color: #16a34a;
+        }
+
+        .pst-warn {
+            color: #d97706;
+        }
+
+        .pst-bad {
+            color: #dc2626;
+        }
+
+        .pst-star {
+            color: #f59e0b;
+        }
+
+        .ph-mini-bar {
+            height: 6px;
+            border-radius: 3px;
+            background: #e2e8f0;
+            margin-top: 3px;
+            overflow: hidden;
+        }
+
+        .ph-mini-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width .4s;
+        }
+
+        /* ── Phase detail table ── */
+        .phase-detail-staff-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--primary);
+            font-weight: 600;
+            padding: 0;
+            font-size: 0.85rem;
+            text-decoration: underline;
+        }
+
+        .phase-task-row {
+            font-size: 0.8rem;
+            background: #fafafa;
+        }
+
+        .phase-task-row td {
+            padding: 5px 10px;
+            color: #475569;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+
+        .pst-kq-ht {
+            color: #16a34a;
+            font-weight: 600;
+        }
+
+        .pst-kq-part {
+            color: #d97706;
+            font-weight: 600;
+        }
+
+        .pst-kq-none {
+            color: #dc2626;
+            font-weight: 600;
+        }
+
+        .pst-kq-move {
+            color: #7c3aed;
+            font-weight: 600;
+        }
+
+        /* ── Scrollable containers — giữ nội dung trong vùng nhìn thấy ── */
+        .scroll-list {
+            max-height: calc(100vh - 340px);
+            min-height: 120px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-right: 3px;
+            scroll-behavior: smooth;
+        }
+
+        .scroll-table {
+            max-height: 420px;
+            overflow-y: auto;
+            overflow-x: auto;
+        }
+
+        /* Giữ header cố định khi scroll bảng */
+        .scroll-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 2;
+            background: #f8fafc;
+            box-shadow: 0 1px 0 var(--border);
+        }
+
+        /* Scrollbar mỏng cho đẹp */
+        .scroll-list::-webkit-scrollbar,
+        .scroll-table::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        .scroll-list::-webkit-scrollbar-thumb,
+        .scroll-table::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+
+        .scroll-list::-webkit-scrollbar-track,
+        .scroll-table::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
         .eval-inline-input {
             display: flex;
             align-items: center;
@@ -1425,24 +1606,60 @@
     <div id="phase-score-overlay"
         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9001; align-items:center; justify-content:center;">
         <div
-            style="background:white; padding:25px; border-radius:10px; width:95%; max-width:720px; max-height:92vh; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            style="background:white; border-radius:12px; width:98%; max-width:1100px; max-height:94vh; display:flex; flex-direction:column; box-shadow:0 12px 40px rgba(0,0,0,0.25); overflow:hidden;">
+            <!-- Header -->
             <div
-                style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px; flex-wrap:wrap; gap:8px;">
-                <h3 style="color:var(--primary); margin:0;" id="phase-score-title"><i class="fas fa-award"></i> Kết quả
-                    giai đoạn</h3>
-                <div style="display:flex; gap:8px; flex-wrap:wrap;">
-                    <button class="btn btn-warning btn-sm" onclick="autoComputePhaseScores()" id="btn-auto-compute">
-                        <i class="fas fa-calculator"></i> Chốt kết quả tự động
+                style="padding:16px 22px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; flex-shrink:0; background:#f8fafc;">
+                <div>
+                    <h3 style="color:var(--primary); margin:0; font-size:1rem;" id="phase-score-title"><i
+                            class="fas fa-award"></i> Kết quả giai đoạn</h3>
+                    <div id="phase-score-subtitle" style="font-size:0.8rem; color:var(--gray); margin-top:2px;"></div>
+                </div>
+                <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+                    <button class="btn btn-warning btn-sm" onclick="autoComputePhaseScores()" id="btn-auto-compute"
+                        style="display:none;">
+                        <i class="fas fa-calculator"></i> Tổng hợp tự động
                     </button>
-                    <button class="btn btn-success btn-sm" onclick="savePhaseScores()">
+                    <button class="btn btn-success btn-sm" onclick="savePhaseScores()" id="btn-save-phase-scores"
+                        style="display:none;">
                         <i class="fas fa-save"></i> Lưu kết quả
                     </button>
                     <button class="btn btn-secondary btn-sm" onclick="closePhaseScoreModal()"><i
                             class="fas fa-times"></i> Đóng</button>
                 </div>
             </div>
-            <input type="hidden" id="phase-score-phase-id">
-            <div id="phase-score-body">Đang tải...</div>
+            <!-- Sub-tabs -->
+            <div
+                style="display:flex; gap:0; border-bottom:2px solid #e2e8f0; flex-shrink:0; background:white; padding:0 20px;">
+                <button class="phase-view-tab active" data-tab="pst-summary" onclick="switchPhaseTab(this)"
+                    style="padding:10px 16px; border:none; background:transparent; border-bottom:3px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--gray);">
+                    📊 Tổng hợp
+                </button>
+                <button class="phase-view-tab" data-tab="pst-detail" onclick="switchPhaseTab(this)"
+                    style="padding:10px 16px; border:none; background:transparent; border-bottom:3px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--gray);">
+                    📋 Chi tiết từng cán bộ
+                </button>
+                <button class="phase-view-tab" data-tab="pst-score" onclick="switchPhaseTab(this)"
+                    style="padding:10px 16px; border:none; background:transparent; border-bottom:3px solid transparent; margin-bottom:-2px; cursor:pointer; font-size:0.85rem; font-weight:600; color:var(--gray);">
+                    ✏️ Điểm & Nhận xét
+                </button>
+            </div>
+            <!-- Body -->
+            <div style="flex:1; overflow-y:auto; padding:16px 20px;">
+                <input type="hidden" id="phase-score-phase-id">
+                <div id="pst-summary" class="phase-score-pane" style="display:block;">
+                    <div style="padding:30px; text-align:center; color:var(--gray);">Bấm <strong>"Tổng hợp tự
+                            động"</strong> để tải và phân tích dữ liệu.</div>
+                </div>
+                <div id="pst-detail" class="phase-score-pane" style="display:none;">
+                    <div style="padding:30px; text-align:center; color:var(--gray);">Chọn cán bộ từ tab Tổng hợp để xem
+                        chi tiết.</div>
+                </div>
+                <div id="pst-score" class="phase-score-pane" style="display:none;">
+                    <div style="padding:30px; text-align:center; color:var(--gray);">Bấm <strong>"Tổng hợp tự
+                            động"</strong> trước.</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1605,7 +1822,7 @@
                             </div>
                         </div>
 
-                        <div class="table-responsive">
+                        <div class="table-responsive scroll-table">
                             <table class="modern-table">
                                 <thead>
                                     <tr>
@@ -1669,7 +1886,7 @@
                             </div>
                         </div>
 
-                        <div class="table-responsive">
+                        <div class="table-responsive scroll-table">
                             <table class="modern-table">
                                 <thead>
                                     <tr>
@@ -1802,7 +2019,7 @@
                             <h3><i class="fas fa-list"></i> Danh sách dự kiến (Hôm nay: <span
                                     id="reg-date-label"></span>)</h3>
                         </div>
-                        <div class="table-responsive">
+                        <div class="table-responsive scroll-table">
                             <table class="modern-table">
                                 <thead>
                                     <tr>
@@ -1883,7 +2100,7 @@
                             </div>
                         </div>
 
-                        <div id="eval-list-container">
+                        <div id="eval-list-container" class="scroll-list">
                             <div style="padding: 30px; text-align: center; color: var(--gray);">Vui lòng chọn ngày và
                                 tải danh sách.</div>
                         </div>
@@ -2047,7 +2264,7 @@
                                     <div class="form-group full">
                                         <h4 style="margin-bottom: 10px; font-size: 0.95rem; color: var(--primary);"><i
                                                 class="fas fa-star"></i> Hoàn thành vượt mức (> 100%)</h4>
-                                        <div class="table-responsive">
+                                        <div class="table-responsive scroll-table">
                                             <table class="modern-table" style="font-size: 0.9rem;">
                                                 <thead>
                                                     <tr>
@@ -2070,7 +2287,7 @@
                                     <div class="form-group full">
                                         <h4 style="margin-bottom: 10px; font-size: 0.95rem; color: var(--success);"><i
                                                 class="fas fa-check-circle"></i> Đã hoàn thành (100%)</h4>
-                                        <div class="table-responsive">
+                                        <div class="table-responsive scroll-table">
                                             <table class="modern-table" style="font-size: 0.9rem;">
                                                 <thead>
                                                     <tr>
@@ -2094,7 +2311,7 @@
                                         <h4 style="margin-bottom: 10px; font-size: 0.95rem; color: var(--danger);"><i
                                                 class="fas fa-exclamation-triangle"></i> Chưa hoàn thành / Trễ hạn (<
                                                 100%)</h4>
-                                                <div class="table-responsive">
+                                                <div class="table-responsive scroll-table">
                                                     <table class="modern-table" style="font-size: 0.9rem;">
                                                         <thead>
                                                             <tr>
@@ -2185,10 +2402,8 @@
                                 <option value="hoan_thanh">Đã hoàn thành</option>
                             </select>
                         </div>
-                        <div id="nvxn-list-container">
-                            <div style="padding:30px;text-align:center;color:var(--gray);">Đang tải...</div>
+                        <div id="nvxn-list-container" class="scroll-list" style="padding:4px 2px;">
                         </div>
-                    </div>
                 </section>
 
 
@@ -4197,6 +4412,9 @@
                             }
                         }
                         updateEvalSummaryUI();
+                        // Scroll list về đầu khi đổi filter
+                        const listEl = document.getElementById('eval-list-container');
+                        if (listEl) listEl.scrollTop = 0;
                     }
 
                     function getProgressColor(pct) {
@@ -5688,68 +5906,308 @@
                     window.openPhaseScores = async function (phaseId) {
                         document.getElementById('phase-score-phase-id').value = phaseId;
                         document.getElementById('phase-score-overlay').style.display = 'flex';
-                        document.getElementById('phase-score-body').innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);">Đang tải...</div>';
                         document.getElementById('btn-auto-compute').style.display = IS_ADMIN ? '' : 'none';
+                        document.getElementById('btn-save-phase-scores').style.display = IS_ADMIN ? '' : 'none';
+                        // Reset all panes
+                        document.querySelectorAll('.phase-score-pane').forEach(p => p.style.display = 'none');
+                        document.getElementById('pst-summary').style.display = 'block';
+                        document.querySelectorAll('.phase-view-tab').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.phase-view-tab')[0].classList.add('active');
+                        document.getElementById('pst-summary').innerHTML = '<div style="padding:30px;text-align:center;color:var(--gray);">Đang tải...</div>';
 
                         try {
                             const snap = await get(child(ref(db), `giaiDoan/${phaseId}`));
-                            if (!snap.exists()) { document.getElementById('phase-score-body').innerHTML = 'Không tìm thấy giai đoạn.'; return; }
+                            if (!snap.exists()) { document.getElementById('pst-summary').innerHTML = 'Không tìm thấy giai đoạn.'; return; }
                             const ph = snap.val();
-                            document.getElementById('phase-score-title').innerHTML = `<i class="fas fa-award"></i> ${ph.ten} (${formatDMY(ph.tuNgay)} → ${formatDMY(ph.denNgay)})`;
-                            renderPhaseScoreTable(ph);
-                        } catch (e) { document.getElementById('phase-score-body').innerHTML = 'Lỗi tải dữ liệu.'; }
+                            document.getElementById('phase-score-title').innerHTML = `<i class="fas fa-award"></i> ${ph.ten}`;
+                            document.getElementById('phase-score-subtitle').textContent = `${formatDMY(ph.tuNgay)} → ${formatDMY(ph.denNgay)}${ph.moTa ? '  ·  ' + ph.moTa : ''}`;
+                            window._currentPhaseData = ph;
+
+                            if (ph.ketQua && Object.keys(ph.ketQua).some(k => ph.ketQua[k]?.taskCount > 0)) {
+                                // Đã có dữ liệu tổng hợp — hiển thị luôn
+                                renderPhaseSummary(ph);
+                                renderPhaseScoreEditor(ph);
+                            } else {
+                                document.getElementById('pst-summary').innerHTML = `
+                                    <div style="padding:40px;text-align:center;color:var(--gray);">
+                                        <i class="fas fa-calculator" style="font-size:2.5rem;margin-bottom:12px;display:block;opacity:.4;"></i>
+                                        Chưa có dữ liệu tổng hợp.<br>
+                                        ${IS_ADMIN ? 'Bấm <strong>"Tổng hợp tự động"</strong> để phân tích dữ liệu đánh giá trong giai đoạn.' : 'Admin chưa tổng hợp kết quả cho giai đoạn này.'}
+                                    </div>`;
+                            }
+                        } catch (e) { document.getElementById('pst-summary').innerHTML = 'Lỗi tải dữ liệu.'; }
                     };
 
-                    function renderPhaseScoreTable(ph) {
+                    window.switchPhaseTab = function (btn) {
+                        document.querySelectorAll('.phase-view-tab').forEach(b => b.classList.remove('active'));
+                        document.querySelectorAll('.phase-score-pane').forEach(p => p.style.display = 'none');
+                        btn.classList.add('active');
+                        document.getElementById(btn.dataset.tab).style.display = 'block';
+                    };
+
+                    // ── Render bảng tổng hợp (tab 1) ──
+                    function renderPhaseSummary(ph) {
                         const ketQua = ph.ketQua || {};
-                        // Build list: all STAFFS + any existing results
-                        const names = new Set([...STAFFS.map(s => s.ten), ...Object.keys(ketQua)]);
-                        const displayNames = IS_ADMIN ? [...names] : [DEVICE_USER];
+                        const names = IS_ADMIN
+                            ? [...new Set([...STAFFS.map(s => s.ten), ...Object.keys(ketQua)])]
+                            : [DEVICE_USER];
+                        const rows = names.map(n => ({ n, kq: ketQua[n] || {} })).filter(r => r.kq.taskCount > 0 || IS_ADMIN);
+
+                        if (rows.length === 0) {
+                            document.getElementById('pst-summary').innerHTML = '<div style="padding:20px;text-align:center;color:var(--gray);">Chưa có dữ liệu.</div>';
+                            return;
+                        }
+
+                        // Totals row
+                        const tot = rows.reduce((a, r) => {
+                            const k = r.kq;
+                            a.tongCV += k.tongCV || 0; a.htDungHan += k.htDungHan || 0;
+                            a.htMotPhan += k.htMotPhan || 0; a.chuaThucHien += k.chuaThucHien || 0;
+                            a.vuotChiTieu += k.vuotChiTieu || 0; a.htSomDaiNgay += k.htSomDaiNgay || 0;
+                            a.phatSinhHT += k.phatSinhHT || 0; a.tuDongChot += k.tuDongChot || 0;
+                            return a;
+                        }, { tongCV: 0, htDungHan: 0, htMotPhan: 0, chuaThucHien: 0, vuotChiTieu: 0, htSomDaiNgay: 0, phatSinhHT: 0, tuDongChot: 0 });
+
+                        const mkBar = (pct, color) => `<div class="ph-mini-bar"><div class="ph-mini-bar-fill" style="width:${Math.min(pct, 100)}%;background:${color};"></div></div>`;
+                        const kqColor = (pct) => pct >= 85 ? '#16a34a' : pct >= 65 ? '#d97706' : '#dc2626';
+                        const xlBadge = (kq) => {
+                            const d = kq.diemCuoiCung ?? kq.diem;
+                            if (d == null) return '<span style="color:#94a3b8;">—</span>';
+                            const xl = getXepLoai(d);
+                            return `<span class="phase-xep-loai ${xl.cls}">${xl.label}</span>`;
+                        };
+
+                        let html = `
+                        <div style="overflow-x:auto;">
+                        <table class="phase-summary-table">
+                        <thead><tr>
+                            <th style="text-align:left;">Cán bộ</th>
+                            <th title="Tổng công việc được giao">Tổng CV</th>
+                            <th title="Hoàn thành 100%">✅ Đúng hạn</th>
+                            <th title="Hoàn thành một phần (>0% &lt;100%)">🟡 Một phần</th>
+                            <th title="Chưa thực hiện / 0%">❌ Không HT</th>
+                            <th title="Trong đó bị tự động chốt lúc 12:00">🔒 Tự chốt</th>
+                            <th title="Vượt số lượng chỉ tiêu (>100%)">⭐ Vượt CT</th>
+                            <th title="Nhiệm vụ dài ngày hoàn thành trước hạn">🏁 HT sớm</th>
+                            <th title="Công việc phát sinh đã hoàn thành">⚡ Phát sinh</th>
+                            <th title="Tỷ lệ hoàn thành (có trọng số ưu tiên)">% HT</th>
+                            <th title="Ưu tiên Cao: hoàn thành / tổng">Ưu tiên Cao</th>
+                            <th>Xếp loại</th>
+                            ${IS_ADMIN ? '<th>Chi tiết</th>' : ''}
+                        </tr></thead>
+                        <tbody>`;
+
+                        for (const { n, kq } of rows) {
+                            const nhom = STAFFS.find(s => s.ten === n)?.nhom || '';
+                            const pct = kq.diemTuDong ?? 0;
+                            const clr = kqColor(pct);
+                            const safe = n.replace(/\s/g, '_');
+                            const prioHigh = kq.uuTienCaoTotal > 0 ? `${kq.uuTienCaoHT || 0}/${kq.uuTienCaoTotal}` : '—';
+                            html += `<tr>
+                                <td>
+                                    <div style="font-weight:600;">${n}</div>
+                                    ${nhom ? `<div style="font-size:0.75rem;color:var(--gray);">${nhom}</div>` : ''}
+                                </td>
+                                <td class="pst-num">${kq.tongCV || 0}</td>
+                                <td class="pst-num pst-good">${kq.htDungHan || 0}</td>
+                                <td class="pst-num pst-warn">${kq.htMotPhan || 0}</td>
+                                <td class="pst-num pst-bad">${kq.chuaThucHien || 0}</td>
+                                <td class="pst-num" style="color:#7c3aed;">${kq.tuDongChot || 0}</td>
+                                <td class="pst-num pst-star">${kq.vuotChiTieu || 0}</td>
+                                <td class="pst-num pst-good">${kq.htSomDaiNgay || 0}</td>
+                                <td class="pst-num" style="color:#0369a1;">${kq.phatSinhHT || 0}</td>
+                                <td>
+                                    <div style="font-weight:700;color:${clr};">${pct}%</div>
+                                    ${mkBar(pct, clr)}
+                                </td>
+                                <td style="color:${kq.uuTienCaoTotal > 0 && (kq.uuTienCaoHT || 0) < kq.uuTienCaoTotal ? '#dc2626' : '#16a34a'}; font-weight:600;">${prioHigh}</td>
+                                <td>${xlBadge(kq)}</td>
+                                ${IS_ADMIN ? `<td><button class="phase-detail-staff-btn" onclick="showPhaseStaffDetail('${safe}','${n}')">Xem</button></td>` : ''}
+                            </tr>`;
+                        }
+
+                        // Totals row
+                        const totPct = tot.tongCV > 0 ? Math.round(tot.htDungHan * 100 / tot.tongCV) : 0;
+                        html += `<tr class="totals-row">
+                            <td>TỔNG ĐƠN VỊ (${rows.length} CB)</td>
+                            <td>${tot.tongCV}</td>
+                            <td class="pst-good">${tot.htDungHan}</td>
+                            <td class="pst-warn">${tot.htMotPhan}</td>
+                            <td class="pst-bad">${tot.chuaThucHien}</td>
+                            <td style="color:#7c3aed;">${tot.tuDongChot}</td>
+                            <td class="pst-star">${tot.vuotChiTieu}</td>
+                            <td class="pst-good">${tot.htSomDaiNgay}</td>
+                            <td style="color:#0369a1;">${tot.phatSinhHT}</td>
+                            <td style="font-weight:700;color:${kqColor(totPct)};">${totPct}%</td>
+                            <td>—</td><td>—</td>${IS_ADMIN ? '<td></td>' : ''}
+                        </tr>`;
+
+                        html += `</tbody></table></div>
+                        <div style="font-size:0.78rem;color:var(--gray);margin-top:10px;line-height:1.7;">
+                            <strong>Chú thích:</strong>
+                            ✅ Đúng hạn = tiLeHoanThanh ≥ 100% &nbsp;·&nbsp;
+                            🟡 Một phần = 0 &lt; tiLe &lt; 100% &nbsp;·&nbsp;
+                            ❌ Không HT = Chưa thực hiện &nbsp;·&nbsp;
+                            🔒 Tự chốt = hệ thống tự đóng lúc 12h hôm sau &nbsp;·&nbsp;
+                            ⭐ Vượt CT = thực tế &gt; chỉ tiêu &nbsp;·&nbsp;
+                            🏁 HT sớm = NVXN xong trước hạn &nbsp;·&nbsp;
+                            % HT = trung bình có trọng số ưu tiên (Cao×3, TB×2, Thấp×1)
+                        </div>`;
+                        document.getElementById('pst-summary').innerHTML = html;
+                    }
+
+                    // ── Hiển thị chi tiết từng cán bộ trong tab 2 ──
+                    window.showPhaseStaffDetail = function (safe, name) {
+                        switchPhaseTab(document.querySelector('.phase-view-tab[data-tab="pst-detail"]'));
+                        const ph = window._currentPhaseData;
+                        const kq = ph?.ketQua?.[name] || {};
+                        const tasks = kq._tasks || [];
+
+                        const nhom = STAFFS.find(s => s.ten === name)?.nhom || '';
+                        const xl = kq.diemCuoiCung != null ? getXepLoai(kq.diemCuoiCung) : null;
+
+                        const kqClass = (k) => k === 'Hoàn thành' ? 'pst-kq-ht' : k === 'Hoàn thành một phần' ? 'pst-kq-part' : k === 'Chuyển sang ngày khác' ? 'pst-kq-move' : 'pst-kq-none';
+                        const kqLabel = (k) => k === 'Hoàn thành' ? '✅ Hoàn thành' : k === 'Hoàn thành một phần' ? '🟡 Một phần' : k === 'Chuyển sang ngày khác' ? '↪️ Chuyển' : '❌ Không HT';
+
+                        let html = `
+                        <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; align-items:center;">
+                            <div>
+                                <div style="font-size:1.1rem; font-weight:700;">${name}</div>
+                                ${nhom ? `<div style="font-size:0.8rem;color:var(--gray);">${nhom}</div>` : ''}
+                            </div>
+                            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-left:auto;">
+                                <span style="background:#f1f5f9;padding:4px 10px;border-radius:6px;font-size:0.85rem;">Tổng: <strong>${kq.tongCV || 0}</strong> CV</span>
+                                <span style="background:#d1fae5;padding:4px 10px;border-radius:6px;font-size:0.85rem;">HT: <strong>${kq.htDungHan || 0}</strong></span>
+                                <span style="background:#fee2e2;padding:4px 10px;border-radius:6px;font-size:0.85rem;">Không HT: <strong>${kq.chuaThucHien || 0}</strong></span>
+                                <span style="background:#fef3c7;padding:4px 10px;border-radius:6px;font-size:0.85rem;">% HT: <strong>${kq.diemTuDong || 0}%</strong></span>
+                                ${xl ? `<span class="phase-xep-loai ${xl.cls}">${xl.label}</span>` : ''}
+                            </div>
+                        </div>`;
+
+                        if (tasks.length === 0) {
+                            html += '<div style="padding:20px;text-align:center;color:var(--gray);">Không có dữ liệu chi tiết. Bấm "Tổng hợp tự động" để lưu task list.</div>';
+                        } else {
+                            // Group by loaiCongViec
+                            const byType = {};
+                            tasks.forEach(t => { const g = t.loai || 'Khác'; if (!byType[g]) byType[g] = []; byType[g].push(t); });
+
+                            html += `<div style="overflow-x:auto;"><table class="phase-summary-table">
+                            <thead><tr>
+                                <th style="text-align:left; min-width:200px;">Nội dung công việc</th>
+                                <th>Ngày</th>
+                                <th>Nhóm</th>
+                                <th>Ưu tiên</th>
+                                <th>Chỉ tiêu</th>
+                                <th>Thực tế</th>
+                                <th>% HT</th>
+                                <th>Kết quả</th>
+                                <th>Ghi chú lý do</th>
+                            </tr></thead><tbody>`;
+
+                            tasks.forEach(t => {
+                                const pct = t.tiLe || 0;
+                                const clr = pct >= 100 ? '#16a34a' : pct >= 50 ? '#d97706' : '#dc2626';
+                                const prioClr = t.uuTien === 'Cao' ? '#dc2626' : t.uuTien === 'Thấp' ? '#64748b' : '#1e40af';
+                                const specialBadge = [
+                                    t.vuot ? '⭐' : '',
+                                    t.htSom ? '🏁' : '',
+                                    t.phatSinh ? '⚡' : '',
+                                    t.tuDongChot ? '🔒' : ''
+                                ].filter(Boolean).join(' ');
+                                html += `<tr class="phase-task-row">
+                                    <td style="text-align:left;font-weight:500;">${t.ten}${specialBadge ? ` <span title="Đặc biệt">${specialBadge}</span>` : ''}</td>
+                                    <td>${t.ngay || ''}</td>
+                                    <td style="white-space:nowrap;">${t.loai || '—'}</td>
+                                    <td style="color:${prioClr};font-weight:600;">${t.uuTien || '—'}</td>
+                                    <td>${t.chiTieu} ${t.dvt || ''}</td>
+                                    <td style="font-weight:600;">${t.thucTe !== undefined ? t.thucTe + (t.dvt ? ' ' + t.dvt : '') : '—'}</td>
+                                    <td style="font-weight:700;color:${clr};">${pct}%</td>
+                                    <td><span class="${kqClass(t.ketQua)}">${kqLabel(t.ketQua)}</span></td>
+                                    <td style="color:#64748b;font-size:0.78rem;">${t.lyDo || ''}</td>
+                                </tr>`;
+                            });
+                            html += '</tbody></table></div>';
+                        }
+
+                        if (kq.nhanXet) {
+                            html += `<div style="margin-top:14px; background:#f0fdf4; border-left:3px solid var(--success); padding:10px 14px; border-radius:0 6px 6px 0; font-size:0.875rem;">
+                                <strong>Nhận xét:</strong> ${kq.nhanXet}
+                            </div>`;
+                        }
+
+                        document.getElementById('pst-detail').innerHTML = html;
+                    };
+
+                    // ── Render tab Điểm & Nhận xét (tab 3) ──
+                    function renderPhaseScoreEditor(ph) {
+                        const ketQua = ph.ketQua || {};
+                        const names = IS_ADMIN
+                            ? [...new Set([...STAFFS.map(s => s.ten), ...Object.keys(ketQua)])]
+                            : [DEVICE_USER];
 
                         let rows = '';
-                        for (const name of displayNames) {
+                        for (const name of names) {
                             const kq = ketQua[name] || {};
-                            const diem = kq.diem !== undefined ? kq.diem : '';
-                            const xl = diem !== '' ? getXepLoai(Number(diem)) : null;
-                            const nhanXet = kq.nhanXet || '';
+                            const safe = name.replace(/\s/g, '_');
+                            const diemAuto = kq.diemTuDong ?? '';
+                            const diemAdmin = kq.diemAdmin !== undefined ? kq.diemAdmin : '';
+                            const diemCuoi = kq.diemCuoiCung ?? kq.diemTuDong;
+                            const xl = diemCuoi != null ? getXepLoai(diemCuoi) : null;
                             rows += `<tr>
                                 <td style="font-weight:600;">${name}</td>
+                                <td style="text-align:center;color:#64748b;">${diemAuto !== '' ? diemAuto + '%' : '—'}</td>
                                 <td style="text-align:center;">
                                     ${IS_ADMIN
-                                    ? `<input type="number" min="0" max="150" step="0.1" value="${diem}" id="ps-diem-${name.replace(/\s/g, '_')}" style="width:70px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;" oninput="updatePhaseXL('${name.replace(/\s/g, '_')}')">`
-                                    : `<strong>${diem !== '' ? diem + '%' : '—'}</strong>`}
+                                    ? `<input type="number" min="0" max="150" step="0.5" value="${diemAdmin}" id="ps-diem-${safe}" placeholder="Tự động" style="width:75px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;text-align:center;" oninput="updatePhaseXL('${safe}')">`
+                                    : `<strong>${diemAdmin !== '' ? diemAdmin + '%' : '—'}</strong>`}
                                 </td>
-                                <td style="text-align:center;" id="ps-xl-${name.replace(/\s/g, '_')}">
+                                <td style="text-align:center;" id="ps-xl-${safe}">
                                     ${xl ? `<span class="phase-xep-loai ${xl.cls}">${xl.label}</span>` : '<span style="color:#94a3b8;">—</span>'}
                                 </td>
                                 <td>${IS_ADMIN
-                                    ? `<input type="text" value="${nhanXet}" id="ps-nx-${name.replace(/\s/g, '_')}" style="width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:4px;" placeholder="Nhận xét...">`
-                                    : (nhanXet || '<span style="color:#94a3b8;">—</span>')}
+                                    ? `<textarea id="ps-nx-${safe}" rows="2" style="width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;resize:vertical;" placeholder="Nhận xét thành tích, hạn chế...">${kq.nhanXet || ''}</textarea>`
+                                    : (kq.nhanXet || '<span style="color:#94a3b8;">—</span>')}
                                 </td>
                             </tr>`;
                         }
 
-                        document.getElementById('phase-score-body').innerHTML = `
-                            <table class="phase-staff-table">
-                                <thead><tr><th style="text-align:left;">Cán bộ</th><th>Điểm (%)</th><th>Xếp loại</th><th style="text-align:left;">Nhận xét</th></tr></thead>
+                        document.getElementById('pst-score').innerHTML = `
+                            <p style="font-size:0.85rem;color:var(--gray);margin-bottom:12px;">
+                                <i class="fas fa-info-circle"></i>
+                                Cột <strong>"Điểm tự động"</strong> = kết quả tính từ dữ liệu (chỉ đọc).
+                                Cột <strong>"Điểm Admin"</strong> = Admin điều chỉnh nếu muốn. Nếu để trống, xếp loại sẽ theo điểm tự động.
+                            </p>
+                            <div style="overflow-x:auto;">
+                            <table class="phase-summary-table">
+                                <thead><tr>
+                                    <th style="text-align:left;">Cán bộ</th>
+                                    <th>Điểm tự động</th>
+                                    <th>Điểm Admin điều chỉnh</th>
+                                    <th>Xếp loại</th>
+                                    <th style="text-align:left;min-width:200px;">Nhận xét</th>
+                                </tr></thead>
                                 <tbody>${rows}</tbody>
-                            </table>
-                            <div style="font-size:0.8rem;color:var(--gray);margin-top:10px;">
-                                Xếp loại: <span class="phase-xep-loai xl-xuat-sac">Xuất sắc ≥90%</span> 
-                                <span class="phase-xep-loai xl-tot">Tốt ≥80%</span> 
-                                <span class="phase-xep-loai xl-kha">Khá ≥70%</span> 
-                                <span class="phase-xep-loai xl-tb">Trung bình ≥50%</span> 
+                            </table></div>
+                            <div style="font-size:0.78rem;color:var(--gray);margin-top:10px;">
+                                Xếp loại: <span class="phase-xep-loai xl-xuat-sac">Xuất sắc ≥90%</span>
+                                <span class="phase-xep-loai xl-tot">Tốt ≥80%</span>
+                                <span class="phase-xep-loai xl-kha">Khá ≥70%</span>
+                                <span class="phase-xep-loai xl-tb">Trung bình ≥50%</span>
                                 <span class="phase-xep-loai xl-yeu">Yếu &lt;50%</span>
                             </div>`;
                         window._currentPhaseData = ph;
                     }
 
-                    window.updatePhaseXL = function (nameSafe) {
-                        const diemEl = document.getElementById(`ps-diem-${nameSafe}`);
-                        const xlEl = document.getElementById(`ps-xl-${nameSafe}`);
-                        if (!diemEl || !xlEl) return;
-                        const v = parseFloat(diemEl.value);
-                        if (isNaN(v)) { xlEl.innerHTML = '<span style="color:#94a3b8;">—</span>'; return; }
+                    window.updatePhaseXL = function (safe) {
+                        const el = document.getElementById(`ps-diem-${safe}`);
+                        const xlEl = document.getElementById(`ps-xl-${safe}`);
+                        if (!el || !xlEl) return;
+                        const ph = window._currentPhaseData;
+                        const name = safe.replace(/_/g, ' ');
+                        const adminVal = parseFloat(el.value);
+                        const autoVal = ph?.ketQua?.[name]?.diemTuDong;
+                        const v = isNaN(adminVal) ? autoVal : adminVal;
+                        if (v == null) { xlEl.innerHTML = '<span style="color:#94a3b8;">—</span>'; return; }
                         const xl = getXepLoai(v);
                         xlEl.innerHTML = `<span class="phase-xep-loai ${xl.cls}">${xl.label}</span>`;
                     };
@@ -5757,73 +6215,162 @@
                     window.savePhaseScores = async function () {
                         if (!IS_ADMIN) { showToast('Chỉ Admin được phép lưu kết quả!', 'error'); return; }
                         const phaseId = document.getElementById('phase-score-phase-id').value;
-                        if (!phaseId) return;
                         const ph = window._currentPhaseData;
-                        if (!ph) return;
+                        if (!phaseId || !ph) return;
                         showLoader(true);
                         try {
-                            const ketQua = { ...(ph.ketQua || {}) };
-                            const displayNames = IS_ADMIN ? [...new Set([...STAFFS.map(s => s.ten), ...Object.keys(ketQua)])] : [DEVICE_USER];
-                            for (const name of displayNames) {
+                            const ketQua = JSON.parse(JSON.stringify(ph.ketQua || {}));
+                            const allNames = [...new Set([...STAFFS.map(s => s.ten), ...Object.keys(ketQua)])];
+                            for (const name of allNames) {
                                 const safe = name.replace(/\s/g, '_');
                                 const diemEl = document.getElementById(`ps-diem-${safe}`);
                                 const nxEl = document.getElementById(`ps-nx-${safe}`);
-                                if (!diemEl) continue;
-                                const diem = parseFloat(diemEl.value);
-                                if (isNaN(diem) && !nxEl?.value) continue;
-                                const xl = getXepLoai(isNaN(diem) ? 0 : diem);
-                                ketQua[name] = { diem: isNaN(diem) ? null : diem, nhanXet: nxEl?.value || '', xepLoai: xl.label, updatedAt: Date.now() };
+                                if (!diemEl && !nxEl) continue;
+                                if (!ketQua[name]) ketQua[name] = {};
+                                const adminVal = diemEl ? parseFloat(diemEl.value) : NaN;
+                                if (!isNaN(adminVal)) {
+                                    ketQua[name].diemAdmin = adminVal;
+                                    ketQua[name].diemCuoiCung = adminVal;
+                                } else {
+                                    delete ketQua[name].diemAdmin;
+                                    ketQua[name].diemCuoiCung = ketQua[name].diemTuDong ?? null;
+                                }
+                                if (nxEl) ketQua[name].nhanXet = nxEl.value.trim();
+                                const d = ketQua[name].diemCuoiCung;
+                                if (d != null) ketQua[name].xepLoai = getXepLoai(d).label;
+                                ketQua[name].updatedAt = Date.now();
                             }
                             await update(ref(db), { [`giaiDoan/${phaseId}/ketQua`]: ketQua });
                             window._currentPhaseData = { ...ph, ketQua };
+                            renderPhaseSummary(window._currentPhaseData);
+                            renderPhaseScoreEditor(window._currentPhaseData);
                             showToast('Đã lưu kết quả giai đoạn!');
                             loadPhaseList();
                         } catch (e) { console.error(e); showToast('Lỗi lưu kết quả!', 'error'); }
                         showLoader(false);
                     };
 
-                    // Tổng hợp điểm tự động từ dữ liệu keHoachNgay trong giai đoạn
+                    // ── Tổng hợp tự động từ keHoachNgay — FULL DETAIL ──
                     window.autoComputePhaseScores = async function () {
                         if (!IS_ADMIN) return;
                         const phaseId = document.getElementById('phase-score-phase-id').value;
                         const ph = window._currentPhaseData;
                         if (!ph) return;
-                        if (!confirm(`Tự động tổng hợp điểm cho giai đoạn "${ph.ten}" từ dữ liệu đánh giá?\n\nĐiểm được tính theo tỷ lệ hoàn thành trung bình (có trọng số ưu tiên). Kết quả đã nhập tay sẽ bị ghi đè.`)) return;
+                        if (!confirm(`Tổng hợp chi tiết kết quả cho giai đoạn "${ph.ten}"?\n\nHệ thống sẽ phân tích toàn bộ dữ liệu đánh giá từ ${formatDMY(ph.tuNgay)} đến ${formatDMY(ph.denNgay)}.\nĐiểm tự động sẽ được cập nhật; điểm Admin điều chỉnh giữ nguyên.`)) return;
 
                         showLoader(true);
                         try {
                             const q = query(ref(db, 'keHoachNgay'), orderByKey(), startAt(ph.tuNgay), endAt(ph.denNgay));
                             const snap = await get(q);
 
-                            const staffAccum = {}; // name → {sumW, sumWP}
+                            // staffMap: name → { tongCV, htDungHan, htMotPhan, chuaThucHien,
+                            //   vuotChiTieu, htSomDaiNgay, phatSinhHT, tuDongChot,
+                            //   sumW, sumWP, uuTienCaoHT, uuTienCaoTotal, _tasks[] }
+                            const staffMap = {};
+                            const ensureStaff = (n) => {
+                                if (!staffMap[n]) staffMap[n] = {
+                                    tongCV: 0, htDungHan: 0, htMotPhan: 0, chuaThucHien: 0,
+                                    vuotChiTieu: 0, htSomDaiNgay: 0, phatSinhHT: 0, tuDongChot: 0,
+                                    sumW: 0, sumWP: 0, uuTienCaoHT: 0, uuTienCaoTotal: 0, _tasks: []
+                                };
+                                return staffMap[n];
+                            };
+
                             if (snap.exists()) {
-                                Object.values(snap.val()).forEach(dayData => {
+                                Object.entries(snap.val()).forEach(([dStr, dayData]) => {
+                                    if (!dayData) return;
                                     Object.values(dayData).forEach(t => {
-                                        if (!t?.nguoiPhuTrach || !t.danhGia?.thoiDiemDanhGia) return;
-                                        const name = t.nguoiPhuTrach;
+                                        if (!t?.nguoiPhuTrach) return;
+                                        const dg = t.danhGia || {};
+                                        if (!dg.thoiDiemDanhGia) return; // Bỏ qua chưa đánh giá
+
+                                        const n = t.nguoiPhuTrach;
+                                        const st = ensureStaff(n);
+                                        const pct = Math.min(parseInt(dg.tiLeHoanThanh) || 0, 100);
+                                        const rawPct = dg.soLuongThucTe !== undefined && (t.chiTieu || 100) > 0
+                                            ? Math.round((parseFloat(dg.soLuongThucTe) / (t.chiTieu || 100)) * 100) : pct;
                                         const w = t.mucDoUuTien === 'Cao' ? 3 : t.mucDoUuTien === 'Thấp' ? 1 : 2;
-                                        const p = Math.min(parseInt(t.danhGia.tiLeHoanThanh) || 0, 100);
-                                        if (!staffAccum[name]) staffAccum[name] = { sumW: 0, sumWP: 0, count: 0 };
-                                        staffAccum[name].sumW += w;
-                                        staffAccum[name].sumWP += p * w;
-                                        staffAccum[name].count++;
+                                        const isDone = pct >= 100 || dg.ketQua === 'Hoàn thành';
+
+                                        st.tongCV++;
+                                        st.sumW += w;
+                                        st.sumWP += pct * w;
+                                        if (t.mucDoUuTien === 'Cao') {
+                                            st.uuTienCaoTotal++;
+                                            if (isDone) st.uuTienCaoHT++;
+                                        }
+
+                                        // Phân loại
+                                        if (!isDone && pct === 0) { st.chuaThucHien++; }
+                                        else if (!isDone && pct > 0) { st.htMotPhan++; }
+                                        else { st.htDungHan++; }
+
+                                        if (rawPct > 100) st.vuotChiTieu++;
+                                        if (t.nvxnLinkId && isDone && dStr < (t.hanHoanThanh || '9999')) st.htSomDaiNgay++;
+                                        if (t.isPhatSinh && isDone) st.phatSinhHT++;
+                                        if (dg.tuDongChot) st.tuDongChot++;
+
+                                        // Lưu task detail để xem chi tiết
+                                        st._tasks.push({
+                                            ten: t.tenCongViec || '(Không tên)',
+                                            ngay: formatDMY(dStr),
+                                            loai: t.loaiCongViec || '—',
+                                            uuTien: t.mucDoUuTien || '—',
+                                            chiTieu: t.chiTieu ?? 100,
+                                            dvt: t.dvt || '%',
+                                            thucTe: dg.soLuongThucTe,
+                                            tiLe: rawPct,
+                                            ketQua: dg.ketQua || 'Chưa thực hiện',
+                                            lyDo: dg.lyDoKhongDat || '',
+                                            vuot: rawPct > 100,
+                                            htSom: !!(t.nvxnLinkId && isDone && dStr < (t.hanHoanThanh || '9999')),
+                                            phatSinh: !!(t.isPhatSinh && isDone),
+                                            tuDongChot: !!dg.tuDongChot,
+                                            _dStr: dStr
+                                        });
                                     });
                                 });
                             }
 
-                            const ketQua = { ...(ph.ketQua || {}) };
-                            for (const name of STAFFS.map(s => s.ten)) {
-                                const acc = staffAccum[name];
-                                if (!acc || acc.sumW === 0) continue;
-                                const diem = Math.round(acc.sumWP / acc.sumW * 10) / 10;
-                                const xl = getXepLoai(diem);
-                                ketQua[name] = { ...ketQua[name], diem, xepLoai: xl.label, autoComputed: true, computedAt: Date.now(), taskCount: acc.count };
+                            // Sắp xếp tasks theo ngày
+                            Object.values(staffMap).forEach(st => {
+                                st._tasks.sort((a, b) => a._dStr.localeCompare(b._dStr));
+                            });
+
+                            // Gộp với ketQua cũ (giữ diemAdmin, nhanXet)
+                            const ketQua = JSON.parse(JSON.stringify(ph.ketQua || {}));
+                            for (const [name, st] of Object.entries(staffMap)) {
+                                const diemAuto = st.sumW > 0 ? Math.round(st.sumWP / st.sumW * 10) / 10 : 0;
+                                const old = ketQua[name] || {};
+                                const diemCuoi = old.diemAdmin !== undefined ? old.diemAdmin : diemAuto;
+                                ketQua[name] = {
+                                    ...old,
+                                    diemTuDong: diemAuto,
+                                    diemCuoiCung: diemCuoi,
+                                    xepLoai: getXepLoai(diemCuoi).label,
+                                    // Detailed stats
+                                    tongCV: st.tongCV,
+                                    htDungHan: st.htDungHan,
+                                    htMotPhan: st.htMotPhan,
+                                    chuaThucHien: st.chuaThucHien,
+                                    vuotChiTieu: st.vuotChiTieu,
+                                    htSomDaiNgay: st.htSomDaiNgay,
+                                    phatSinhHT: st.phatSinhHT,
+                                    tuDongChot: st.tuDongChot,
+                                    uuTienCaoHT: st.uuTienCaoHT,
+                                    uuTienCaoTotal: st.uuTienCaoTotal,
+                                    taskCount: st.tongCV,
+                                    _tasks: st._tasks,   // task list giữ in-memory + Firebase
+                                    autoComputed: true,
+                                    computedAt: Date.now()
+                                };
                             }
 
                             await update(ref(db), { [`giaiDoan/${phaseId}/ketQua`]: ketQua });
                             window._currentPhaseData = { ...ph, ketQua };
-                            renderPhaseScoreTable(window._currentPhaseData);
-                            showToast(`Đã tổng hợp điểm cho ${Object.keys(staffAccum).length} cán bộ!`);
+                            renderPhaseSummary(window._currentPhaseData);
+                            renderPhaseScoreEditor(window._currentPhaseData);
+                            showToast(`Đã tổng hợp ${Object.keys(staffMap).length} cán bộ — ${Object.values(staffMap).reduce((s, x) => s + x.tongCV, 0)} công việc!`);
                             loadPhaseList();
                         } catch (e) { console.error(e); showToast('Lỗi tổng hợp!', 'error'); }
                         showLoader(false);
