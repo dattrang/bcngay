@@ -5371,8 +5371,17 @@
                             let groups = {};
                             allFilteredTasks.forEach(t => {
                                 const cat = t.loaiCongViec || 'Khác';
-                                if (!groups[cat]) groups[cat] = [];
-                                groups[cat].push(t);
+                                if (!groups[cat]) groups[cat] = {};
+                                const tName = (t.tenCongViec || '').trim();
+                                if (!groups[cat][tName]) {
+                                    groups[cat][tName] = { chiTieu: 0, thucTe: 0, dvt: t.dvt || '' };
+                                }
+                                const chiTieuVal = parseFloat(t.chiTieu) || 0;
+                                const dg = t.dg || {};
+                                const thucTeVal = parseFloat(dg.soLuongThucTe) || 0;
+                                
+                                groups[cat][tName].chiTieu += chiTieuVal;
+                                groups[cat][tName].thucTe += thucTeVal;
                             });
                             let reportLines = [];
                             reportLines.push(`BÁO CÁO TỔNG HỢP CÔNG VIỆC (Từ ngày ${formatDMY(startStr)} đến ${formatDMY(endStr)})`);
@@ -5380,15 +5389,16 @@
                             reportLines.push(`- Đã hoàn thành: ${doneCV}`);
                             reportLines.push(`- Tỷ lệ hoàn thành chung: ${currPct}%`);
                             reportLines.push('');
-                            reportLines.push('CHI TIẾT CÁC NHIỆM VỤ THEO NHÓM CÔNG VIỆC:');
+                            reportLines.push('CHI TIẾT CHỈ TIÊU THEO NHÓM CÔNG VIỆC:');
                             let groupIndex = 1;
                             for (const cat in groups) {
                                 reportLines.push(`${groupIndex}. Nhóm: ${cat.toUpperCase()}`);
-                                groups[cat].forEach(t => {
-                                    let note = t.dg.ketQua || 'Chưa thực hiện';
-                                    if (t.dg.lyDoKhongDat) note += ` - ${t.dg.lyDoKhongDat}`;
-                                    reportLines.push(`   - ${t.tenCongViec} (Phụ trách: ${t.nguoiPhuTrach}, Tiến độ: ${t.p}% - ${note})`);
-                                });
+                                for (const tName in groups[cat]) {
+                                    const stats = groups[cat][tName];
+                                    let pct = stats.chiTieu > 0 ? Math.round((stats.thucTe / stats.chiTieu) * 100) : (stats.thucTe > 0 ? 100 : 0);
+                                    let dvtStr = stats.dvt ? ` ${stats.dvt}` : '';
+                                    reportLines.push(`   - ${tName}: Đã làm ${stats.thucTe} / ${stats.chiTieu}${dvtStr} (Đạt ${pct}%)`);
+                                }
                                 groupIndex++;
                             }
                             const rptTextEl = document.getElementById('rpt-text-content');
