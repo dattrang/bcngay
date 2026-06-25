@@ -2015,9 +2015,13 @@
                     </div>
 
                     <div class="card">
-                        <div class="card-header">
+                        <div class="card-header" style="justify-content: space-between; align-items: center; display: flex; flex-wrap: wrap; gap: 10px;">
                             <h3><i class="fas fa-list"></i> Danh sách dự kiến (Hôm nay: <span
                                     id="reg-date-label"></span>)</h3>
+                            <div class="form-group" style="max-width: 250px; margin-bottom: 0;">
+                                <input type="text" id="reg-filter-staff" placeholder="-- Lọc theo cán bộ --"
+                                    autocomplete="off" oninput="renderRegTable()" style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
+                            </div>
                         </div>
                         <div class="table-responsive scroll-table">
                             <table class="modern-table">
@@ -3991,14 +3995,32 @@
 
                         const tbody = document.getElementById('reg-tbody');
                         tbody.innerHTML = '';
-                        document.getElementById('reg-total-count').innerText = tempRegTasks.length;
+                        let displayTasks = [...tempRegTasks];
+                        
+                        // Sort: Theo cán bộ (nguoiPhuTrach), sau đó Chuyển tiếp lên đầu
+                        displayTasks.sort((a, b) => {
+                            const nameA = a.nguoiPhuTrach || '';
+                            const nameB = b.nguoiPhuTrach || '';
+                            if (nameA !== nameB) return nameA.localeCompare(nameB);
+                            const aCT = (a.tenCongViec || '').includes('[Chuyển tiếp]') ? -1 : 1;
+                            const bCT = (b.tenCongViec || '').includes('[Chuyển tiếp]') ? -1 : 1;
+                            return aCT - bCT;
+                        });
 
-                        if (tempRegTasks.length === 0) {
+                        // Lọc theo cán bộ
+                        const filterStaff = (document.getElementById('reg-filter-staff')?.value || '').toLowerCase().trim();
+                        if (filterStaff) {
+                            displayTasks = displayTasks.filter(t => (t.nguoiPhuTrach || '').toLowerCase().includes(filterStaff));
+                        }
+
+                        document.getElementById('reg-total-count').innerText = `${displayTasks.length} / ${tempRegTasks.length}`;
+
+                        if (displayTasks.length === 0) {
                             tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8;">Chưa có công việc nào.</td></tr>';
                             return;
                         }
 
-                        tempRegTasks.forEach((t, i) => {
+                        displayTasks.forEach((t, i) => {
                             let badgeClass = t.mucDoUuTien === 'Cao' ? 'badge-high' : (t.mucDoUuTien === 'Thấp' ? 'badge-low' : 'badge-medium');
                             tbody.innerHTML += `
                     <tr style="cursor:pointer;" onclick="switchAndJumpToEval('${t.id}', event)" title="Nhấn để chuyển sang Đánh giá">
@@ -4164,10 +4186,13 @@
 
                                 if (!IS_ADMIN) tasksArr = tasksArr.filter(t => t.nguoiPhuTrach === DEVICE_USER);
 
-                                // Sort: Chuyển tiếp lên đầu
+                                // Sort: Theo cán bộ (nguoiPhuTrach), sau đó Chuyển tiếp lên đầu
                                 tasksArr.sort((a, b) => {
-                                    const aCT = a.tenCongViec.includes('[Chuyển tiếp]') ? -1 : 1;
-                                    const bCT = b.tenCongViec.includes('[Chuyển tiếp]') ? -1 : 1;
+                                    const nameA = a.nguoiPhuTrach || '';
+                                    const nameB = b.nguoiPhuTrach || '';
+                                    if (nameA !== nameB) return nameA.localeCompare(nameB);
+                                    const aCT = (a.tenCongViec || '').includes('[Chuyển tiếp]') ? -1 : 1;
+                                    const bCT = (b.tenCongViec || '').includes('[Chuyển tiếp]') ? -1 : 1;
                                     return aCT - bCT;
                                 });
 
@@ -4228,6 +4253,16 @@
                                 }
 
                                 if (tasksArr.length > 0) {
+                                    // Sort: Theo cán bộ (nguoiPhuTrach), sau đó Chuyển tiếp lên đầu
+                                    tasksArr.sort((a, b) => {
+                                        const nameA = a.nguoiPhuTrach || '';
+                                        const nameB = b.nguoiPhuTrach || '';
+                                        if (nameA !== nameB) return nameA.localeCompare(nameB);
+                                        const aCT = (a.tenCongViec || '').includes('[Chuyển tiếp]') ? -1 : 1;
+                                        const bCT = (b.tenCongViec || '').includes('[Chuyển tiếp]') ? -1 : 1;
+                                        return aCT - bCT;
+                                    });
+
                                     let idx = 1;
                                     tasksArr.forEach(task => {
                                         currentEvalTasks[task.id] = task;
