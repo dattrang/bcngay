@@ -6175,7 +6175,8 @@
                         const tasks = kq._tasks || [];
 
                         const nhom = STAFFS.find(s => s.ten === name)?.nhom || '';
-                        const xl = kq.diemCuoiCung != null ? getXepLoai(kq.diemCuoiCung) : null;
+                        // getXepLoai đã bị loại bỏ ở hệ thống điểm tích luỹ mới
+                        const xl = null;
 
                         const kqClass = (k) => k === 'Hoàn thành' ? 'pst-kq-ht' : k === 'Hoàn thành một phần' ? 'pst-kq-part' : k === 'Chuyển sang ngày khác' ? 'pst-kq-move' : 'pst-kq-none';
                         const kqLabel = (k) => k === 'Hoàn thành' ? '✅ Hoàn thành' : k === 'Hoàn thành một phần' ? '🟡 Một phần' : k === 'Chuyển sang ngày khác' ? '↪️ Chuyển' : '❌ Không HT';
@@ -6328,7 +6329,7 @@
                                 }
                                 if (nxEl) ketQua[name].nhanXet = nxEl.value.trim();
                                 const d = ketQua[name].diemCuoiCung;
-                                if (d != null) ketQua[name].xepLoai = getXepLoai(d).label;
+                                // getXepLoai removed
                                 ketQua[name].updatedAt = Date.now();
                             }
                             await update(ref(db), { [`giaiDoan/${phaseId}/ketQua`]: ketQua });
@@ -6452,7 +6453,7 @@
                                     ...old,
                                     diemTuDong: diemAuto,
                                     diemCuoiCung: diemCuoi,
-                                    xepLoai: getXepLoai(diemCuoi).label,
+                                    // xepLoai removed
                                     // Detailed stats
                                     tongCV: st.tongCV,
                                     htDungHan: st.htDungHan,
