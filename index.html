@@ -1745,6 +1745,23 @@
                         <div class="card-header">
                             <h3><i class="fas fa-mobile-alt"></i> Quản lý Thiết bị (Bảo mật)</h3>
                         </div>
+                        <!-- [SECURITY] Cấu hình mật khẩu Admin lưu trên Firebase -->
+                        <div
+                            style="padding:15px; background:#fff3cd; border:1px solid #ffc107; border-radius:6px; margin-bottom:16px;">
+                            <p style="font-size:0.85rem; color:#856404; font-weight:600; margin-bottom:8px;"><i
+                                    class="fas fa-key"></i> Cài đặt / Đổi mật khẩu Admin</p>
+                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <input type="password" id="new-admin-pwd" placeholder="Nhập mật khẩu Admin mới..."
+                                    style="flex:1; min-width:220px; padding:8px 12px; border:1px solid #ffc107; border-radius:6px;">
+                                <input type="password" id="confirm-admin-pwd" placeholder="Nhập lại để xác nhận..."
+                                    style="flex:1; min-width:220px; padding:8px 12px; border:1px solid #ffc107; border-radius:6px;">
+                                <button type="button" class="btn btn-warning btn-sm" onclick="saveAdminPassword()"><i
+                                        class="fas fa-save"></i> Lưu mật khẩu</button>
+                            </div>
+                            <p style="font-size:0.78rem; color:#6d4c00; margin-top:6px;"><i
+                                    class="fas fa-info-circle"></i> Mật khẩu được mã hoá SHA-256 và lưu vào Firebase —
+                                không lưu trực tiếp trong code nguồn.</p>
+                        </div>
                         <div
                             style="padding:15px; border:1px solid var(--border); border-radius:6px; margin-bottom:20px;">
                             <p style="font-size:0.85rem; color:var(--gray); margin-bottom:10px;">Danh sách cán bộ đã
@@ -2015,12 +2032,14 @@
                     </div>
 
                     <div class="card">
-                        <div class="card-header" style="justify-content: space-between; align-items: center; display: flex; flex-wrap: wrap; gap: 10px;">
+                        <div class="card-header"
+                            style="justify-content: space-between; align-items: center; display: flex; flex-wrap: wrap; gap: 10px;">
                             <h3><i class="fas fa-list"></i> Danh sách dự kiến (Hôm nay: <span
                                     id="reg-date-label"></span>)</h3>
                             <div class="form-group autocomplete-wrapper" style="max-width: 250px; margin-bottom: 0;">
                                 <input type="text" id="reg-filter-staff" placeholder="-- Lọc theo cán bộ --"
-                                    autocomplete="off" oninput="renderRegTable()" style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
+                                    autocomplete="off" oninput="renderRegTable()"
+                                    style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
                                 <div id="reg-filter-staff-list" class="autocomplete-items"></div>
                             </div>
                         </div>
@@ -2191,7 +2210,8 @@
                                 onclick="switchRptTab(this)">🧑‍💼 Chi tiết cán bộ</button>
                             <button class="rpt-subtab-btn" data-pane="rpt-pane-phase" onclick="switchRptTab(this)">📅
                                 Đánh giá giai đoạn</button>
-                            <button class="rpt-subtab-btn" data-pane="rpt-pane-text-report" onclick="switchRptTab(this)">📝
+                            <button class="rpt-subtab-btn" data-pane="rpt-pane-text-report"
+                                onclick="switchRptTab(this)">📝
                                 Báo cáo văn bản</button>
                         </div>
 
@@ -2358,13 +2378,17 @@
 
                         <!-- Pane 4: Báo cáo văn bản -->
                         <div class="rpt-subtab-pane" id="rpt-pane-text-report">
-                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin:12px 0;">
-                                <p style="font-size:0.85rem;color:var(--gray);margin:0;">Văn bản tổng hợp tự động theo khoảng thời gian và bộ lọc đang chọn, nhóm theo nhóm công việc.</p>
+                            <div
+                                style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin:12px 0;">
+                                <p style="font-size:0.85rem;color:var(--gray);margin:0;">Văn bản tổng hợp tự động theo
+                                    khoảng thời gian và bộ lọc đang chọn, nhóm theo nhóm công việc.</p>
                                 <button class="btn btn-primary btn-sm" onclick="copyTextReport()">
                                     <i class="fas fa-copy"></i> Copy Báo cáo
                                 </button>
                             </div>
-                            <textarea id="rpt-text-content" rows="15" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:0.95rem; background:#f8fafc;" readonly></textarea>
+                            <textarea id="rpt-text-content" rows="15"
+                                style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:0.95rem; background:#f8fafc;"
+                                readonly></textarea>
                         </div>
 
                         <!-- Pane 5: Đánh giá giai đoạn -->
@@ -2545,7 +2569,7 @@
                     const formatLocalYMD = (d) => { const p = n => String(n).padStart(2, '0'); return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); };
                     const getTodayYMD = () => formatLocalYMD(new Date());
                     const formatDMY = (ymd) => { if (!ymd) return ''; const p = ymd.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
-                    window.esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    window.esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
                     const getPriorityWeight = (prio) => { if (prio === 'Cao') return 3; if (prio === 'Trung bình') return 2; if (prio === 'Thấp') return 1; return 2; };
 
                     // INIT
@@ -2870,7 +2894,7 @@
                             const pwd = document.getElementById('lock-password').value;
                             const buffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(pwd));
                             const hash = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, "0")).join("");
-                            
+
                             showLoader(true);
                             try {
                                 const configSnap = await get(child(ref(db), 'config/adminPasswordHash'));
@@ -2959,6 +2983,27 @@
                             window.location.reload();
                         }
                     }
+
+                    // [SECURITY] Lưu mật khẩu Admin lên Firebase (đã mã hoá SHA-256)
+                    window.saveAdminPassword = async function () {
+                        const pwd = document.getElementById('new-admin-pwd').value;
+                        const confirm2 = document.getElementById('confirm-admin-pwd').value;
+                        if (!pwd || pwd.length < 6) { showToast('Mật khẩu phải từ 6 ký tự trở lên!', 'error'); return; }
+                        if (pwd !== confirm2) { showToast('Mật khẩu xác nhận không khớp!', 'error'); return; }
+                        showLoader(true);
+                        try {
+                            const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pwd));
+                            const hash = Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+                            await update(ref(db), { 'config/adminPasswordHash': hash });
+                            document.getElementById('new-admin-pwd').value = '';
+                            document.getElementById('confirm-admin-pwd').value = '';
+                            showToast('Đã cập nhật mật khẩu Admin thành công!', 'success');
+                        } catch (e) {
+                            console.error(e);
+                            showToast('Lỗi khi lưu mật khẩu!', 'error');
+                        }
+                        showLoader(false);
+                    };
 
                     // checkAlerts() đã được xóa — nhắc nhở tích hợp vào setupEndOfDayAlert()
 
@@ -3279,7 +3324,7 @@
                             const tbody = document.getElementById('audit-log-tbody');
                             tbody.innerHTML = '';
                             history.forEach((h, i) => {
-                                tbody.innerHTML += `<tr><td>${i + 1}</td><td>${h.thoiGian}</td><td>${h.hanhDong}</td></tr>`;
+                                tbody.innerHTML += `<tr><td>${i + 1}</td><td>${esc(h.thoiGian)}</td><td>${esc(h.hanhDong)}</td></tr>`;
                             });
                             modal.style.display = 'flex';
                         };
@@ -3361,10 +3406,10 @@
                                 let html = '';
                                 for (const [staff, fp] of Object.entries(bindings)) {
                                     html += `<tr>
-                            <td><strong>${staff}</strong></td>
-                            <td style="font-family:monospace; color:var(--gray); font-size:0.8rem;">${fp}</td>
+                            <td><strong>${esc(staff)}</strong></td>
+                            <td style="font-family:monospace; color:var(--gray); font-size:0.8rem;">${esc(fp)}</td>
                             <td style="text-align:center;">
-                                <button class="btn btn-sm btn-danger" onclick="unbindDevice(this.dataset.staff, this.dataset.fp)" data-staff="${staff.replace(/"/g, '&quot;')}" data-fp="${fp.replace(/"/g, '&quot;')}"><i class="fas fa-unlink"></i> Gỡ</button>
+                                <button class="btn btn-sm btn-danger" onclick="unbindDevice(this.dataset.staff, this.dataset.fp)" data-staff="${esc(staff)}" data-fp="${esc(fp)}"><i class="fas fa-unlink"></i> Gỡ</button>
                             </td>
                         </tr>`;
                                 }
@@ -3410,11 +3455,11 @@
                             tbody.innerHTML += `
                     <tr>
                         <td>${i + 1}</td>
-                        <td><strong>${s.ten}</strong></td>
-                        <td><span class="badge badge-medium" style="background:#e2e8f0; color:#475569;">${s.nhom}</span></td>
+                        <td><strong>${esc(s.ten)}</strong></td>
+                        <td><span class="badge badge-medium" style="background:#e2e8f0; color:#475569;">${esc(s.nhom)}</span></td>
                         <td style="text-align:center;">
-                            <button class="btn btn-sm btn-secondary" title="Sửa" data-name="${s.ten}" data-group="${s.nhom}" onclick="editStaff(this.dataset.name, this.dataset.group)"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-danger" title="Xóa" data-name="${s.ten}" onclick="deleteStaff(this.dataset.name)"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-secondary" title="Sửa" data-name="${esc(s.ten)}" data-group="${esc(s.nhom)}" onclick="editStaff(this.dataset.name, this.dataset.group)"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-danger" title="Xóa" data-name="${esc(s.ten)}" onclick="deleteStaff(this.dataset.name)"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -3493,10 +3538,10 @@
                                                 input.value = ten;
                                                 input.dataset.oldValue = ten;
                                                 closeAllLists();
-                                                try { 
-                                                    if (isFilter) { 
-                                                        if (inputId === 'reg-filter-staff') renderRegTable(); else filterEvalList(); 
-                                                    } 
+                                                try {
+                                                    if (isFilter) {
+                                                        if (inputId === 'reg-filter-staff') renderRegTable(); else filterEvalList();
+                                                    }
                                                 } catch (e) { }
                                             });
                                             list.appendChild(div);
@@ -3715,14 +3760,14 @@
                             tbody.innerHTML += `
                     <tr>
                         <td>${i + 1}</td>
-                        <td><strong>${t.tenNhiemVu}</strong></td>
-                        <td><small>${t.nhomNhiemVu.length > 30 ? t.nhomNhiemVu.substring(0, 30) + '...' : t.nhomNhiemVu}</small></td>
-                        <td>${t.donViTinh}</td>
-                        <td><span class="badge ${t.uutienMacDinh === 'Cao' ? 'badge-high' : t.uutienMacDinh === 'Thấp' ? 'badge-low' : 'badge-medium'}">${t.uutienMacDinh}</span></td>
+                        <td><strong>${esc(t.tenNhiemVu)}</strong></td>
+                        <td><small>${esc(t.nhomNhiemVu.length > 30 ? t.nhomNhiemVu.substring(0, 30) + '...' : t.nhomNhiemVu)}</small></td>
+                        <td>${esc(t.donViTinh)}</td>
+                        <td><span class="badge ${t.uutienMacDinh === 'Cao' ? 'badge-high' : t.uutienMacDinh === 'Thấp' ? 'badge-low' : 'badge-medium'}">${esc(t.uutienMacDinh)}</span></td>
                         <td style="text-align:center;">
-                            <button class="btn btn-sm btn-secondary" title="Sửa" onclick="editAdminTask('${t.id}')"><i class="fas fa-edit"></i></button>
-                            <button class="btn btn-sm btn-success" title="Sao chép" onclick="cloneAdminTask('${t.id}')"><i class="fas fa-copy"></i></button>
-                            <button class="btn btn-sm btn-danger" title="Xóa" onclick="deleteAdminTask('${t.id}')"><i class="fas fa-trash"></i></button>
+                            <button class="btn btn-sm btn-secondary" title="Sửa" onclick="editAdminTask('${esc(t.id)}')"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-success" title="Sao chép" onclick="cloneAdminTask('${esc(t.id)}')"><i class="fas fa-copy"></i></button>
+                            <button class="btn btn-sm btn-danger" title="Xóa" onclick="deleteAdminTask('${esc(t.id)}')"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -4031,7 +4076,7 @@
                         const tbody = document.getElementById('reg-tbody');
                         tbody.innerHTML = '';
                         let displayTasks = [...tempRegTasks];
-                        
+
                         // Sort: Theo cán bộ (nguoiPhuTrach), sau đó Chuyển tiếp lên đầu
                         displayTasks.sort((a, b) => {
                             const nameA = a.nguoiPhuTrach || '';
@@ -4830,12 +4875,12 @@
                             if (thucteEl) {
                                 thucte = thucteEl.value;
                             }
-                            
+
                             let lyDo = t.danhGia?.lyDoKhongDat || '';
                             if (reasonEl) {
                                 lyDo = reasonEl.value;
                             }
-                            
+
                             let ghiChuText = '';
                             if (t.ghiChu && lyDo) {
                                 ghiChuText = ` [Ghi chú: ${t.ghiChu} | Lý do: ${lyDo}]`;
@@ -5317,7 +5362,7 @@
 
                                         return `<tr>
                                 <td style="text-align:center; font-weight:bold; font-size:1.1rem;">${badge}</td>
-                                <td><strong>${s.name}</strong></td>
+                                <td><strong>${esc(s.name)}</strong></td>
                                 <td style="text-align:center;">${s.total}</td>
                                 <td style="text-align:center;"><span class="badge" style="background:${color}; color:white; font-size:0.9rem;">${s.pct}%</span></td>
                             </tr>`;
@@ -5337,9 +5382,9 @@
                                     return topList.map((t, i) => `
                             <tr>
                                 <td>${i + 1}</td>
-                                <td><strong>${t.tenCongViec}</strong><br><small style="color:var(--gray);">${t.loaiCongViec}</small></td>
-                                <td>${t.nguoiPhuTrach}</td>
-                                <td><span style="color:${color}; font-weight:bold;">${t.dg.ketQua || 'Chưa thực hiện'} (${t.p}%)</span></td>
+                                <td><strong>${esc(t.tenCongViec)}</strong><br><small style="color:var(--gray);">${esc(t.loaiCongViec)}</small></td>
+                                <td>${esc(t.nguoiPhuTrach)}</td>
+                                <td><span style="color:${color}; font-weight:bold;">${esc(t.dg.ketQua || 'Chưa thực hiện')} (${t.p}%)</span></td>
                                 <td>${formatDMY(t.date)}</td>
                             </tr>
                         `).join('');
@@ -5395,7 +5440,7 @@
                                 const chiTieuVal = parseFloat(t.chiTieu) || 0;
                                 const dg = t.dg || {};
                                 const thucTeVal = parseFloat(dg.soLuongThucTe) || 0;
-                                
+
                                 groups[cat][tName].chiTieu += chiTieuVal;
                                 groups[cat][tName].thucTe += thucTeVal;
 
@@ -5431,7 +5476,7 @@
                         showLoader(false);
                     }
 
-                    window.copyTextReport = function() {
+                    window.copyTextReport = function () {
                         const rptTextEl = document.getElementById('rpt-text-content');
                         if (!rptTextEl || !rptTextEl.value) {
                             return showToast('Không có nội dung để copy!', 'warning');
@@ -6059,7 +6104,7 @@
                             const snap = await get(child(ref(db), `giaiDoan/${phaseId}`));
                             if (!snap.exists()) { document.getElementById('pst-summary').innerHTML = 'Không tìm thấy giai đoạn.'; return; }
                             const ph = snap.val();
-                            document.getElementById('phase-score-title').innerHTML = `<i class="fas fa-award"></i> ${ph.ten}`;
+                            document.getElementById('phase-score-title').innerHTML = `<i class="fas fa-award"></i> ${esc(ph.ten)}`;
                             document.getElementById('phase-score-subtitle').textContent = `${formatDMY(ph.tuNgay)} → ${formatDMY(ph.denNgay)}${ph.moTa ? '  ·  ' + ph.moTa : ''}`;
                             window._currentPhaseData = ph;
 
@@ -6254,15 +6299,15 @@
                                     t.tuDongChot ? '🔒' : ''
                                 ].filter(Boolean).join(' ');
                                 html += `<tr class="phase-task-row">
-                                    <td style="text-align:left;font-weight:500;">${t.ten}${specialBadge ? ` <span title="Đặc biệt">${specialBadge}</span>` : ''}</td>
-                                    <td>${t.ngay || ''}</td>
-                                    <td style="white-space:nowrap;">${t.loai || '—'}</td>
-                                    <td style="color:${prioClr};font-weight:600;">${t.uuTien || '—'}</td>
-                                    <td>${t.chiTieu} ${t.dvt || ''}</td>
-                                    <td style="font-weight:600;">${t.thucTe !== undefined ? t.thucTe + (t.dvt ? ' ' + t.dvt : '') : '—'}</td>
+                                    <td style="text-align:left;font-weight:500;">${esc(t.ten)}${specialBadge ? ` <span title="Đặc biệt">${specialBadge}</span>` : ''}</td>
+                                    <td>${esc(t.ngay || '')}</td>
+                                    <td style="white-space:nowrap;">${esc(t.loai || '—')}</td>
+                                    <td style="color:${prioClr};font-weight:600;">${esc(t.uuTien || '—')}</td>
+                                    <td>${esc(t.chiTieu)} ${esc(t.dvt || '')}</td>
+                                    <td style="font-weight:600;">${t.thucTe !== undefined ? esc(t.thucTe) + (t.dvt ? ' ' + esc(t.dvt) : '') : '—'}</td>
                                     <td style="font-weight:700;color:${clr};">${pct}%</td>
                                     <td><span class="${kqClass(t.ketQua)}">${kqLabel(t.ketQua)}</span></td>
-                                    <td style="color:#64748b;font-size:0.78rem;">${t.lyDo || ''}</td>
+                                    <td style="color:#64748b;font-size:0.78rem;">${esc(t.lyDo || '')}</td>
                                 </tr>`;
                             });
                             html += '</tbody></table></div>';
@@ -6270,7 +6315,7 @@
 
                         if (kq.nhanXet) {
                             html += `<div style="margin-top:14px; background:#f0fdf4; border-left:3px solid var(--success); padding:10px 14px; border-radius:0 6px 6px 0; font-size:0.875rem;">
-                                <strong>Nhận xét:</strong> ${kq.nhanXet}
+                                <strong>Nhận xét:</strong> ${esc(kq.nhanXet)}
                             </div>`;
                         }
 
@@ -7180,8 +7225,8 @@
                 <div class="nvxn-card" style="border-left:4px solid ${borderColor}">
                     <div class="nvxn-card-header">
                         <div>
-                            <div class="nvxn-title">${t.tenCongViec} ${nvxnLaplaiChip(t)}</div>
-                            <div class="nvxn-meta"><i class="fas fa-user"></i> ${t.nguoiPhuTrach} &nbsp;|&nbsp; <i class="far fa-calendar-alt"></i> Hạn: ${formatDMY(t.hanHoanThanh)} &nbsp;|&nbsp; Hiện trước ${t.soNgayHienTruoc ?? 5} ngày ${daysLabel ? ' | ' + daysLabel : ''}</div>
+                            <div class="nvxn-title">${esc(t.tenCongViec)} ${nvxnLaplaiChip(t)}</div>
+                            <div class="nvxn-meta"><i class="fas fa-user"></i> ${esc(t.nguoiPhuTrach)} &nbsp;|&nbsp; <i class="far fa-calendar-alt"></i> Hạn: ${formatDMY(t.hanHoanThanh)} &nbsp;|&nbsp; Hiện trước ${t.soNgayHienTruoc ?? 5} ngày ${daysLabel ? ' | ' + daysLabel : ''}</div>
                         </div>
                         <span class="nvxn-status-badge ${s.cls}">${s.label}</span>
                     </div>
@@ -7207,8 +7252,8 @@
                 <div class="nvxn-card" style="border-left:4px solid ${borderColor}">
                     <div class="nvxn-card-header">
                         <div>
-                            <div class="nvxn-title">${t.tenCongViec} ${nvxnLaplaiChip(t)}</div>
-                            <div class="nvxn-meta"><i class="fas fa-user"></i> ${t.nguoiPhuTrach} &nbsp;|&nbsp; <i class="far fa-calendar-alt"></i> ${formatDMY(t.ngayBatDau)} → ${formatDMY(t.hanHoanThanh)} &nbsp;|&nbsp; ${daysLeftLabel}</div>
+                            <div class="nvxn-title">${esc(t.tenCongViec)} ${nvxnLaplaiChip(t)}</div>
+                            <div class="nvxn-meta"><i class="fas fa-user"></i> ${esc(t.nguoiPhuTrach)} &nbsp;|&nbsp; <i class="far fa-calendar-alt"></i> ${formatDMY(t.ngayBatDau)} → ${formatDMY(t.hanHoanThanh)} &nbsp;|&nbsp; ${daysLeftLabel}</div>
                         </div>
                         <span class="nvxn-status-badge ${s.cls}">${s.label}</span>
                     </div>
