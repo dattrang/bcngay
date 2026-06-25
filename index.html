@@ -2191,6 +2191,8 @@
                                 onclick="switchRptTab(this)">🧑‍💼 Chi tiết cán bộ</button>
                             <button class="rpt-subtab-btn" data-pane="rpt-pane-phase" onclick="switchRptTab(this)">📅
                                 Đánh giá giai đoạn</button>
+                            <button class="rpt-subtab-btn" data-pane="rpt-pane-text-report" onclick="switchRptTab(this)">📝
+                                Báo cáo văn bản</button>
                         </div>
 
                         <!-- Pane 1: Tổng quan -->
@@ -2354,7 +2356,18 @@
                             </div>
                         </div>
 
-                        <!-- Pane 4: Đánh giá giai đoạn -->
+                        <!-- Pane 4: Báo cáo văn bản -->
+                        <div class="rpt-subtab-pane" id="rpt-pane-text-report">
+                            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin:12px 0;">
+                                <p style="font-size:0.85rem;color:var(--gray);margin:0;">Văn bản tổng hợp tự động theo khoảng thời gian và bộ lọc đang chọn, nhóm theo nhóm công việc.</p>
+                                <button class="btn btn-primary btn-sm" onclick="copyTextReport()">
+                                    <i class="fas fa-copy"></i> Copy Báo cáo
+                                </button>
+                            </div>
+                            <textarea id="rpt-text-content" rows="15" style="width:100%; padding:12px; border:1px solid var(--border); border-radius:8px; font-family:inherit; font-size:0.95rem; background:#f8fafc;" readonly></textarea>
+                        </div>
+
+                        <!-- Pane 5: Đánh giá giai đoạn -->
                         <div class="rpt-subtab-pane" id="rpt-pane-phase">
                             <div
                                 style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin:12px 0 16px;">
@@ -5353,9 +5366,47 @@
                             let pLabels = Object.keys(typeCounts); let pData = Object.values(typeCounts);
                             pieChart = new Chart(document.getElementById('rptChartPie'), { type: 'doughnut', data: { labels: pLabels.length ? pLabels : ['Rỗng'], datasets: [{ data: pData.length ? pData : [1] }] }, options: { responsive: true, maintainAspectRatio: false } });
 
-                        } catch (e) { showToast('Lỗi thống kê.', 'error'); }
+                            // Text report generation
+                            const allFilteredTasks = [...overTasks, ...doneTasks, ...lateTasks];
+                            let groups = {};
+                            allFilteredTasks.forEach(t => {
+                                const cat = t.loaiCongViec || 'Khác';
+                                if (!groups[cat]) groups[cat] = [];
+                                groups[cat].push(t);
+                            });
+                            let reportLines = [];
+                            reportLines.push(`BÁO CÁO TỔNG HỢP CÔNG VIỆC (Từ ngày ${formatDMY(startStr)} đến ${formatDMY(endStr)})`);
+                            reportLines.push(`- Tổng số công việc: ${totalCV}`);
+                            reportLines.push(`- Đã hoàn thành: ${doneCV}`);
+                            reportLines.push(`- Tỷ lệ hoàn thành chung: ${currPct}%`);
+                            reportLines.push('');
+                            reportLines.push('CHI TIẾT CÁC NHIỆM VỤ THEO NHÓM CÔNG VIỆC:');
+                            let groupIndex = 1;
+                            for (const cat in groups) {
+                                reportLines.push(`${groupIndex}. Nhóm: ${cat.toUpperCase()}`);
+                                groups[cat].forEach(t => {
+                                    let note = t.dg.ketQua || 'Chưa thực hiện';
+                                    if (t.dg.lyDoKhongDat) note += ` - ${t.dg.lyDoKhongDat}`;
+                                    reportLines.push(`   - ${t.tenCongViec} (Phụ trách: ${t.nguoiPhuTrach}, Tiến độ: ${t.p}% - ${note})`);
+                                });
+                                groupIndex++;
+                            }
+                            const rptTextEl = document.getElementById('rpt-text-content');
+                            if (rptTextEl) rptTextEl.value = reportLines.join('\n');
+
+                        } catch (e) { console.error(e); showToast('Lỗi thống kê.', 'error'); }
                         showLoader(false);
                     }
+
+                    window.copyTextReport = function() {
+                        const rptTextEl = document.getElementById('rpt-text-content');
+                        if (!rptTextEl || !rptTextEl.value) {
+                            return showToast('Không có nội dung để copy!', 'warning');
+                        }
+                        rptTextEl.select();
+                        document.execCommand('copy');
+                        showToast('Đã copy văn bản báo cáo!');
+                    };
 
                     async function exportToExcel() {
                         const startStr = document.getElementById('rpt-start').value;
