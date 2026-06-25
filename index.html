@@ -1486,21 +1486,26 @@
                 <i class="fas fa-bolt"></i> Ghi nhận Công việc Phát sinh
             </h3>
             <div class="form-row">
-                <div class="form-group" style="flex:2">
-                    <label>Tên công việc phát sinh <span>*</span></label>
-                    <input type="text" id="ps-ten" placeholder="Nhập tên công việc...">
+                <div class="form-group" style="flex:1">
+                    <label>Nhóm / Phân loại <span>*</span></label>
+                    <select id="ps-loai" required onchange="filterPSTasks()"></select>
                 </div>
-                <div class="form-group autocomplete-wrapper" style="flex:1">
-                    <label>Người phụ trách <span>*</span></label>
-                    <input type="text" id="ps-nguoi" placeholder="Chọn cán bộ..." autocomplete="off">
-                    <div id="ps-nguoi-list" class="autocomplete-items"></div>
+                <div class="form-group" style="flex: 2">
+                    <label>Tên công việc phát sinh <span>*</span></label>
+                    <select id="ps-ten-select" required onchange="onSelectPSTask()">
+                        <option value="">-- Chọn công việc --</option>
+                    </select>
+                    <input type="text" id="ps-ten-input" placeholder="Nhập tên công việc ngoài danh mục..." style="display:none;">
+                    <div style="margin-top: 6px;">
+                        <label class="checkbox-label"><input type="checkbox" id="ps-is-custom" onchange="toggleCustomPSTask()"> Công việc khác (nhập ngoài danh mục)</label>
+                    </div>
                 </div>
             </div>
             <div class="form-row">
                 <div class="form-group autocomplete-wrapper" style="flex:1">
-                    <label>Nhóm công việc <span>*</span></label>
-                    <input type="text" id="ps-nhom" placeholder="Chọn hoặc gõ tên nhóm..." autocomplete="off">
-                    <div id="ps-nhom-list" class="autocomplete-items"></div>
+                    <label>Người phụ trách <span>*</span></label>
+                    <input type="text" id="ps-nguoi" placeholder="Chọn cán bộ..." autocomplete="off">
+                    <div id="ps-nguoi-list" class="autocomplete-items"></div>
                 </div>
                 <div class="form-group" style="flex:1">
                     <label>Khối lượng đã làm <span>*</span></label>
@@ -1509,6 +1514,14 @@
                 <div class="form-group" style="flex:1">
                     <label>Đơn vị tính <span>*</span></label>
                     <input type="text" id="ps-dvt" value="lượt">
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label>Mức độ Ưu tiên <span>*</span></label>
+                    <select id="ps-uutien">
+                        <option value="Cao">Cao</option>
+                        <option value="Trung bình" selected>Trung bình</option>
+                        <option value="Thấp">Thấp</option>
+                    </select>
                 </div>
             </div>
 
@@ -2621,10 +2634,8 @@
                             // nvxnSyncDailyEntries cần kết quả của nvxnAutoSyncFromQlcv
                             // nhưng nvxnTasks đã được load trong nvxnAutoSyncFromQlcv → không cần loadNVXNTasks lại
                             // loadTodayTasks và initDashboardView có thể chạy song song với nvxnSyncDailyEntries
-                            const [todaySnap] = await Promise.all([
-                                get(child(ref(db), `keHoachNgay/${getTodayYMD()}`)),
-                                nvxnSyncDailyEntriesWithSnap()  // dùng snap đã có để tránh đọc lại
-                            ]);
+                            const todaySnap = await get(child(ref(db), `keHoachNgay/${getTodayYMD()}`));
+                            await nvxnSyncDailyEntriesWithSnap(todaySnap);
 
                             // [PERF FIX] Dùng todaySnap đã tải để fill UI thay vì đọc lại Firebase
                             await loadTodayTasksFromSnap(todaySnap);
@@ -3261,7 +3272,7 @@
                                     const foundCb = STAFFS.find(s => s.ten.toLowerCase() === canBo.toLowerCase() || s.ten.toLowerCase().includes(canBo.toLowerCase()));
                                     if (foundCb) cbName = foundCb.ten;
 
-                                    const newId = `CV-${dateStr.replace(/-/g, '')}-${Date.now().toString().slice(-6) + Math.floor(Math.random() * 1000)}`;
+                                    const newId = `CV-${dateStr.replace(/-/g, '')}-${Date.now().toString(36)}-${index}-${Math.floor(Math.random() * 1000)}`;
                                     tempRegTasks.push({
                                         id: newId,
                                         loaiCongViec: 'Công việc khác',
@@ -3368,7 +3379,7 @@
                                     STAFFS = data.map(name => ({ ten: name, nhom: 'Mặc định' })).sort((a, b) => a.ten.localeCompare(b.ten, 'vi'));
                                     await set(ref(db, `danhMucCanBo`), STAFFS);
                                 } else {
-                                    STAFFS = data;
+                                    STAFFS = Array.isArray(data) ? data : Object.values(data);
                                 }
                             } else {
                                 STAFFS = DEFAULT_STAFFS.map(name => ({ ten: name, nhom: 'Mặc định' })).sort((a, b) => a.ten.localeCompare(b.ten, 'vi'));
@@ -4417,6 +4428,54 @@
                         }
                     }
 
+                    window.filterPSTasks = function () {
+                        if (document.getElementById('ps-is-custom').checked) return;
+
+                        const nhom = document.getElementById('ps-loai').value;
+                        const sel = document.getElementById('ps-ten-select');
+                        sel.innerHTML = '<option value="">-- Chọn công việc trong danh mục --</option>';
+
+                        Object.keys(masterTasks).forEach(k => {
+                            const t = masterTasks[k];
+                            if (t.nhomNhiemVu === nhom) {
+                                sel.appendChild(new Option(t.tenNhiemVu, k));
+                            }
+                        });
+                        document.getElementById('ps-dvt').value = 'lượt';
+                        document.getElementById('ps-chitieu').value = '1';
+                        document.getElementById('ps-uutien').value = 'Trung bình';
+                    }
+
+                    window.onSelectPSTask = function () {
+                        const selId = document.getElementById('ps-ten-select').value;
+                        if (!selId) return;
+                        const t = masterTasks[selId];
+                        if (t) {
+                            document.getElementById('ps-dvt').value = t.donViTinh;
+                            document.getElementById('ps-chitieu').value = t.chiTieuMacDinh || (t.donViTinh === '%' ? '100' : '1');
+                            document.getElementById('ps-uutien').value = t.uutienMacDinh;
+                        }
+                    }
+
+                    window.toggleCustomPSTask = function () {
+                        const isCustom = document.getElementById('ps-is-custom').checked;
+                        const sel = document.getElementById('ps-ten-select');
+                        const inp = document.getElementById('ps-ten-input');
+                        const dvt = document.getElementById('ps-dvt');
+                        const chitieu = document.getElementById('ps-chitieu');
+
+                        if (isCustom) {
+                            sel.style.display = 'none';
+                            inp.style.display = 'block';
+                            if (!dvt.value) dvt.value = 'lượt';
+                            if (!chitieu.value) chitieu.value = '1';
+                        } else {
+                            inp.style.display = 'none';
+                            sel.style.display = 'block';
+                            filterPSTasks();
+                        }
+                    }
+
                     window.showPhatSinhModal = function () {
                         const dateStr = document.getElementById('eval-date').value;
                         if (!dateStr) {
@@ -4424,10 +4483,21 @@
                             return;
                         }
 
-                        // Set defaults
-                        document.getElementById('ps-ten').value = '';
+                        // Populate categories
+                        const groupSet = new Set();
+                        Object.values(masterTasks).forEach(t => groupSet.add(t.nhomNhiemVu));
+                        const loaiSel = document.getElementById('ps-loai');
+                        loaiSel.innerHTML = '';
+                        Array.from(groupSet).sort().forEach(g => {
+                            loaiSel.appendChild(new Option(g, g));
+                        });
+
+                        document.getElementById('ps-is-custom').checked = false;
+                        toggleCustomPSTask();
+                        
                         document.getElementById('ps-chitieu').value = '1';
                         document.getElementById('ps-dvt').value = 'lượt';
+                        document.getElementById('ps-uutien').value = 'Trung bình';
 
                         // Set default staff to current filter or current user
                         const currentFilter = document.getElementById('eval-filter-staff').value;
@@ -4438,8 +4508,6 @@
                         } else {
                             document.getElementById('ps-nguoi').value = '';
                         }
-
-                        document.getElementById('ps-nhom').value = '';
 
                         document.getElementById('phat-sinh-overlay').style.display = 'flex';
                     };
@@ -4452,11 +4520,22 @@
                         const dateStr = document.getElementById('eval-date').value;
                         if (!dateStr) return;
 
-                        const ten = document.getElementById('ps-ten').value.trim();
+                        const isCustom = document.getElementById('ps-is-custom').checked;
+                        let ten = '';
+                        let nhom = document.getElementById('ps-loai').value;
+
+                        if (isCustom) {
+                            ten = document.getElementById('ps-ten-input').value.trim();
+                        } else {
+                            const selId = document.getElementById('ps-ten-select').value;
+                            if (!selId) { showToast('Vui lòng chọn công việc!', 'warning'); return; }
+                            ten = masterTasks[selId].tenNhiemVu;
+                        }
+
                         const nguoi = document.getElementById('ps-nguoi').value.trim();
-                        const nhom = document.getElementById('ps-nhom').value.trim();
                         const chiTieu = parseFloat(document.getElementById('ps-chitieu').value) || 1;
                         const dvt = document.getElementById('ps-dvt').value.trim() || 'lượt';
+                        const uutien = document.getElementById('ps-uutien').value;
 
                         if (!ten || !nguoi || !nhom) {
                             showToast("Vui lòng nhập đủ các thông tin bắt buộc!", "warning");
@@ -4478,7 +4557,7 @@
                                 dvt: dvt,
                                 nguoiPhuTrach: nguoi,
                                 nguoiPhoiHop: '',
-                                mucDoUuTien: 'Trung bình',
+                                mucDoUuTien: uutien,
                                 trangThai: 'dang_thuc_hien', // ← Yêu cầu đánh giá kết quả sau (không tự hoàn thành 100%)
                                 isPhatSinh: true,
                                 danhGia: null // ← Cán bộ phải đánh giá qua giao diện bình thưỜng
@@ -4989,11 +5068,11 @@
 
                                 if (prog < 100 && !reason.trim() && res !== 'Chuyển sang ngày khác' && res !== 'Chưa thực hiện') {
                                     showToast(`Công việc "${t.tenCongViec}" chưa hoàn thành phải nhập nguyên nhân!`, 'error');
-                                    toggleEvalForm(key); hasError = true; break;
+                                    toggleEvalForm(key); hasError = true; continue;
                                 }
                                 if (res === 'Chuyển sang ngày khác' && !transDate) {
                                     showToast(`Công việc "${t.tenCongViec}" chưa chọn ngày chuyển!`, 'error');
-                                    hasError = true; break;
+                                    hasError = true; continue;
                                 }
                             }
 
@@ -5481,8 +5560,7 @@
                         if (!rptTextEl || !rptTextEl.value) {
                             return showToast('Không có nội dung để copy!', 'warning');
                         }
-                        rptTextEl.select();
-                        document.execCommand('copy');
+                        navigator.clipboard.writeText(rptTextEl.value);
                         showToast('Đã copy văn bản báo cáo!');
                     };
 
@@ -6433,7 +6511,7 @@
                             const staffMap = {};
                             const ensureStaff = (n) => {
                                 if (!staffMap[n]) staffMap[n] = {
-                                    tongCV: 0, htDungHan: 0, htMotPhan: 0, chuaThucHien: 0,
+                                    tongCV: 0, htDungHan: 0, htMotPhan: 0, chuaThucHien: 0, daChuyenNgay: 0,
                                     vuotChiTieu: 0, htSomDaiNgay: 0, phatSinhHT: 0, tuDongChot: 0,
                                     sumW: 0, sumWP: 0, uuTienCaoHT: 0, uuTienCaoTotal: 0, _tasks: []
                                 };
@@ -6456,6 +6534,12 @@
                                         const w = t.mucDoUuTien === 'Cao' ? 3 : t.mucDoUuTien === 'Thấp' ? 1 : 2;
                                         const isDone = pct >= 100 || dg.ketQua === 'Hoàn thành';
 
+                                        // BỎ QUA phạt nếu là nhiệm vụ Dài ngày - Tích 1 lần mà chưa đến hạn và chưa làm
+                                        const isOneTimeNVXN = t.isOneTimeNVXN || (t.nvxnLinkId && t.ghiChu && t.ghiChu.includes('tích Hoàn thành'));
+                                        if (isOneTimeNVXN && !isDone && t.hanHoanThanh && dStr < t.hanHoanThanh) {
+                                            return; // Bỏ qua task này, không cộng vào tongCV hay tính điểm
+                                        }
+
                                         st.tongCV++;
                                         st.sumW += w;
                                         st.sumWP += pct * w;
@@ -6465,9 +6549,16 @@
                                         }
 
                                         // Phân loại
-                                        if (!isDone && pct === 0) { st.chuaThucHien++; }
-                                        else if (!isDone && pct > 0) { st.htMotPhan++; }
-                                        else { st.htDungHan++; }
+                                        const isTransferred = dg.ketQua === 'Chuyển sang ngày khác';
+                                        if (isTransferred) {
+                                            st.daChuyenNgay++;
+                                        } else if (!isDone && pct === 0) { 
+                                            st.chuaThucHien++; 
+                                        } else if (!isDone && pct > 0) { 
+                                            st.htMotPhan++; 
+                                        } else { 
+                                            st.htDungHan++; 
+                                        }
 
                                         if (rawPct > 100) st.vuotChiTieu++;
                                         if (t.nvxnLinkId && isDone && dStr < (t.hanHoanThanh || '9999')) st.htSomDaiNgay++;
@@ -6531,6 +6622,7 @@
                                     htDungHan: st.htDungHan,
                                     htMotPhan: st.htMotPhan,
                                     chuaThucHien: st.chuaThucHien,
+                                    daChuyenNgay: st.daChuyenNgay,
                                     vuotChiTieu: st.vuotChiTieu,
                                     htSomDaiNgay: st.htSomDaiNgay,
                                     phatSinhHT: st.phatSinhHT,
@@ -6958,6 +7050,7 @@
                                             ? `⚠ Đã quá hạn — còn thiếu ${remaining}/${task.tongSoLuong} ${task.dvt || ''} (hạn ${formatDMY(task.hanHoanThanh)})`
                                             : `Còn lại ${remaining}/${task.tongSoLuong} ${task.dvt || ''} — hạn ${formatDMY(task.hanHoanThanh)}`,
                                         isPhatSinh: false,
+                                        hanHoanThanh: task.hanHoanThanh,
                                         nvxnLinkId: task.id,
                                         trangThai: 'dang_thuc_hien',
                                         danhGia: null
@@ -6987,6 +7080,8 @@
                                             ? `⚠ Đã quá hạn ${-daysUntil} ngày (hạn ${formatDMY(task.hanHoanThanh)}) — tích Hoàn thành để đóng nhiệm vụ`
                                             : `Hạn hoàn thành: ${formatDMY(task.hanHoanThanh)} (còn ${daysUntil} ngày) — tích Hoàn thành khi xong`,
                                         isPhatSinh: false,
+                                        isOneTimeNVXN: true,
+                                        hanHoanThanh: task.hanHoanThanh,
                                         nvxnLinkId: task.id,
                                         trangThai: 'dang_thuc_hien',
                                         danhGia: null
