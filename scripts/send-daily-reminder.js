@@ -1,182 +1,97 @@
-/**
- * Script gửi thông báo FCM nhắc nhở đánh giá cuối ngày
- * Chạy bởi GitHub Actions lúc 17:00 giờ Việt Nam mỗi ngày
- * KHÔNG cần Firebase Cloud Functions, KHÔNG cần thẻ tín dụng
- */
+// send-daily-reminder.js
+// Chạy lúc ~17:07 VN — nhắc cán bộ chưa đánh giá kết quả công việc hôm nay
+'use strict';
 
-const admin = require('firebase-admin');
-
-// Đọc Service Account từ GitHub Secrets
-// Secret được lưu dạng Base64 để tránh lỗi private_key bị gãy dòng
-if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-    console.error('❌ Thiếu biến môi trường FIREBASE_SERVICE_ACCOUNT!');
-    process.exit(1);
-}
-
-let serviceAccount;
-try {
-    // Thử giải mã Base64 trước
-    const decoded = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf8');
-    serviceAccount = JSON.parse(decoded);
-    console.log('✅ Đọc Service Account thành công (Base64).');
-} catch (e1) {
-    // Nếu không phải Base64 thì thử đọc JSON thẳng
-    try {
-        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-        // Sửa private_key nếu bị escape
-        if (serviceAccount.private_key) {
-            serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-        }
-        console.log('✅ Đọc Service Account thành công (JSON).');
-    } catch (e2) {
-        console.error('❌ Không thể đọc FIREBASE_SERVICE_ACCOUNT:', e2.message);
-        process.exit(1);
-    }
-}
-admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: "https://baocaongay-78245-default-rtdb.asia-southeast1.firebasedatabase.app"
-});
-
-const db = admin.database();
-const messaging = admin.messaging();
-
-// URL ứng dụng Netlify (đổi thành URL thật của bạn)
-const APP_URL = process.env.APP_URL || 'https://your-app.netlify.app/';
+const { getDb, getTodayVN, formatDMY } = require('./utils/firebase');
+const { sendReminder }                 = require('./utils/zalo');
 
 async function main() {
-    // Ngày hôm nay theo múi giờ Việt Nam
-    const todayStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Asia/Ho_Chi_Minh" });
-    console.log(`📅 Kiểm tra công việc ngày: ${todayStr}`);
+  const today   = getTodayVN();
+  const todayDMY = formatDMY(today);
+  console.log(`[${new Date().toISOString()}] Bắt đầu nhắc cuối ngày — ${todayDMY}`);
 
-    // Lấy tất cả công việc hôm nay
-    const tasksSnap = await db.ref(`keHoachNgay/${todayStr}`).get();
-    if (!tasksSnap.exists()) {
-        console.log('✅ Không có công việc hôm nay. Không gửi thông báo.');
-        process.exit(0);
+  const db = getDb();
+
+  // 1. Lấy danh sách cán bộ + Zalo ID mapping
+  const [staffSnap, zaloSnap, tasksSnap] = await Promise.all([
+    db.ref('danhMucCanBo').once('value'),
+    db.ref('zaloIds').once('value'),         // { "Nguyễn Văn A": "zalo_user_id" }
+    db.ref(`keHoachNgay/${today}`).once('value'),
+  ]);
+
+  const staffList = staffSnap.val() || [];
+  const allNames  = staffList.map(s => (typeof s === 'string' ? s : s.ten));
+  const zaloIdMap = zaloSnap.val() || {};
+
+  // 2. Không có kế hoạch hôm nay → không nhắc
+  if (!tasksSnap.exists()) {
+    console.log('Không có kế hoạch nào hôm nay. Bỏ qua.');
+    return;
+  }
+
+  const tasks = Object.values(tasksSnap.val());
+
+  // 3. Tìm cán bộ có việc chưa đánh giá
+  const unevalMap = {}; // { name: count }
+  for (const t of tasks) {
+    const name = t.nguoiPhuTrach;
+    if (!name || !allNames.includes(name)) continue;
+    if (!t.danhGia || !t.danhGia.thoiDiemDanhGia) {
+      unevalMap[name] = (unevalMap[name] || 0) + 1;
     }
+  }
 
-    const tasks = Object.values(tasksSnap.val());
+  const unevalList = Object.entries(unevalMap)
+    .sort((a, b) => b[1] - a[1])            // Người nhiều việc tồn lên trước
+    .map(([name, count]) => ({ name, count }));
 
-    // Nhóm công việc chưa đánh giá theo cán bộ
-    const pendingByStaff = {};
-    tasks.forEach(task => {
-        if (!task.danhGia || !task.danhGia.thoiDiemDanhGia) {
-            const staff = task.nguoiPhuTrach;
-            if (staff) pendingByStaff[staff] = (pendingByStaff[staff] || 0) + 1;
-        }
-    });
+  if (unevalList.length === 0) {
+    console.log('✅ Tất cả cán bộ đã đánh giá xong. Không cần nhắc.');
+    return;
+  }
 
-    const totalPending = Object.values(pendingByStaff).reduce((a, b) => a + b, 0);
-    console.log(`📊 Tổng công việc chưa đánh giá: ${totalPending} của ${Object.keys(pendingByStaff).length} cán bộ`);
+  console.log(`Cần nhắc ${unevalList.length} cán bộ:`,
+    unevalList.map(x => `${x.name}(${x.count})`).join(', '));
 
-    // Lấy FCM tokens từ Firebase
-    const tokensSnap = await db.ref('fcmTokens').get();
-    if (!tokensSnap.exists()) {
-        console.log('⚠️ Chưa có FCM token nào được đăng ký.');
-        process.exit(0);
-    }
+  const appUrl = process.env.APP_URL || '';
+  const names  = unevalList.map(x => x.name);
 
-    const tokens = tokensSnap.val();
-    const messages = [];
+  // 4. Gửi tin nhắn cá nhân (nếu có Zalo ID) hoặc broadcast
+  await sendReminder({
+    names,
+    zaloIdMap,
 
-    // Gửi thông báo cá nhân cho từng cán bộ còn việc chưa đánh giá
-    for (const [staff, count] of Object.entries(pendingByStaff)) {
-        const token = tokens[staff];
-        if (!token) {
-            console.log(`⚠️ Không có token cho: ${staff}`);
-            continue;
-        }
-        messages.push({
-            token,
-            notification: {
-                title: '⏰ Nhắc nhở đánh giá cuối ngày',
-                body: `Đ/c ${staff} còn ${count} công việc chưa đánh giá kết quả hôm nay!`
-            },
-            webpush: {
-                notification: { 
-                    icon: 'icon-192.png',
-                    badge: 'icon-192.png',
-                    vibrate: [300, 100, 300, 100, 300],
-                    requireInteraction: true, 
-                    tag: 'pccc-eval-reminder', 
-                    renotify: true 
-                },
-                fcmOptions: { link: APP_URL }
-            },
-            data: { staff, count: String(count), date: todayStr }
-        });
-    }
+    // Tin nhắn cá nhân — chỉ hiện số việc của người đó
+    message: (name) => {
+      const count = unevalMap[name];
+      return [
+        `⏰ NHẮC NHỞ — ${todayDMY}`,
+        ``,
+        `Đ/c ${name} ơi, bạn còn ${count} công việc hôm nay chưa được đánh giá kết quả.`,
+        `Vui lòng hoàn thành trước 17:30 để kịp thống kê.`,
+        appUrl ? `\n🔗 Vào hệ thống: ${appUrl}` : '',
+      ].filter(Boolean).join('\n');
+    },
 
-    // Gửi báo cáo tổng hợp cho Admin
-    const adminToken = tokens['Admin'];
-    if (adminToken) {
-        let adminTitle = `📊 Báo cáo cuối ngày ${todayStr}`;
-        let adminBody = '';
+    // Broadcast cho người chưa có Zalo ID — hiện cả danh sách
+    broadcastFallbackMessage: (remaining) => {
+      const lines = remaining.map(n => `  • ${n}: ${unevalMap[n]} việc`);
+      return [
+        `⏰ NHẮC NHỞ ĐÁNH GIÁ CUỐI NGÀY — ${todayDMY}`,
+        ``,
+        `Các đồng chí dưới đây còn việc chưa đánh giá kết quả:`,
+        ...lines,
+        ``,
+        `Vui lòng vào hệ thống hoàn thành trước 17:30.`,
+        appUrl ? `🔗 ${appUrl}` : '',
+      ].filter(Boolean).join('\n');
+    },
+  });
 
-        if (totalPending > 0) {
-            const staffNames = Object.keys(pendingByStaff);
-            const preview = staffNames.slice(0, 3).join(', ');
-            const more = staffNames.length > 3 ? ` và ${staffNames.length - 3} người khác` : '';
-            adminBody = `Còn ${totalPending} việc chưa đánh giá: ${preview}${more}`;
-        } else {
-            adminBody = `Tuyệt vời! 100% công việc hôm nay đã được đánh giá kết quả.`;
-        }
-
-        messages.push({
-            token: adminToken,
-            notification: {
-                title: adminTitle,
-                body: adminBody
-            },
-            webpush: {
-                notification: { 
-                    icon: 'icon-192.png',
-                    badge: 'icon-192.png',
-                    requireInteraction: true,
-                    tag: 'pccc-admin-report'
-                },
-                fcmOptions: { link: APP_URL }
-            }
-        });
-    }
-
-    if (messages.length === 0) {
-        console.log('⚠️ Không có token hợp lệ để gửi.');
-        process.exit(0);
-    }
-
-    // Gửi tất cả thông báo
-    console.log(`📤 Đang gửi ${messages.length} thông báo...`);
-    const result = await messaging.sendEach(messages);
-    console.log(`✅ Kết quả: ${result.successCount} thành công / ${result.failureCount} thất bại`);
-
-    // Xóa token hết hạn
-    const expiredStaff = [];
-    result.responses.forEach((resp, idx) => {
-        if (!resp.success) {
-            console.log(`  ❌ [${idx}] ${resp.error?.code}: ${resp.error?.message}`);
-            const code = resp.error?.code;
-            if (code === 'messaging/registration-token-not-registered' || code === 'messaging/invalid-registration-token') {
-                const failedToken = messages[idx].token;
-                for (const [staff, token] of Object.entries(tokens)) {
-                    if (token === failedToken) expiredStaff.push(staff);
-                }
-            }
-        }
-    });
-
-    if (expiredStaff.length > 0) {
-        console.log(`🧹 Xóa ${expiredStaff.length} token hết hạn: ${expiredStaff.join(', ')}`);
-        const updates = {};
-        expiredStaff.forEach(s => { updates[`fcmTokens/${s}`] = null; });
-        await db.ref().update(updates);
-    }
-
-    process.exit(0);
+  console.log(`[${new Date().toISOString()}] Hoàn thành.`);
 }
 
 main().catch(e => {
-    console.error('💥 Lỗi không xử lý được:', e);
-    process.exit(1);
+  console.error('Lỗi không xử lý được:', e);
+  process.exit(1);
 });

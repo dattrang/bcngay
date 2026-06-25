@@ -1,9 +1,14 @@
 {
-  "name": "pccc-reminder-script",
+  "name": "ctcn-reminder-scripts",
   "version": "1.0.0",
-  "description": "Script gửi nhắc nhở đánh giá cuối ngày qua FCM",
-  "main": "send-daily-reminder.js",
+  "description": "Reminder scripts for CTCN - gửi nhắc nhở qua Zalo OA",
+  "main": "index.js",
+  "scripts": {
+    "daily": "node send-daily-reminder.js",
+    "morning": "node send-morning-reminder.js"
+  },
   "dependencies": {
-    "firebase-admin": "^12.0.0"
+    "axios": "^1.7.2",
+    "firebase-admin": "^12.3.0"
   }
 }

@@ -1,0 +1,27 @@
+# render.yaml — Đặt file này ở ROOT của repo GitHub
+# Render tự đọc file này và cấu hình service tự động
+# Tài liệu: https://render.com/docs/infrastructure-as-code
+
+services:
+  - type: web
+    name: ctcn-zalo-webhook
+    runtime: node
+    rootDir: webhook          # Render chỉ build từ thư mục này
+    buildCommand: npm install
+    startCommand: npm start
+    plan: free                # Free tier: tắt sau 15 phút idle, khởi động lại ~30s
+
+    # Biến môi trường — điền giá trị thật trong Render Dashboard
+    # KHÔNG điền giá trị nhạy cảm vào đây (file này public trên GitHub)
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      # Các secret sau: điền trong Render Dashboard → Environment
+      - key: FIREBASE_SERVICE_ACCOUNT
+        sync: false           # sync: false = phải điền thủ công trong Dashboard
+      - key: ZALO_OA_ACCESS_TOKEN
+        sync: false
+      - key: ZALO_APP_SECRET
+        sync: false
