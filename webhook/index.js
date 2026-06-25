@@ -11,7 +11,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ──────────────────────────────────────────────
-// Firebase Admin — khởi tạo lazy (không crash khi thiếu env var lúc start)
+// Firebase Admin — khởi tạo lazy
 // ──────────────────────────────────────────────
 let _db = null;
 function getDb() {
@@ -19,20 +19,14 @@ function getDb() {
 
   const raw = process.env.FIREBASE_SERVICE_ACCOUNT;
   if (!raw || raw.trim() === '') {
-    throw new Error(
-      'Thiếu biến môi trường FIREBASE_SERVICE_ACCOUNT.\n' +
-      'Vào Render Dashboard → Environment → điền giá trị JSON Firebase.'
-    );
+    throw new Error('Thiếu biến môi trường FIREBASE_SERVICE_ACCOUNT.');
   }
 
   let sa;
   try {
     sa = JSON.parse(raw);
   } catch {
-    throw new Error(
-      'FIREBASE_SERVICE_ACCOUNT không phải JSON hợp lệ.\n' +
-      'Kiểm tra lại: mở file JSON bằng Notepad → Ctrl+A → Ctrl+C → paste nguyên vào Render.'
-    );
+    throw new Error('FIREBASE_SERVICE_ACCOUNT không phải JSON hợp lệ.');
   }
 
   if (!admin.apps.length) {
@@ -47,15 +41,12 @@ function getDb() {
 }
 
 // ──────────────────────────────────────────────
-// Kiểm tra env vars khi khởi động — báo lỗi rõ ràng thay vì crash im lặng
+// Kiểm tra env vars khi khởi động
 // ──────────────────────────────────────────────
 const REQUIRED_ENVS = ['FIREBASE_SERVICE_ACCOUNT', 'ZALO_OA_ACCESS_TOKEN'];
 const missing = REQUIRED_ENVS.filter(k => !process.env[k] || process.env[k].trim() === '');
 if (missing.length > 0) {
-  console.error('❌ Thiếu các biến môi trường bắt buộc:', missing.join(', '));
-  console.error('   Vào Render Dashboard → tab "Environment" → điền đủ các biến trên → Save Changes');
-  // Không process.exit() — để server vẫn start, health check vẫn pass
-  // Chỉ báo lỗi khi có request thật
+  console.error('❌ Thiếu env vars:', missing.join(', '));
 }
 
 // ──────────────────────────────────────────────
@@ -88,10 +79,19 @@ async function replyToUser(userId, text) {
 }
 
 // ──────────────────────────────────────────────
+// Xác thực domain với Zalo (thay vì DNS TXT record)
+// Zalo gọi GET endpoint này để xác minh domain bcngay.onrender.com
+// ──────────────────────────────────────────────
+app.get('/zalo-platform-site-verification', (req, res) => {
+  const code = process.env.ZALO_VERIFY_CODE || 'HCMw1C_4EWijr95MszenKp_AvMlJkpSrCJG';
+  res.send(code);
+});
+
+// ──────────────────────────────────────────────
 // Webhook endpoint chính
 // ──────────────────────────────────────────────
 app.post('/zalo-webhook', async (req, res) => {
-  res.sendStatus(200); // Trả 200 ngay để Zalo không retry
+  res.sendStatus(200);
 
   if (!verifyZaloSignature(req)) {
     console.warn('Webhook signature không hợp lệ, bỏ qua.');
@@ -196,7 +196,7 @@ app.post('/zalo-webhook', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────
-// Health check — Render dùng endpoint này để kiểm tra server còn sống
+// Health check
 // ──────────────────────────────────────────────
 app.get('/', (req, res) => {
   const envOk = REQUIRED_ENVS.every(k => process.env[k] && process.env[k].trim() !== '');
@@ -211,6 +211,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`✅ Webhook server chạy tại cổng ${PORT}`);
   if (missing.length > 0) {
-    console.warn(`⚠️  Thiếu env vars: ${missing.join(', ')} — vào Render Dashboard điền đủ`);
+    console.warn(`⚠️  Thiếu env vars: ${missing.join(', ')}`);
   }
 });
