@@ -1,0 +1,92 @@
+graph TB
+    subgraph FIREBASE["🔥 Firebase Realtime Database"]
+        FB1[(qlcv_tasks\nkpiRef · kpiValue\nassignees · status)]
+        FB2[(qlcv_persons\nid · name · cluster\ndept · role)]
+        FB3[(qlcv_accounts\nusername · password\nrole · personId)]
+        FB4[(qlcv_master_template\nkpi groups · okr groups\nunit · weight · target)]
+        FB5[(kpi_targets / personId\nactual · progress\nper-person targets)]
+        FB6[(masterData\nclusters · categories)]
+    end
+
+    subgraph INDEX["📄 index.html — Quản lý Công việc"]
+        direction TB
+        A1[🔐 Login\ndoLogin\ncurrentAccount]
+        A2{Role?}
+        A3[renderDashboard\nAdmin view\nAll persons]
+        A4[renderStaffDashboard\nStaff view\nTasks of mine]
+        A5[renderPersonView\nAdmin xem 1 người]
+        A6[renderAllTasks\nAdmin xem tất cả]
+        A7[openTaskModal\nkpiRef + kpiValue\nGắn chỉ tiêu]
+        A8[rebuildKpiRefDd\nCombo chọn KPI/OKR]
+        A9[masterKPIs / masterOKRs\nLocal state]
+
+        A1 --> A2
+        A2 -->|admin| A3
+        A2 -->|staff| A4
+        A3 --> A5
+        A3 --> A6
+        A7 -->|save kpiRef| FB1
+        A8 --> A9
+    end
+
+    subgraph KPI_MGR["📊 kpi_okr_manager.html — Quản trị Chỉ tiêu"]
+        direction TB
+        B1[Person Selector\nperson-selector]
+        B2[loadTargetsForPerson\npid]
+        B3[autoCalculateKpiFromTasks\nQuét tasks có kpiRef]
+        B4[renderTables\nKPI Table · OKR Table]
+        B5[renderDashboard\nDash cards · Score]
+        B6[saveAllChanges\nLưu kpi_targets/pid]
+        B7[saveMasterTemplate\nLưu qlcv_master_template]
+        B8[assignToAllUnit\nGiao khung cho tất cả CBCS]
+        B9[exportExcelKPI\nXuất báo cáo]
+        B10[openKpiSettings Modal\nunit · weight · period\npriority · min · target]
+        B11[openOkrSettings Modal\ndeadline · weight]
+        B12[currentKPIs · currentOKRs\nLocal state]
+
+        B1 --> B2
+        B2 --> B12
+        B3 --> B12
+        B12 --> B4
+        B12 --> B5
+        B4 --> B10
+        B4 --> B11
+        B6 --> FB5
+        B7 --> FB4
+        B3 -->|đọc| FB1
+    end
+
+    subgraph LINK["🔗 Liên kết Dữ liệu (kpiRef)"]
+        L1[Task.kpiRef = kpi_1_1\nTask.kpiValue = 1\nTask.status = done]
+        L2[KPI item id = kpi_1_1\nunit = hộ / % / lần\ntarget = 100]
+        L1 -->|match id| L2
+    end
+
+    %% External data flows
+    FB3 --> A1
+    FB2 --> A4
+    FB1 --> A4
+    FB4 --> A9
+    FB6 --> INDEX
+
+    FB2 --> B1
+    FB4 --> B2
+    FB5 --> B2
+    FB1 --> B3
+
+    A7 -.->|kpiRef gắn vào task| LINK
+    B3 -.->|đọc kpiRef tính actual| LINK
+
+    %% Missing link - proposed
+    FB5 -.->|❌ CHƯA CÓ\nĐề xuất tích hợp| A4
+
+    classDef firebase fill:#FF9800,stroke:#E65100,color:#fff,rx:8
+    classDef index fill:#1976D2,stroke:#0D47A1,color:#fff
+    classDef kpimgr fill:#388E3C,stroke:#1B5E20,color:#fff
+    classDef link fill:#7B1FA2,stroke:#4A148C,color:#fff
+    classDef missing stroke-dasharray:5 5,fill:#FFEBEE,color:#C62828
+
+    class FB1,FB2,FB3,FB4,FB5,FB6 firebase
+    class A1,A2,A3,A4,A5,A6,A7,A8,A9 index
+    class B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12 kpimgr
+    class L1,L2 link

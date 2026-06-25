@@ -1,0 +1,1828 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hệ thống Quản trị Chỉ tiêu KPI & OKR (CSKV)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1d4ed8;
+            --primary-light: #dbeafe;
+            --success: #059669;
+            --success-light: #d1fae5;
+            --warn: #d97706;
+            --warn-light: #fef3c7;
+            --danger: #dc2626;
+            --danger-light: #fee2e2;
+            --purple: #7c3aed;
+            --purple-light: #ede9fe;
+            --teal: #0f766e;
+            --teal-light: #ccfbf1;
+            --bg: #f1f5f9;
+            --border: #e2e8f0;
+            --text-muted: #64748b;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1500px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        /* HEADER */
+        .header-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 9px 18px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+            font-size: 13px;
+        }
+
+        .btn:hover {
+            opacity: 0.85;
+            transform: translateY(-1px);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: #fff;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-warn {
+            background: var(--warn);
+            color: #fff;
+        }
+
+        .btn-teal {
+            background: var(--teal);
+            color: #fff;
+        }
+
+        /* TOOLBAR */
+        .toolbar {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            border: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        select,
+        input[type="text"],
+        input[type="number"],
+        input[type="date"] {
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            outline: none;
+            font-family: inherit;
+            font-size: 13px;
+        }
+
+        select:focus,
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-light);
+        }
+
+        /* TABS */
+        .tab-bar {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 20px;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            background: none;
+            font-weight: bold;
+            cursor: pointer;
+            color: var(--text-muted);
+            border-bottom: 3px solid transparent;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background: #f8fafc;
+            border-radius: 6px 6px 0 0;
+        }
+
+        /* PANEL & DASHBOARD */
+        .panel {
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .panel h3 {
+            margin-top: 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--primary);
+            border-bottom: 1px solid #eee;
+            padding-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .dash-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 20px;
+        }
+
+        .dash-card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
+
+        .dash-card h4 {
+            margin: 0 0 15px 0;
+            color: var(--text-muted);
+            font-size: 13px;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .dash-value {
+            font-size: 36px;
+            font-weight: 800;
+            margin: 10px 0;
+        }
+
+        /* TABLE */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th,
+        td {
+            padding: 7px 8px;
+            border-bottom: 1px solid #f1f5f9;
+            text-align: left;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #f8fafc;
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            white-space: normal;
+            line-height: 1.2;
+            vertical-align: bottom;
+        }
+
+        tr:hover td {
+            background: #fafbfc;
+        }
+
+        /* EDITABLE CELLS */
+        .input-text {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 5px 7px;
+            border: 1px solid transparent;
+            border-radius: 4px;
+            outline: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 13px;
+            transition: 0.15s;
+        }
+
+        .input-text:hover,
+        .input-text:focus {
+            border: 1px dashed #94a3b8;
+            background: #fff;
+        }
+
+        textarea.input-text {
+            resize: none;
+            overflow: hidden;
+            line-height: 1.4;
+            white-space: pre-wrap;
+            word-break: break-word;
+            min-height: 32px;
+        }
+
+        .input-num {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 5px 7px;
+            border: 1px dashed #f59e0b;
+            border-radius: 4px;
+            outline: none;
+            background: #fffbeb;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .input-num:focus {
+            border-color: var(--warn);
+            background: #fff;
+        }
+
+        select.input-text {
+            cursor: pointer;
+        }
+
+        /* GROUP TITLE ROW */
+        .grp-title-row td {
+            padding: 4px 8px;
+        }
+
+        .grp-title-wrap {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #e0e7ff;
+            color: #1e3a8a;
+            padding: 6px 10px;
+            border-radius: 6px;
+            gap: 8px;
+        }
+
+        .grp-title-wrap.okr {
+            background: var(--teal-light);
+            color: var(--teal);
+        }
+
+        .grp-title-input {
+            font-weight: 700;
+            color: inherit;
+            font-size: 13px;
+            flex: 1;
+        }
+
+        .grp-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            white-space: nowrap;
+        }
+
+        /* WEIGHT BADGE */
+        .weight-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .weight-ok {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .weight-over {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .weight-warn {
+            background: var(--warn-light);
+            color: var(--warn);
+        }
+
+        .weight-empty {
+            background: #f1f5f9;
+            color: var(--text-muted);
+        }
+
+        /* PRIORITY BADGE */
+        .priority-cao {
+            color: #fff;
+            background: var(--danger);
+            padding: 2px 7px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .priority-tb {
+            color: #fff;
+            background: var(--warn);
+            padding: 2px 7px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .priority-thap {
+            color: #fff;
+            background: var(--success);
+            padding: 2px 7px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        /* STATUS BADGE - OKR */
+        .status-select {
+            padding: 3px 6px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .status-chuabatdau {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .status-danglam {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-hoanthanh {
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        .status-ruiro {
+            background: var(--danger-light);
+            color: var(--danger);
+        }
+
+        /* ACTION BTNS */
+        .action-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 2px;
+            opacity: 0.6;
+            transition: 0.15s;
+            padding: 3px 5px;
+            border-radius: 4px;
+        }
+
+        .action-btn:hover {
+            opacity: 1;
+            background: #f1f5f9;
+            transform: scale(1.15);
+        }
+
+        .del-btn {
+            color: var(--danger) !important;
+        }
+
+        .add-btn {
+            background: var(--primary-light);
+            color: var(--primary);
+            border: 1px dashed var(--primary);
+            width: 100%;
+            padding: 7px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: bold;
+            margin-top: 2px;
+            transition: 0.2s;
+        }
+
+        .add-btn:hover {
+            background: #bfdbfe;
+        }
+
+        .add-btn.okr {
+            background: var(--teal-light);
+            color: var(--teal);
+            border-color: var(--teal);
+        }
+
+        .add-btn.okr:hover {
+            background: #99f6e4;
+        }
+
+        /* STATUS TAG */
+        .status-tag {
+            padding: 5px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            background: var(--success-light);
+            color: var(--success);
+        }
+
+        /* FOOTER TOTAL */
+        .total-weight-bar {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-top: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+        }
+
+        /* INFO BOX */
+        .info-note {
+            background: #fef3c7;
+            border-left: 3px solid #f59e0b;
+            padding: 8px 12px;
+            font-size: 11px;
+            color: #92400e;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 12px;
+        }
+
+        /* MOBILE */
+        /* ================= MOBILE OPTIMIZATION (BẢN GỌN NHẸ MỚI) ================= */
+        @media (max-width: 768px) {
+            body {
+                padding: 5px;
+            }
+
+            .container {
+                padding: 8px;
+                border-radius: 0;
+                box-shadow: none;
+            }
+
+            .header-panel {
+                flex-direction: column;
+            }
+
+            .header-panel>div:last-child {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                width: 100%;
+            }
+
+            .header-panel .btn {
+                width: 100%;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            #person-selector {
+                width: 100%;
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            /* Tab bar vuốt ngang */
+            .tab-bar {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 5px;
+                border: none;
+                gap: 6px;
+            }
+
+            .tab-btn {
+                flex: 0 0 auto;
+                white-space: nowrap;
+                font-size: 12px;
+                padding: 8px 12px;
+                border: 1px solid var(--border) !important;
+                border-radius: 6px;
+            }
+
+            .panel {
+                padding: 0;
+                border: none;
+                margin-top: 10px;
+            }
+
+            .panel>div {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                padding-bottom: 10px;
+            }
+
+            /* --- BẢNG ÔM SÁT CHỮ --- */
+            table {
+                width: 100%;
+                min-width: auto;
+            }
+
+            /* Xóa mọi width cứng, ép chữ trên 1 dòng để cột nhỏ gọn lại */
+            th,
+            td {
+                width: auto !important;
+                padding: 6px 4px !important;
+                /* Giảm khoảng trống thừa */
+                white-space: nowrap;
+                font-size: 12px !important;
+            }
+
+            th {
+                white-space: normal !important;
+                text-align: center;
+                vertical-align: bottom;
+            }
+
+            /* Riêng Cột 1 (Tên nhiệm vụ) cho xuống dòng, cố định bên trái nhưng chiều rộng vừa phải */
+            th:first-child,
+            td:first-child {
+                white-space: normal !important;
+                width: 45vw !important;
+                min-width: 45vw !important;
+                max-width: 45vw !important;
+                position: sticky;
+                left: 0;
+                background: #fff;
+                z-index: 1;
+                box-shadow: 2px 0 5px rgba(0, 0, 0, 0.08);
+            }
+
+            th:first-child {
+                background: #f8fafc;
+                z-index: 2;
+            }
+
+            /* Dòng tên nhóm (Group) không bị dính bên trái */
+            tr.grp-title-row td {
+                position: static !important;
+                box-shadow: none;
+                z-index: 0;
+                white-space: normal;
+            }
+
+            /* --- THU NHỎ Ô NHẬP LIỆU --- */
+            .input-text,
+            .input-num {
+                font-size: 13px !important;
+                padding: 4px !important;
+            }
+
+            /* Ô nhập số (Trọng số, Mục tiêu, Thực hiện) chỉ cần bé xíu */
+            .input-num {
+                width: 45px !important;
+                text-align: center;
+            }
+
+            /* Dropdown tự động co giãn theo chữ đang chọn */
+            select.input-text {
+                width: auto !important;
+            }
+
+            /* Thu nhỏ các nút bấm Thêm/Xóa/Nhân bản */
+            .action-btn {
+                font-size: 16px;
+                padding: 4px;
+                margin: 0;
+            }
+
+            .add-btn {
+                padding: 12px !important;
+                font-size: 12px !important;
+                margin-top: 5px;
+            }
+
+            /* --- MODAL BOTTOM SHEET (GIAO DIỆN VUỐT CHẠM DI ĐỘNG) --- */
+            .modal-overlay {
+                align-items: flex-end;
+                /* Hiển thị phía dưới cùng của màn hình */
+                padding: 0;
+            }
+
+            .modal-box {
+                width: 100%;
+                max-width: 100%;
+                border-radius: 16px 16px 0 0;
+                /* Bo tròn góc trên để nhìn như Menu điện thoại */
+                animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+                margin: 0;
+                position: relative;
+            }
+
+            .modal-body {
+                max-height: 60vh;
+                /* Thu gọn chiều cao body */
+            }
+
+            /* Tách cột biểu mẫu thành xếp dọc */
+            .form-row {
+                flex-direction: column;
+                gap: 12px;
+                margin-bottom: 12px;
+            }
+        }
+
+        /* MODAL STYLES */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-box {
+            background: #fff;
+            width: 90%;
+            max-width: 450px;
+            border-radius: 10px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            animation: zoomIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+
+        .modal-header {
+            background: #f8fafc;
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            margin: 0;
+            color: var(--primary);
+            font-size: 16px;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            color: var(--text-muted);
+        }
+
+        .modal-body {
+            padding: 20px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+
+        .modal-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--border);
+            background: #f8fafc;
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .form-col {
+            flex: 1;
+        }
+
+        .form-col label {
+            display: block;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        .form-col input,
+        .form-col select {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        @keyframes zoomIn {
+            from {
+                transform: scale(0.95);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="header-panel">
+            <div>
+                <h1 style="margin:0; color:var(--primary);">🎯 Module Quản trị Chỉ tiêu KPI & OKR (CSKV)</h1>
+                <p style="margin:5px 0 0; color:var(--text-muted);">Gắn khung chuẩn cho toàn Đơn vị hoặc điều chỉnh
+                    riêng cho từng Cán bộ</p>
+            </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
+                <button class="btn btn-primary" onclick="saveMasterTemplate()">💾 Lưu thành Form Mẫu Chung</button>
+                <button class="btn btn-warn" onclick="assignToAllUnit()">🚀 Giao khung chuẩn cho TOÀN BỘ CBCS</button>
+                <button class="btn btn-success" onclick="saveAllChanges()">💾 Lưu chỉ tiêu người này</button>
+                <button class="btn btn-teal" style="background:#0f766e; color:#fff;" onclick="exportExcelKPI()">📊 Xuất
+                    Excel</button>
+            </div>
+        </div>
+
+        <div class="toolbar">
+            <strong>👤 Điều chỉnh riêng cho:</strong>
+            <select id="person-selector" onchange="loadTargetsForPerson(this.value)"
+                style="min-width:300px; font-size:13px;">
+                <option value="">-- Cấu hình KHUNG CHUẨN chung hoặc chọn 1 Cán bộ --</option>
+            </select>
+            <span id="sync-status" class="status-tag" style="background:#fef3c7;color:#92400e;">Đang kết nối...</span>
+        </div>
+
+        <div class="info-note">
+            ⚡ <strong>Quy tắc chốt:</strong> Tuần (Thứ 6) | Tháng, Quý, Năm (Ngày cuối cùng) &nbsp;|&nbsp;
+            🏋 <strong>Trọng số:</strong> Tổng % toàn bộ KPI phải = 100% | Trọng số từng KR trong 1 OKR phải = 100%
+        </div>
+
+        <div class="tab-bar">
+            <button class="tab-btn active" id="tab-dashboard-btn" onclick="switchTab('tab-dashboard', this)">📈
+                Dashboard Tổng quan</button>
+            <button class="tab-btn" id="tab-kpi-btn" onclick="switchTab('tab-kpi', this)">📊 Bảng KPI Thường
+                xuyên</button>
+            <button class="tab-btn" id="tab-okr-btn" onclick="switchTab('tab-okr', this)">🎯 Bảng OKR Cao điểm</button>
+        </div>
+        <div id="tab-dashboard" class="tab-content" style="display:block;">
+            <div class="dash-grid">
+                <div class="dash-card">
+                    <h4>📊 TỔNG ĐIỂM KPI <span>(Trên thang 100)</span></h4>
+                    <div class="dash-value" id="dash-kpi-score" style="color:var(--text-muted)">0.0</div>
+                    <div style="margin-top:15px; border-top:1px dashed #eee; padding-top:15px;" id="dash-kpi-groups">
+                    </div>
+                </div>
+
+                <div class="dash-card">
+                    <h4>🎯 TIẾN ĐỘ OKR TRUNG BÌNH <span>(Chiến dịch)</span></h4>
+                    <div class="dash-value" id="dash-okr-progress" style="color:var(--text-muted)">0%</div>
+                    <div style="margin-top:15px; border-top:1px dashed #eee; padding-top:15px;" id="dash-okr-status">
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="tab-kpi" class="tab-content" style="display:none;">
+            <div class="panel">
+                <h3>
+                    <span>📊 KPI Thường xuyên (Tháng/Quý)</span>
+                    <span id="total-weight-kpi" style="font-size:12px; font-weight:normal;"></span>
+                </h3>
+                <div style="max-height: 650px; overflow-y: auto; overflow-x: auto;">
+                    <div id="kpi-body"></div>
+                </div>
+                <div class="total-weight-bar" id="kpi-weight-footer" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div id="tab-okr" class="tab-content" style="display:none;">
+            <div class="panel">
+                <h3>
+                    <span>🎯 OKR Đợt Cao điểm (Chiến dịch)</span>
+                    <span style="font-weight:normal; color:var(--text-muted); font-size:12px;">Mỗi Objective có nhóm Key
+                        Results riêng | Trọng số KR trong 1 OKR = 100%</span>
+                </h3>
+                <div style="max-height: 650px; overflow-y: auto; overflow-x: auto;">
+                    <div id="okr-body"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI SETTINGS MODAL -->
+        <div class="modal-overlay" id="modal-kpi-settings" onclick="if(event.target===this) this.style.display='none'">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>⚙️ Cài đặt Chỉ tiêu KPI</h3>
+                    <button class="modal-close"
+                        onclick="document.getElementById('modal-kpi-settings').style.display='none'">✕</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="ks-gidx"><input type="hidden" id="ks-idx">
+                    <div class="form-row">
+                        <div class="form-col"><label>Chu kỳ</label>
+                            <select id="ks-period">
+                                <option value="Hàng ngày">Hàng ngày</option>
+                                <option value="Hàng tuần">Hàng tuần</option>
+                                <option value="Hàng tháng">Hàng tháng</option>
+                                <option value="Hàng quý">Hàng quý</option>
+                                <option value="Hàng năm">Hàng năm</option>
+                            </select>
+                        </div>
+                        <div class="form-col"><label>Ưu tiên</label>
+                            <select id="ks-priority">
+                                <option value="Cao">🔴 Cao</option>
+                                <option value="TB">🟡 TB</option>
+                                <option value="Thấp">🟢 Thấp</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col"><label>Trọng số (%)</label><input type="number" id="ks-weight" min="0"
+                                step="1"></div>
+                        <div class="form-col"><label>Đơn vị tính</label><input type="text" id="ks-unit"
+                                placeholder="VD: lần, %, vụ..."></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-col"><label>Kiểu dữ liệu</label>
+                            <select id="ks-type">
+                                <option value="so">🔢 Chấm điểm bằng Số</option>
+                                <option value="chu">📝 Đánh giá bằng Chữ</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div>
+                        <button class="btn" style="background:#f1f5f9;border:1px solid var(--border);"
+                            onclick="dupKpiFromModal()" title="Nhân bản">📄 Chép</button>
+                        <button class="btn btn-warn" style="background:var(--danger);" onclick="delKpiFromModal()"
+                            title="Xóa">🗑 Xóa</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveKpiSettings()">Lưu & Đóng</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- OKR SETTINGS MODAL -->
+        <div class="modal-overlay" id="modal-okr-settings" onclick="if(event.target===this) this.style.display='none'">
+            <div class="modal-box">
+                <div class="modal-header">
+                    <h3>⚙️ Cài đặt Key Result</h3>
+                    <button class="modal-close"
+                        onclick="document.getElementById('modal-okr-settings').style.display='none'">✕</button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="os-gidx"><input type="hidden" id="os-idx">
+                    <div class="form-row">
+                        <div class="form-col"><label>Thời hạn (Deadline)</label><input type="text" id="os-deadline"
+                                placeholder="VD: Tháng 3/2025"></div>
+                        <div class="form-col"><label>Trọng số (%)</label><input type="number" id="os-weight" min="0"
+                                step="5"></div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div>
+                        <button class="btn" style="background:#f1f5f9;border:1px solid var(--border);"
+                            onclick="dupOkrFromModal()" title="Nhân bản">📄 Chép</button>
+                        <button class="btn btn-warn" style="background:var(--danger);" onclick="delOkrFromModal()"
+                            title="Xóa">🗑 Xóa</button>
+                    </div>
+                    <button class="btn btn-primary" onclick="saveOkrSettings()">Lưu & Đóng</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-app.js';
+        import { getDatabase, ref, set, get, onValue, update } from 'https://www.gstatic.com/firebasejs/10.0.0/firebase-database.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDm03m2YmKREzQgVmQY4496NtwGhgzppdQ",
+            authDomain: "qlvb-ca1b4.firebaseapp.com",
+            databaseURL: "https://qlvb-ca1b4-default-rtdb.firebaseio.com",
+            projectId: "qlvb-ca1b4",
+            storageBucket: "qlvb-ca1b4.firebasestorage.app",
+            messagingSenderId: "634158346515",
+            appId: "1:634158346515:web:af49cc37d550d959deaae6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        let allPersons = [];
+        let currentPersonId = "";
+        let currentKPIs = [];
+        let currentOKRs = [];
+        let firebaseMasterKPI = null;
+        let firebaseMasterOKR = null;
+
+        // --- NORMALIZE FIREBASE DATA (Mảng bị biến thành object) ---
+        function toArr(v) {
+            if (!v) return [];
+            if (Array.isArray(v)) return v;
+            return Object.values(v);
+        }
+        function normalizeTask(t) {
+            if (!t) return t;
+            t.assignees = toArr(t.assignees);
+            t.completedBy = toArr(t.completedBy);
+            t.subtasks = toArr(t.subtasks).map(s => {
+                if (!s) return s;
+                s.assignees = toArr(s.assignees);
+                s.completedBy = toArr(s.completedBy);
+                return s;
+            });
+            return t;
+        }
+
+        // ==========================================
+        // DỮ LIỆU MẪU MẶC ĐỊNH (HARDCODE DỰ PHÒNG)
+        // Trường mới: weight (Trọng số %), priority (Cao/TB/Thấp), period, actual
+        // ==========================================
+        const masterKPI = [
+            {
+                grp: "01. Quản lý địa bàn & dân cư", data: [
+                    { id: "kpi_1_1", name: "Tỷ lệ hộ dân được thăm hỏi", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 5, min: 80, target: 100, actual: 0, output: "" },
+                    { id: "kpi_1_2", name: "Cập nhật Sổ nhật ký địa bàn", unit: "lần/tuần", period: "Hàng tuần", priority: "TB", weight: 3, min: 3, target: 5, actual: 0, output: "" },
+                    { id: "kpi_1_3", name: "Cập nhật biến động nhân khẩu CSDL", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 5, min: 95, target: 100, actual: 0, output: "" },
+                    { id: "kpi_1_4", name: "Tỷ lệ hộ gia đình thông tin đầy đủ", unit: "%", period: "Hàng quý", priority: "TB", weight: 4, min: 90, target: 100, actual: 0, output: "" },
+                    { id: "kpi_1_5", name: "Số vụ việc ANTT báo cáo kịp thời", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 5, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_1_6", name: "Lượt kiểm tra người NN tạm trú", unit: "%", period: "Hàng tháng", priority: "TB", weight: 3, min: 100, target: 100, actual: 0, output: "" }
+                ]
+            },
+            {
+                grp: "02. Quản lý & giáo dục đối tượng", data: [
+                    { id: "kpi_2_1", name: "Tỷ lệ đối tượng được biết mặt", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 6, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_2_2", name: "Gặp gỡ, giáo dục đối tượng", unit: "lần/ĐT", period: "Hàng tháng", priority: "Cao", weight: 5, min: 1, target: 2, actual: 0, output: "" },
+                    { id: "kpi_2_3", name: "Biến động đối tượng cập nhật CSDL", unit: "%", period: "Hàng tháng", priority: "TB", weight: 4, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_2_4", name: "Số đối tượng vi phạm phát hiện", unit: "vụ", period: "Hàng tháng", priority: "Cao", weight: 5, textMin: "-", textTarget: "Phát hiện đủ", actual: 0, output: "" }
+                ]
+            },
+            {
+                grp: "03. Xử lý vi phạm hành chính & Tố giác", data: [
+                    { id: "kpi_3_1", name: "Tin báo, tố giác tiếp nhận xử lý", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 6, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_3_2", name: "Hồ sơ giáo dục xã/phường", unit: "%", period: "Hàng quý", priority: "TB", weight: 4, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_3_3", name: "Tỷ lệ vụ VPHC xử lý đúng hạn", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 5, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_3_4", name: "Bắt giữ người phạm tội quả tang", unit: "vụ", period: "Hàng tháng", priority: "Cao", weight: 4, textMin: "-", textTarget: "Theo KH", actual: 0, output: "" }
+                ]
+            },
+            {
+                grp: "04. Phong trào BVANTQ", data: [
+                    { id: "kpi_4_1", name: "Hướng dẫn Tổ BVANTQ cơ sở", unit: "buổi", period: "Hàng tháng", priority: "TB", weight: 3, min: 2, target: 4, actual: 0, output: "" },
+                    { id: "kpi_4_2", name: "Tổ viên được kiểm tra hoạt động", unit: "%", period: "Hàng quý", priority: "TB", weight: 3, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_4_3", name: "Mô hình điểm BVANTQ triển khai", unit: "MH", period: "Hàng năm", priority: "Thấp", weight: 2, min: 1, target: 2, actual: 0, output: "" }
+                ]
+            },
+            {
+                grp: "05. Tuyên truyền & Hòa giải", data: [
+                    { id: "kpi_5_1", name: "Tuyên truyền pháp luật ANTT", unit: "buổi", period: "Hàng tháng", priority: "TB", weight: 3, min: 2, target: 4, actual: 0, output: "" },
+                    { id: "kpi_5_2", name: "Người dân tiếp cận tuyên truyền", unit: "người", period: "Hàng tháng", priority: "TB", weight: 2, min: 50, target: 100, actual: 0, output: "" },
+                    { id: "kpi_5_3", name: "Vụ mâu thuẫn giải quyết thành công", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 4, min: 80, target: 95, actual: 0, output: "" },
+                    { id: "kpi_5_4", name: "Mâu thuẫn phát hiện sớm", unit: "vụ", period: "Hàng tháng", priority: "TB", weight: 3, textMin: "-", textTarget: "Xử lý 100%", actual: 0, output: "" }
+                ]
+            },
+            {
+                grp: "06. Nghiệp vụ cơ bản & Phối hợp", data: [
+                    { id: "kpi_6_1", name: "Tin tức phục vụ hồ sơ ĐTCB", unit: "tin", period: "Hàng tháng", priority: "TB", weight: 4, textMin: "-", textTarget: "Theo KH", actual: 0, output: "" },
+                    { id: "kpi_6_2", name: "Tham gia phương án ANTT", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 5, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_6_3", name: "Tham mưu tổ chức tuần tra", unit: "buổi", period: "Hàng tháng", priority: "TB", weight: 4, min: 4, target: 8, actual: 0, output: "" }
+                ]
+            },
+            {
+                grp: "07. Thông tin báo cáo & CĐS", data: [
+                    { id: "kpi_7_1", name: "Báo cáo định kỳ đúng hạn", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 5, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_7_2", name: "Báo cáo đột xuất trong 24h", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 5, min: 100, target: 100, actual: 0, output: "" },
+                    { id: "kpi_7_3", name: "Sáng kiến CNTT/CĐS", unit: "SK", period: "Hàng năm", priority: "Thấp", weight: 2, min: 1, target: 2, actual: 0, output: "" },
+                    { id: "kpi_7_4", name: "Đồng bộ dữ liệu CSDL quốc gia", unit: "%", period: "Hàng tháng", priority: "Cao", weight: 4, min: 95, target: 100, actual: 0, output: "" }
+                ]
+            }
+        ];
+
+        // OKR: Thêm deadline (Thời hạn), weight (Trọng số KR %), status (Trạng thái)
+        const masterOKR = [
+            {
+                grp: "🎯 O1: Làm sạch 100% dữ liệu dân cư", data: [
+                    { id: "okr_1_1", name: "Rà soát toàn bộ hộ dân trên địa bàn", target: "100%", deadline: "Tháng 2/2025", weight: 30, status: "Chưa bắt đầu", progress: 0 },
+                    { id: "okr_1_2", name: "Sửa sai lệch CSDL trong vòng 48h", target: "95%", deadline: "Liên tục", weight: 30, status: "Chưa bắt đầu", progress: 0 },
+                    { id: "okr_1_3", name: "Hộ tạm trú được đăng ký đầy đủ", target: "100%", deadline: "Tháng 3/2025", weight: 20, status: "Chưa bắt đầu", progress: 0 },
+                    { id: "okr_1_4", name: "Báo cáo tổng hợp nộp đúng hạn", target: "4 báo cáo", deadline: "Hàng tuần", weight: 20, status: "Chưa bắt đầu", progress: 0 }
+                ]
+            },
+            {
+                grp: "🎯 O2: Đẩy mạnh kích hoạt VNeID", data: [
+                    { id: "okr_2_1", name: "Hỗ trợ người dân kích hoạt VNeID thành công", target: "300 người", deadline: "Tháng 4/2025", weight: 60, status: "Chưa bắt đầu", progress: 0 },
+                    { id: "okr_2_2", name: "CBCS/Tổ viên được tập huấn VNeID", target: "100%", deadline: "Tháng 2/2025", weight: 40, status: "Chưa bắt đầu", progress: 0 }
+                ]
+            },
+            {
+                grp: "🎯 O3: Quản lý đối tượng dịp Tết", data: [
+                    { id: "okr_3_1", name: "Gặp mặt, xác minh 100% đối tượng trước Tết", target: "100%", deadline: "28 Tết", weight: 60, status: "Chưa bắt đầu", progress: 0 },
+                    { id: "okr_3_2", name: "Tổ chức tuần tra tăng cường dịp Tết", target: "2 buổi/tuần", deadline: "Xuyên Tết", weight: 40, status: "Chưa bắt đầu", progress: 0 }
+                ]
+            },
+            {
+                grp: "🎯 O4: Tuyên truyền Vũ khí/Vật liệu nổ", data: [
+                    { id: "okr_4_1", name: "Tổ chức buổi tuyên truyền VK/VLN", target: "4 buổi", deadline: "Tháng 3/2025", weight: 50, status: "Chưa bắt đầu", progress: 0 },
+                    { id: "okr_4_2", name: "Thanh thiếu niên được tiếp cận trực tiếp", target: "200 người", deadline: "Tháng 4/2025", weight: 50, status: "Chưa bắt đầu", progress: 0 }
+                ]
+            },
+            {
+                grp: "🎯 O5: Nâng cao hiệu quả Tuần tra", data: [
+                    { id: "okr_5_1", name: "Buổi tuần tra phối hợp BVANTQ", target: "16 buổi", deadline: "Hàng quý", weight: 50, status: "Chưa bắt đầu", progress: 0 },
+                    { id: "okr_5_2", name: "Chỉ số hài lòng của người dân", target: "≥80%", deadline: "Cuối quý", weight: 50, status: "Chưa bắt đầu", progress: 0 }
+                ]
+            }
+        ];
+
+        // ==========================================
+        // KHỞI TẠO: LẤY FORM MẪU TỪ FIREBASE
+        // ==========================================
+        get(ref(db, 'qlcv_master_template')).then((snap) => {
+            if (snap.exists()) {
+                firebaseMasterKPI = snap.val().kpi;
+                firebaseMasterOKR = snap.val().okr;
+            } else {
+                firebaseMasterKPI = JSON.parse(JSON.stringify(masterKPI));
+                firebaseMasterOKR = JSON.parse(JSON.stringify(masterOKR));
+            }
+            currentKPIs = JSON.parse(JSON.stringify(firebaseMasterKPI));
+            currentOKRs = JSON.parse(JSON.stringify(firebaseMasterOKR));
+            renderTables();
+        });
+
+        onValue(ref(db, 'qlcv_persons'), snap => {
+            if (snap.exists()) {
+                const v = snap.val();
+                allPersons = (Array.isArray(v) ? v : Object.values(v || {})).filter(Boolean);
+                const sel = document.getElementById('person-selector');
+                sel.innerHTML = '<option value="">-- Cấu hình KHUNG CHUẨN chung hoặc chọn 1 Cán bộ --</option>' +
+                    allPersons.sort((a, b) => a.name.localeCompare(b.name, 'vi'))
+                        .map(p => `<option value="${p.id}">${p.name} (${p.cluster || 'Chưa phân tổ'})</option>`).join('');
+                document.getElementById('sync-status').textContent = '✅ Đã kết nối';
+                document.getElementById('sync-status').style.cssText = 'background:var(--success-light);color:var(--success);padding:5px 12px;border-radius:12px;font-size:11px;font-weight:700;';
+            }
+        });
+
+        // ==========================================
+        // TẢI CHỈ TIÊU THEO CÁN BỘ
+        // FIX BUG: Dùng firebaseMasterKPI/OKR thay vì hardcode masterKPI/OKR
+        // ==========================================
+        window.loadTargetsForPerson = async function (pid) {
+            currentPersonId = pid;
+            if (!pid) {
+                // ✅ FIX: Dùng firebaseMasterKPI (từ Firebase), không dùng masterKPI hardcode
+                currentKPIs = JSON.parse(JSON.stringify(firebaseMasterKPI || masterKPI));
+                currentOKRs = JSON.parse(JSON.stringify(firebaseMasterOKR || masterOKR));
+                renderTables();
+                return;
+            }
+            const snap = await get(ref(db, `qlcv_targets/${pid}`));
+            if (snap.exists()) {
+                currentKPIs = snap.val().kpi || JSON.parse(JSON.stringify(firebaseMasterKPI || masterKPI));
+                currentOKRs = snap.val().okr || JSON.parse(JSON.stringify(firebaseMasterOKR || masterOKR));
+            } else {
+                currentKPIs = JSON.parse(JSON.stringify(firebaseMasterKPI || masterKPI));
+                currentOKRs = JSON.parse(JSON.stringify(firebaseMasterOKR || masterOKR));
+            }
+
+            // GỌI HÀM TÍNH TOÁN Ở ĐÂY THAY VÌ CHỈ RENDER
+            document.getElementById('sync-status').textContent = '⏳ Đang tính toán tiến độ...';
+            await window.autoCalculateKpiFromTasks(pid);
+            document.getElementById('sync-status').textContent = '✅ Đã kết nối & Đồng bộ';
+        };
+        // Hàm mới: Quét bảng Tasks và tự động điền giá trị Thực hiện cho KPI/OKR
+        window.autoCalculateKpiFromTasks = async function (pid) {
+            if (!pid) return;
+
+            // 1. Tải toàn bộ công việc của hệ thống
+            const taskSnap = await get(ref(db, 'qlcv_tasks'));
+            if (!taskSnap.exists()) return;
+
+            const tasksRaw = taskSnap.val();
+            const allTasks = Object.values(tasksRaw).map(t => normalizeTask(t));
+
+            // 2. Lọc ra các công việc: (1) Của người này, (2) Đã xong, (3) Có gắn mã KPI
+            const myDoneTasks = allTasks.filter(t => {
+                const isMyTask = (t.assignees && t.assignees.includes(pid)) ||
+                    (t.subtasks && t.subtasks.some(s => s.assignees && s.assignees.includes(pid) && s.done));
+                // ✅ FIX #4: Tính cả task đang trình duyệt ('review') vào KPI
+                const isDone = t.status === 'done' || t.status === 'review';
+                const hasKpi = t.kpiRef && t.kpiRef !== "";
+                return isMyTask && isDone && hasKpi;
+            });
+
+            // 3. Reset toàn bộ số "Thực hiện" và "Tiến độ" hiện tại về 0 trước khi cộng dồn
+            currentKPIs.forEach(g => g.data.forEach(k => { if (k.actual !== undefined) k.actual = 0; }));
+            currentOKRs.forEach(g => g.data.forEach(o => { if (o.progress !== undefined) o.progress = 0; }));
+
+            // 4. Cộng dồn giá trị
+            myDoneTasks.forEach(task => {
+                const refId = task.kpiRef;
+                const val = parseFloat(task.kpiValue) || 1;
+
+                if (refId.startsWith('kpi_')) {
+                    currentKPIs.forEach(g => {
+                        let item = g.data.find(k => k.id === refId);
+                        if (item) item.actual = (item.actual || 0) + val;
+                    });
+                } else if (refId.startsWith('okr_')) {
+                    currentOKRs.forEach(g => {
+                        let item = g.data.find(o => o.id === refId);
+                        if (item) item.progress = (item.progress || 0) + val;
+                    });
+                }
+            });
+
+            // 5. Cập nhật lại giao diện (Bảng và Dashboard)
+            renderTables();
+            window.saveAllChanges(); // Tự động lưu dữ liệu vừa tính toán
+        };
+        // ==========================================
+        // CHUYỂN TAB
+        // ==========================================
+        window.switchTab = function (tabId, btn) {
+            document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'block';
+            btn.classList.add('active');
+        };
+
+        // ==========================================
+        // ĐỒNG BỘ DOM → STATE (Đọc tất cả trường mới)
+        // ==========================================
+        window.syncDOMtoState = function () {
+            currentKPIs.forEach((g, gIdx) => {
+                const grpEl = document.getElementById(`kpi_grp_title_${gIdx}`);
+                if (grpEl) g.grp = grpEl.value;
+
+                g.data.forEach((k, idx) => {
+                    const nameEl = document.getElementById(`kpi_name_${gIdx}_${idx}`);
+                    // unit, period, priority, weight, type chỉ có trong modal ⚙️, không có trong bảng
+                    // ✅ FIX #6: Xóa 5 dòng getElementById không tồn tại (dead code)
+                    const minEl = document.getElementById(`kpi_min_${gIdx}_${idx}`);
+                    const targetEl = document.getElementById(`kpi_target_${gIdx}_${idx}`);
+                    const outputEl = document.getElementById(`kpi_output_${gIdx}_${idx}`);
+                    const actualEl = document.getElementById(`kpi_actual_${gIdx}_${idx}`);
+
+                    if (nameEl) k.name = nameEl.value;
+                    if (outputEl) k.output = outputEl.value;
+
+                    const isText = k.textMin !== undefined;
+                    if (isText) {
+                        if (minEl) k.textMin = minEl.value;
+                        if (targetEl) k.textTarget = targetEl.value;
+                        if (actualEl) k.textActual = actualEl.value;
+                    } else {
+                        if (minEl) k.min = parseFloat(minEl.value) || 0;
+                        if (targetEl) k.target = parseFloat(targetEl.value) || 0;
+                        if (actualEl) k.actual = parseFloat(actualEl.value) || 0;
+                    }
+                });
+            });
+
+            currentOKRs.forEach((g, gIdx) => {
+                const grpEl = document.getElementById(`okr_grp_title_${gIdx}`);
+                if (grpEl) g.grp = grpEl.value;
+
+                g.data.forEach((o, idx) => {
+                    const nameEl = document.getElementById(`okr_name_${gIdx}_${idx}`);
+                    const deadlineEl = document.getElementById(`okr_deadline_${gIdx}_${idx}`);
+                    const wEl = document.getElementById(`okr_weight_${gIdx}_${idx}`);
+                    const tarEl = document.getElementById(`okr_target_${gIdx}_${idx}`);
+                    const progressEl = document.getElementById(`okr_progress_${gIdx}_${idx}`);
+                    const noteEl = document.getElementById(`okr_note_${gIdx}_${idx}`);
+                    const statusEl = document.getElementById(`okr_status_${gIdx}_${idx}`);
+
+                    if (nameEl) o.name = nameEl.value;
+                    if (deadlineEl) o.deadline = deadlineEl.value;
+                    if (wEl) o.weight = parseFloat(wEl.value) || 0;
+                    if (tarEl) o.target = tarEl.value;
+                    if (progressEl) o.progress = parseFloat(progressEl.value) || 0;
+                    if (noteEl) o.note = noteEl.value;
+                    if (statusEl) o.status = statusEl.value;
+                });
+            });
+        };
+
+        // ==========================================
+        // THÊM / XÓA / NHÂN BẢN — KPI
+        // ==========================================
+        window.addKPI = function (gIdx) {
+            syncDOMtoState();
+            currentKPIs[gIdx].data.push({ id: "kpi_new_" + Date.now(), name: "Nhiệm vụ mới", unit: "lần", period: "Hàng tháng", priority: "TB", weight: 0, min: 0, target: 0, actual: 0, output: "" });
+            renderTables();
+        };
+        window.delKPI = function (gIdx, idx) {
+            if (!confirm("Xác nhận xóa chỉ tiêu này?")) return;
+            syncDOMtoState(); currentKPIs[gIdx].data.splice(idx, 1); renderTables();
+        };
+        window.dupKPI = function (gIdx, idx) {
+            if (!confirm("Nhân bản chỉ tiêu này?")) return;
+            syncDOMtoState();
+            const clone = JSON.parse(JSON.stringify(currentKPIs[gIdx].data[idx]));
+            clone.id = "kpi_dup_" + Date.now();
+            currentKPIs[gIdx].data.splice(idx + 1, 0, clone);
+            renderTables();
+        };
+        window.addGroupKPI = function () {
+            syncDOMtoState();
+            const n = currentKPIs.length + 1;
+            currentKPIs.push({ grp: `0${n}. Tên Nhóm KPI Mới`, data: [] });
+            renderTables();
+        };
+        window.delGroupKPI = function (gIdx) {
+            if (!confirm("⚠️ XÓA TOÀN BỘ NHÓM này và tất cả chỉ tiêu bên trong?")) return;
+            syncDOMtoState(); currentKPIs.splice(gIdx, 1); renderTables();
+        };
+
+        // ==========================================
+        // THÊM / XÓA / NHÂN BẢN — OKR
+        // ==========================================
+        window.addOKR = function (gIdx) {
+            syncDOMtoState();
+            currentOKRs[gIdx].data.push({ id: "okr_new_" + Date.now(), name: "Kết quả then chốt mới", target: "100%", deadline: "", weight: 0, status: "Chưa bắt đầu" });
+            renderTables();
+        };
+        window.delOKR = function (gIdx, idx) {
+            if (!confirm("Xác nhận xóa Key Result này?")) return;
+            syncDOMtoState(); currentOKRs[gIdx].data.splice(idx, 1); renderTables();
+        };
+        window.dupOKR = function (gIdx, idx) {
+            if (!confirm("Nhân bản Key Result này?")) return;
+            syncDOMtoState();
+            const clone = JSON.parse(JSON.stringify(currentOKRs[gIdx].data[idx]));
+            clone.id = "okr_dup_" + Date.now();
+            currentOKRs[gIdx].data.splice(idx + 1, 0, clone);
+            renderTables();
+        };
+        window.addGroupOKR = function () {
+            syncDOMtoState();
+            const n = currentOKRs.length + 1;
+            currentOKRs.push({ grp: `🎯 O${n}: Tên Chiến dịch Cao điểm mới`, data: [] });
+            renderTables();
+        };
+        window.delGroupOKR = function (gIdx) {
+            if (!confirm("⚠️ XÓA TOÀN BỘ CHIẾN DỊCH này và tất cả KR bên trong?")) return;
+            syncDOMtoState(); currentOKRs.splice(gIdx, 1); renderTables();
+        };
+
+        // ==========================================
+        // HELPER: BADGE TRỌNG SỐ
+        // ==========================================
+        function weightBadge(sum) {
+            if (sum === 0) return `<span class="weight-badge weight-empty">0%</span>`;
+            if (sum === 100) return `<span class="weight-badge weight-ok">✅ ${sum}%</span>`;
+            if (sum > 100) return `<span class="weight-badge weight-over" style="background:#fee2e2;color:#dc2626;">⚠️ ${sum}% (Vượt 100%!)</span>`;
+            return `<span class="weight-badge weight-warn">⚠️ ${sum}% / 100%</span>`;
+        }
+
+        function priorityBadge(p) {
+            if (p === 'Cao') return '<span class="priority-cao">🔴 Cao</span>';
+            if (p === 'Thấp') return '<span class="priority-thap">🟢 Thấp</span>';
+            return '<span class="priority-tb">🟡 TB</span>';
+        }
+
+        function getStatusClass(s) {
+            if (s === 'Đang thực hiện') return 'status-danglam';
+            if (s === 'Hoàn thành') return 'status-hoanthanh';
+            if (s === 'Có rủi ro') return 'status-ruiro';
+            return 'status-chuabatdau';
+        }
+
+        // ==========================================
+        // MODAL LOGIC (KPI & OKR SETTINGS)
+        // ==========================================
+        window.openKpiSettings = function (gIdx, idx) {
+            syncDOMtoState(); // Save current table edits first
+            const k = currentKPIs[gIdx].data[idx];
+            document.getElementById('ks-gidx').value = gIdx;
+            document.getElementById('ks-idx').value = idx;
+            document.getElementById('ks-period').value = k.period || 'Hàng tháng';
+            document.getElementById('ks-priority').value = k.priority || 'TB';
+            document.getElementById('ks-weight').value = k.weight !== undefined ? k.weight : 0;
+            document.getElementById('ks-unit').value = k.unit || '';
+            document.getElementById('ks-type').value = (k.textMin !== undefined) ? 'chu' : 'so';
+            document.getElementById('modal-kpi-settings').style.display = 'flex';
+        };
+        window.saveKpiSettings = function () {
+            const gIdx = parseInt(document.getElementById('ks-gidx').value);
+            const idx = parseInt(document.getElementById('ks-idx').value);
+            const k = currentKPIs[gIdx].data[idx];
+
+            k.period = document.getElementById('ks-period').value;
+            k.priority = document.getElementById('ks-priority').value;
+            k.weight = parseFloat(document.getElementById('ks-weight').value) || 0;
+            k.unit = document.getElementById('ks-unit').value.trim();
+
+            const newType = document.getElementById('ks-type').value;
+            const oldType = (k.textMin !== undefined) ? 'chu' : 'so';
+            if (newType !== oldType) {
+                window.onKpiTypeChangeFromModal(gIdx, idx, newType);
+            }
+
+            document.getElementById('modal-kpi-settings').style.display = 'none';
+            renderTables();
+        };
+        window.onKpiTypeChangeFromModal = function (gIdx, idx, val) {
+            const k = currentKPIs[gIdx].data[idx];
+            if (val === 'chu') {
+                k.textMin = String(k.min !== undefined ? k.min : '-');
+                k.textTarget = String(k.target !== undefined ? k.target : '-');
+                k.textActual = String(k.actual !== undefined ? k.actual : '-');
+                delete k.min; delete k.target; delete k.actual;
+            } else {
+                k.min = parseFloat(k.textMin) || 0;
+                k.target = parseFloat(k.textTarget) || 0;
+                k.actual = parseFloat(k.textActual) || 0;
+                delete k.textMin; delete k.textTarget; delete k.textActual;
+            }
+        };
+        window.dupKpiFromModal = function () {
+            const gIdx = parseInt(document.getElementById('ks-gidx').value);
+            const idx = parseInt(document.getElementById('ks-idx').value);
+            document.getElementById('modal-kpi-settings').style.display = 'none';
+            window.dupKPI(gIdx, idx);
+        };
+        window.delKpiFromModal = function () {
+            const gIdx = parseInt(document.getElementById('ks-gidx').value);
+            const idx = parseInt(document.getElementById('ks-idx').value);
+            document.getElementById('modal-kpi-settings').style.display = 'none';
+            window.delKPI(gIdx, idx);
+        };
+
+        window.openOkrSettings = function (gIdx, idx) {
+            syncDOMtoState();
+            const o = currentOKRs[gIdx].data[idx];
+            document.getElementById('os-gidx').value = gIdx;
+            document.getElementById('os-idx').value = idx;
+            document.getElementById('os-deadline').value = o.deadline || '';
+            document.getElementById('os-weight').value = o.weight !== undefined ? o.weight : 0;
+            document.getElementById('modal-okr-settings').style.display = 'flex';
+        };
+        window.saveOkrSettings = function () {
+            const gIdx = parseInt(document.getElementById('os-gidx').value);
+            const idx = parseInt(document.getElementById('os-idx').value);
+            const o = currentOKRs[gIdx].data[idx];
+            o.deadline = document.getElementById('os-deadline').value.trim();
+            o.weight = parseFloat(document.getElementById('os-weight').value) || 0;
+            document.getElementById('modal-okr-settings').style.display = 'none';
+            renderTables();
+        };
+        window.dupOkrFromModal = function () {
+            const gIdx = parseInt(document.getElementById('os-gidx').value);
+            const idx = parseInt(document.getElementById('os-idx').value);
+            document.getElementById('modal-okr-settings').style.display = 'none';
+            window.dupOKR(gIdx, idx);
+        };
+        window.delOkrFromModal = function () {
+            const gIdx = parseInt(document.getElementById('os-gidx').value);
+            const idx = parseInt(document.getElementById('os-idx').value);
+            document.getElementById('modal-okr-settings').style.display = 'none';
+            window.delOKR(gIdx, idx);
+        };
+
+        // ==========================================
+        // RENDER DASHBOARD
+        // ==========================================
+        function renderDashboard(totalKpiScore) {
+            // Render Điểm KPI Tổng
+            const kpiScoreEl = document.getElementById('dash-kpi-score');
+            kpiScoreEl.textContent = totalKpiScore.toFixed(1);
+            kpiScoreEl.style.color = totalKpiScore >= 90 ? 'var(--success)' : totalKpiScore >= 70 ? 'var(--warn)' : 'var(--danger)';
+
+            // Render tiến độ chi tiết từng nhóm KPI
+            let kpiGroupsHtml = '';
+            currentKPIs.forEach((g) => {
+                let grpScore = 0;
+                let grpWeight = 0;
+                g.data.forEach(k => {
+                    if (k.textMin === undefined) {
+                        const pct = (k.target || 0) > 0 ? Math.min((k.actual || 0) / (k.target || 1) * 100, 100) : 0;
+                        grpScore += (k.weight || 0) * pct / 100;
+                    }
+                    grpWeight += (k.weight || 0);
+                });
+                const grpPct = grpWeight > 0 ? (grpScore / grpWeight) * 100 : 0;
+                const barColor = grpPct >= 90 ? 'var(--success)' : grpPct >= 70 ? 'var(--warn)' : 'var(--danger)';
+
+                kpiGroupsHtml += `
+                <div style="margin-bottom:12px; text-align:left;">
+                    <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px; color:#475569;">
+                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis; width:70%;" title="${g.grp}">${g.grp}</span>
+                        <strong>${grpScore.toFixed(1)} / ${grpWeight}</strong>
+                    </div>
+                    <div style="height:6px; background:#e2e8f0; border-radius:3px; overflow:hidden;">
+                        <div style="width:${grpPct}%; height:100%; background:${barColor};"></div>
+                    </div>
+                </div>
+            `;
+            });
+            document.getElementById('dash-kpi-groups').innerHTML = kpiGroupsHtml || '<div style="font-size:12px; color:#94a3b8;">Chưa có dữ liệu</div>';
+
+            // Tính toán & Render dữ liệu OKR
+            let totalOkrProgress = 0;
+            let totalKrCount = 0;
+            let okrStatusCounts = { 'Chưa bắt đầu': 0, 'Đang thực hiện': 0, 'Hoàn thành': 0, 'Có rủi ro': 0 };
+
+            currentOKRs.forEach(g => {
+                g.data.forEach(o => {
+                    totalOkrProgress += (o.progress || 0);
+                    totalKrCount++;
+                    okrStatusCounts[o.status || 'Chưa bắt đầu']++;
+                });
+            });
+
+            const avgOkrProgress = totalKrCount > 0 ? (totalOkrProgress / totalKrCount).toFixed(1) : 0;
+            const okrProgressEl = document.getElementById('dash-okr-progress');
+            okrProgressEl.textContent = avgOkrProgress + '%';
+            okrProgressEl.style.color = avgOkrProgress >= 80 ? 'var(--success)' : avgOkrProgress >= 50 ? 'var(--warn)' : 'var(--danger)';
+
+            document.getElementById('dash-okr-status').innerHTML = `
+            <div style="display:flex; justify-content:space-between; text-align:center;">
+                <div style="flex:1;"><div style="font-size:20px; font-weight:800; color:#475569;">${okrStatusCounts['Chưa bắt đầu']}</div><div style="font-size:11px; color:#64748b;">Chưa bắt đầu</div></div>
+                <div style="flex:1;"><div style="font-size:20px; font-weight:800; color:#1e40af;">${okrStatusCounts['Đang thực hiện']}</div><div style="font-size:11px; color:#64748b;">Đang làm</div></div>
+                <div style="flex:1;"><div style="font-size:20px; font-weight:800; color:var(--success);">${okrStatusCounts['Hoàn thành']}</div><div style="font-size:11px; color:#64748b;">Hoàn thành</div></div>
+                <div style="flex:1;"><div style="font-size:20px; font-weight:800; color:var(--danger);">${okrStatusCounts['Có rủi ro']}</div><div style="font-size:11px; color:#64748b;">Rủi ro</div></div>
+            </div>
+        `;
+        }
+        // ==========================================
+        // RENDER BẢNG
+        // ==========================================
+        function renderTables() {
+            // ---- KPI TABLE ----
+            const totalWeight = currentKPIs.reduce((s, g) => s + g.data.reduce((ss, k) => ss + (k.weight || 0), 0), 0);
+            const totalScore = currentKPIs.reduce((s, g) => s + g.data.reduce((ss, k) => {
+                if (k.textMin !== undefined) return ss;
+                const pct = (k.target || 0) > 0 ? Math.min((k.actual || 0) / (k.target || 1) * 100, 100) : 0;
+                return ss + (k.weight || 0) * pct / 100;
+            }, 0), 0);
+
+            renderDashboard(totalScore);
+
+            const footerEl = document.getElementById('kpi-weight-footer');
+            footerEl.style.display = 'flex';
+            footerEl.innerHTML = `<strong>📊 Tổng Trọng số:</strong> ${weightBadge(totalWeight)}
+            &nbsp;|&nbsp; <strong>🏆 Tổng Điểm KPI:</strong>
+            <span style="font-weight:800;font-size:15px;color:${totalScore >= 90 ? '#059669' : totalScore >= 70 ? '#d97706' : '#dc2626'}">
+                ${totalScore.toFixed(1)} / 100
+            </span>
+            <span style="color:var(--text-muted);font-size:11px;">(Tính trên các chỉ tiêu số có nhập Thực hiện)</span>`;
+            document.getElementById('total-weight-kpi').innerHTML = weightBadge(totalWeight);
+
+            let kpiHtml = `<table><thead><tr>
+            <th style="min-width:280px;text-align:left;white-space:normal;">Chỉ tiêu nhiệm vụ</th>
+            <th style="width:70px;text-align:center;white-space:normal;">Tối<br>thiểu</th>
+            <th style="width:70px;text-align:center;white-space:normal;">Mục<br>tiêu</th>
+            <th style="min-width:120px;text-align:left;white-space:normal;">Sản phẩm<br>đầu ra</th>
+            <th style="width:50px;text-align:center;color:#059669;white-space:normal;">Thực<br>hiện</th>
+            <th style="width:50px;text-align:center;color:#7c3aed;white-space:normal;">% Đạt</th>
+            <th style="width:45px;text-align:center;color:#d97706;white-space:normal;">Điểm</th>
+            <th style="width:45px;text-align:center;white-space:normal;">Cài<br>đặt</th>
+        </tr></thead><tbody>`;
+
+            currentKPIs.forEach((g, gIdx) => {
+                const grpSum = g.data.reduce((s, k) => s + (k.weight || 0), 0);
+                kpiHtml += `<tr class="grp-title-row"><td colspan="8">
+                <div class="grp-title-wrap">
+                    <input type="text" class="input-text grp-title-input" value="${g.grp}" id="kpi_grp_title_${gIdx}">
+                    <div class="grp-actions">
+                        ${weightBadge(grpSum)}
+                        <button class="action-btn del-btn" style="font-size:11px;font-weight:bold;" onclick="delGroupKPI(${gIdx})">🗑 Xóa Nhóm</button>
+                    </div>
+                </div>
+            </td></tr>`;
+
+                g.data.forEach((k, idx) => {
+                    const isText = k.textMin !== undefined;
+                    const typeVal = isText ? 'chu' : 'so';
+                    const minVal = isText ? k.textMin : k.min;
+                    const tarVal = isText ? k.textTarget : k.target;
+                    const priVal = k.priority || 'TB';
+                    const wVal = k.weight !== undefined ? k.weight : 0;
+                    const period = k.period || 'Hàng tháng';
+
+                    const actualVal = k.actual !== undefined ? k.actual : 0;
+                    const pctDat = (!isText && (k.target || 0) > 0)
+                        ? Math.min(Math.round((actualVal / (k.target || 1)) * 100), 200)
+                        : null;
+                    const diem = pctDat !== null ? ((k.weight || 0) * Math.min(pctDat, 100) / 100).toFixed(1) : '-';
+                    const pctColor = pctDat === null ? '#94a3b8' : pctDat >= 100 ? '#059669' : pctDat >= 80 ? '#d97706' : '#dc2626';
+
+                    // Gộp unit và period (Ví dụ: Lần • Hàng tuần -> Lần/Tuần)
+                    const shortPeriod = period.replace(/[Hh]àng\s+/i, '');
+                    const capPeriod = shortPeriod.charAt(0).toUpperCase() + shortPeriod.slice(1);
+                    const unitLabel = `${k.unit ? k.unit : 'Chưa set'}/${capPeriod}`;
+
+                    kpiHtml += `<tr>
+                    <td>
+                        <textarea class="input-text" id="kpi_name_${gIdx}_${idx}" rows="1" oninput="this.style.height='auto';this.style.height=(this.scrollHeight+8)+'px'" style="font-weight:bold;">${k.name}</textarea>
+                        <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+                            ${weightBadge(wVal)} ${priorityBadge(priVal)} 
+                            <span class="weight-badge weight-empty" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:10px;">${unitLabel}</span>
+                        </div>
+                    </td>
+                    <td>
+                        ${isText
+                            ? `<input type="text" class="input-text" value="${minVal}" id="kpi_min_${gIdx}_${idx}" style="text-align:center;font-size:11px;">`
+                            : `<input type="number" class="input-num" value="${minVal}" id="kpi_min_${gIdx}_${idx}">`}
+                    </td>
+                    <td>
+                        ${isText
+                            ? `<input type="text" class="input-text" value="${tarVal}" id="kpi_target_${gIdx}_${idx}" style="text-align:center;font-size:11px;">`
+                            : `<input type="number" class="input-num" value="${tarVal}" id="kpi_target_${gIdx}_${idx}">`}
+                    </td>
+                    <td>
+                        <textarea class="input-text" id="kpi_output_${gIdx}_${idx}" rows="1" oninput="this.style.height='auto';this.style.height=(this.scrollHeight+8)+'px'" placeholder="VD: Báo cáo...">${k.output || ''}</textarea>
+                    </td>
+                    <td>
+                        ${isText
+                            ? `<input type="text" class="input-text" value="${k.textActual || '-'}" id="kpi_actual_${gIdx}_${idx}" style="text-align:center;font-size:11px;">`
+                            : `<input type="number" class="input-num" value="${actualVal}" id="kpi_actual_${gIdx}_${idx}" style="background:#f0fdf4;">`}
+                    </td>
+                    <td style="text-align:center; font-weight:700; color:${pctColor};">
+                        ${pctDat !== null ? pctDat + '%' : '-'}
+                    </td>
+                    <td style="text-align:center; font-weight:700; color:#d97706;">
+                        ${diem}
+                    </td>
+                    <td style="text-align:center;white-space:nowrap;">
+                        <button class="btn btn-primary" style="padding:4px 8px;font-size:11px;background:#e0e7ff;color:#1e40af;" onclick="window.openKpiSettings(${gIdx},${idx})" title="Cài đặt thông số chi tiết">⚙️</button>
+                    </td>
+                </tr>`;
+                });
+                kpiHtml += `<tr><td colspan="8" style="padding:3px 10px;"><button class="add-btn" onclick="addKPI(${gIdx})">+ Thêm chỉ tiêu mới vào nhóm này</button></td></tr>`;
+            });
+            kpiHtml += `<tr><td colspan="8" style="padding:20px 10px;"><button class="btn btn-primary" style="width:100%;padding:12px;" onclick="addGroupKPI()">+ TẠO NHÓM KPI MỚI</button></td></tr>`;
+            document.getElementById('kpi-body').innerHTML = kpiHtml + '</tbody></table>';
+
+            // ---- OKR TABLE ----
+            let okrHtml = `<table><thead><tr>
+            <th style="min-width:280px">Kết quả then chốt (Key Result)</th>
+            <th style="width:110px;text-align:center">Mục tiêu (Target)</th>
+            <th style="width:70px;text-align:center;color:#7c3aed">Tiến độ %</th>
+            <th style="width:140px">Ghi chú</th>
+            <th style="width:115px">Trạng thái</th>
+            <th style="width:60px;text-align:center">Cài đặt</th>
+        </tr></thead><tbody>`;
+
+            currentOKRs.forEach((g, gIdx) => {
+                const grpSum = g.data.reduce((s, o) => s + (o.weight || 0), 0);
+                okrHtml += `<tr class="grp-title-row"><td colspan="6">
+                <div class="grp-title-wrap okr">
+                    <input type="text" class="input-text grp-title-input" value="${g.grp}" id="okr_grp_title_${gIdx}">
+                    <div class="grp-actions">
+                        ${weightBadge(grpSum)}
+                        <button class="action-btn del-btn" style="font-size:11px;font-weight:bold;" onclick="delGroupOKR(${gIdx})">🗑 Xóa Nhóm</button>
+                    </div>
+                </div>
+            </td></tr>`;
+
+                g.data.forEach((o, idx) => {
+                    const status = o.status || 'Chưa bắt đầu';
+                    const wVal = o.weight !== undefined ? o.weight : 0;
+                    const deadline = o.deadline || '';
+                    const statusCls = getStatusClass(status);
+
+                    const progress = o.progress !== undefined ? o.progress : 0;
+                    const progColor = progress >= 100 ? '#059669' : progress >= 60 ? '#d97706' : '#dc2626';
+
+                    okrHtml += `<tr>
+                    <td>
+                        <textarea class="input-text" id="okr_name_${gIdx}_${idx}" rows="1" oninput="this.style.height='auto';this.style.height=(this.scrollHeight+8)+'px'" style="font-weight:bold;">${o.name}</textarea>
+                        <div style="margin-top:4px;display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+                            ${weightBadge(wVal)} 
+                            <span class="weight-badge weight-empty" style="background:#f8fafc;border:1px solid #e2e8f0;color:#dc2626;font-size:10px;">⏳ ${deadline ? deadline : 'Chưa set hạn'}</span>
+                        </div>
+                    </td>
+                    <td><input type="text" class="input-num" value="${o.target}" id="okr_target_${gIdx}_${idx}" style="text-align:center;"></td>
+                    <td>
+                        <input type="number" class="input-num" value="${progress}" id="okr_progress_${gIdx}_${idx}"
+                            min="0" max="100" style="background:#faf5ff;" title="% hoàn thành thực tế">
+                        <div style="height:4px;background:#e2e8f0;border-radius:2px;margin-top:3px;">
+                            <div style="width:${Math.min(progress, 100)}%;height:100%;background:${progColor};border-radius:2px;transition:0.3s;"></div>
+                        </div>
+                    </td>
+                    <td><input type="text" class="input-text" value="${o.note || ''}" id="okr_note_${gIdx}_${idx}" placeholder="Ghi chú..." style="font-size:11px;"></td>
+                    <td>
+                        <select class="status-select ${statusCls}" id="okr_status_${gIdx}_${idx}"
+                            onchange="this.className='status-select '+getOkrStatusCls(this.value)">
+                            ${['Chưa bắt đầu', 'Đang thực hiện', 'Hoàn thành', 'Có rủi ro']
+                            .map(s => `<option value="${s}" ${status === s ? 'selected' : ''}>${s === 'Chưa bắt đầu' ? '⬜ ' + s : s === 'Đang thực hiện' ? '🔵 ' + s : s === 'Hoàn thành' ? '✅ ' + s : '🔴 ' + s}</option>`).join('')}
+                        </select>
+                    </td>
+                    <td style="text-align:center;white-space:nowrap;">
+                        <button class="btn btn-primary" style="padding:4px 8px;font-size:11px;background:#ccfbf1;color:#0f766e;" onclick="window.openOkrSettings(${gIdx},${idx})" title="Cài đặt hạn / Trọng số / Xóa">⚙️</button>
+                    </td>
+                </tr>`;
+                });
+                okrHtml += `<tr><td colspan="6" style="padding:3px 10px;"><button class="add-btn okr" onclick="addOKR(${gIdx})">+ Thêm Key Result vào chiến dịch này</button></td></tr>`;
+            });
+            okrHtml += `<tr><td colspan="6" style="padding:20px 10px;"><button class="btn btn-teal" style="width:100%;padding:12px;" onclick="addGroupOKR()">+ TẠO CHIẾN DỊCH CAO ĐIỂM (OKR) MỚI</button></td></tr>`;
+            document.getElementById('okr-body').innerHTML = okrHtml + '</tbody></table>';
+
+            // Auto-resize tất cả textarea ngay sau render (thêm buffer 8px để tránh bị lẹm chữ)
+            const doResize = () => {
+                document.querySelectorAll('textarea.input-text').forEach(ta => {
+                    ta.style.height = 'auto'; // Reset tạm để lấy độ cao thật
+                    ta.style.height = (ta.scrollHeight + 8) + 'px';
+                });
+            };
+
+            // Chạy ngay khi có thể, và chạy lại sau 300ms đề phòng di động vẽ UI chậm
+            setTimeout(doResize, 10);
+            setTimeout(doResize, 300);
+        }
+
+        // Lắng nghe sự kiện xoay màn hình điện thoại hoặc resize để cập nhật độ cao
+        window.addEventListener('resize', () => {
+            document.querySelectorAll('textarea.input-text').forEach(ta => {
+                ta.style.height = 'auto';
+                ta.style.height = (ta.scrollHeight + 8) + 'px';
+            });
+        });
+
+        // Helper cho onchange status dropdown (gọi từ inline HTML)
+        window.getOkrStatusCls = getStatusClass;
+
+        // ==========================================
+        // LƯU DỮ LIỆU LÊN FIREBASE
+        // ==========================================
+        window.saveAllChanges = async function () {
+            if (!currentPersonId) { alert("Vui lòng chọn 1 CBCS ở trên trước khi ấn Lưu Riêng!"); return; }
+            syncDOMtoState();
+            await set(ref(db, `qlcv_targets/${currentPersonId}`), {
+                kpi: currentKPIs, okr: currentOKRs, updatedAt: new Date().toISOString()
+            });
+            alert("✅ Đã lưu chỉ tiêu CÁ NHÂN TÙY CHỈNH cho cán bộ này thành công!");
+        };
+
+        window.saveMasterTemplate = async function () {
+            syncDOMtoState();
+            if (currentPersonId !== "") {
+                if (!confirm("Bạn đang chọn 1 cán bộ. Muốn biến chỉ tiêu của NGƯỜI NÀY thành FORM MẪU CHUNG cho toàn đơn vị?")) return;
+            } else {
+                if (!confirm("Xác nhận LƯU các chỉnh sửa hiện tại thành FORM MẪU CHUNG mới trên Firebase?")) return;
+            }
+            try {
+                await set(ref(db, 'qlcv_master_template'), {
+                    kpi: currentKPIs, okr: currentOKRs, updatedAt: new Date().toISOString()
+                });
+                firebaseMasterKPI = JSON.parse(JSON.stringify(currentKPIs));
+                firebaseMasterOKR = JSON.parse(JSON.stringify(currentOKRs));
+                alert("✅ Đã LƯU FORM MẪU CHUNG lên Firebase thành công!");
+            } catch (e) { alert("❌ Lỗi: " + e.message); }
+        };
+
+        window.assignToAllUnit = async function () {
+            if (!confirm(`Xác nhận GHI ĐÈ bộ khung HIỆN TẠI cho TOÀN BỘ ${allPersons.length} CBCS?`)) return;
+            syncDOMtoState();
+            let updates = {};
+            allPersons.forEach(p => {
+                updates[`qlcv_targets/${p.id}/kpi`] = currentKPIs;
+                updates[`qlcv_targets/${p.id}/okr`] = currentOKRs;
+                updates[`qlcv_targets/${p.id}/updatedAt`] = new Date().toISOString();
+            });
+            await update(ref(db), updates);
+            alert(`🚀 Thành công! Đã gắn chỉ tiêu cho ${allPersons.length} CBCS.`);
+        };
+        // ==========================================
+        // XUẤT EXCEL BẢNG KPI
+        // ==========================================
+        window.exportExcelKPI = function () {
+            if (typeof XLSX === 'undefined') {
+                alert('Thư viện Excel đang tải, vui lòng thử lại sau 1 giây!');
+                return;
+            }
+
+            // Ép hệ thống lấy dữ liệu mới nhất đang gõ trên màn hình
+            syncDOMtoState();
+
+            // Nhận diện xem đang xuất KPI của Form chung hay của riêng cán bộ nào
+            const sel = document.getElementById('person-selector');
+            let personName = 'Form_Mau_Chung';
+            if (sel && sel.value !== "") {
+                personName = sel.options[sel.selectedIndex].text.split(' (')[0].replace(/\s+/g, '_');
+            }
+
+            // Tạo mảng dữ liệu (Dòng đầu tiên là tiêu đề cột)
+            let data = [
+                ['NHÓM / CHỈ TIÊU NHIỆM VỤ', 'ĐVT', 'CHU KỲ', 'ƯU TIÊN', 'TRỌNG SỐ (%)', 'KIỂU', 'NGƯỠNG MIN', 'MỤC TIÊU', 'THỰC HIỆN', '% ĐẠT', 'ĐIỂM', 'SẢN PHẨM ĐẦU RA / GHI CHÚ']
+            ];
+
+            // Duyệt qua từng nhóm KPI để nạp dữ liệu
+            currentKPIs.forEach(g => {
+                // Dòng bôi đậm tên nhóm
+                data.push([g.grp.toUpperCase(), '', '', '', '', '', '', '', '', '', '', '']);
+
+                g.data.forEach(k => {
+                    const isText = k.textMin !== undefined;
+                    const minVal = isText ? k.textMin : (k.min || 0);
+                    const tarVal = isText ? k.textTarget : (k.target || 0);
+                    const actVal = isText ? (k.textActual || '-') : (k.actual || 0);
+
+                    let pctDat = '-';
+                    let diem = '-';
+
+                    // Tính toán phần trăm và điểm nếu là dữ liệu dạng số
+                    if (!isText && (k.target || 0) > 0) {
+                        let rawPct = Math.round((actVal / k.target) * 100);
+                        let maxPct = Math.min(rawPct, 200); // Tối đa hiển thị 200%
+                        pctDat = maxPct + '%';
+                        diem = ((k.weight || 0) * Math.min(maxPct, 100) / 100).toFixed(1);
+                    }
+
+                    data.push([
+                        '   - ' + k.name,  // Lùi đầu dòng một chút cho đẹp
+                        k.unit || '',
+                        k.period || '',
+                        k.priority || 'TB',
+                        k.weight || 0,
+                        isText ? 'Chữ' : 'Số',
+                        minVal,
+                        tarVal,
+                        actVal,
+                        pctDat,
+                        diem,
+                        k.output || ''  // ✅ Cột Sản phẩm đầu ra / Ghi chú
+                    ]);
+                });
+            });
+
+            // Chuyển mảng thành sheet
+            const ws = XLSX.utils.aoa_to_sheet(data);
+
+            // Căn chỉnh độ rộng các cột cho chuyên nghiệp (đơn vị: số ký tự)
+            ws['!cols'] = [
+                { wch: 50 }, // Chỉ tiêu
+                { wch: 10 }, // ĐVT
+                { wch: 15 }, // Chu kỳ
+                { wch: 10 }, // Ưu tiên
+                { wch: 15 }, // Trọng số
+                { wch: 10 }, // Kiểu
+                { wch: 15 }, // Min
+                { wch: 15 }, // Target
+                { wch: 15 }, // Actual
+                { wch: 12 }, // % Đạt
+                { wch: 10 }, // Điểm
+                { wch: 40 }  // Sản phẩm đầu ra / Ghi chú
+            ];
+
+            // Tạo file excel và tải xuống
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Bảng KPI");
+
+            const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            XLSX.writeFile(wb, `Bang_KPI_${personName}_${dateStr}.xlsx`);
+        };
+    </script>
+</body>
+
+</html>

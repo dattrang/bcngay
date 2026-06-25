@@ -1,0 +1,7 @@
+﻿File: 315317 bytes
+OK (4x): 787579c3aa6e206e67c3a079 -> 64c3a069206e67c3a079
+OK (2x): 587579c3aa6e206e67c3a079 -> 44c3a069206e67c3a079
+OK (1x): 585559c38a4e204e47c38059 -> 44c38049204e47c38059
+
+Total: 7 replacements
+File saved (binary).

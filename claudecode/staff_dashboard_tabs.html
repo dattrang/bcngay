@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Cán bộ – Tách Tab Công việc / KPI / OKR</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  --primary:#1d4ed8; --primary-light:#dbeafe; --primary-dark:#1e3a8a;
+  --success:#16a34a; --success-light:#dcfce7;
+  --warn:#d97706;    --warn-light:#fef3c7;
+  --danger:#dc2626;  --danger-light:#fee2e2;
+  --teal:#0d9488;    --teal-light:#ccfbf1;
+  --purple:#7c3aed;  --purple-light:#ede9fe;
+  --border:#e2e8f0;  --text1:#0f172a; --text2:#64748b;
+  --bg:#f1f5f9;      --card:#fff;
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Be Vietnam Pro',sans-serif;background:var(--bg);color:var(--text1);font-size:13px;line-height:1.5;min-height:100vh}
+
+/* ── SHELL ── */
+.shell{display:flex;min-height:100vh}
+.sidebar{width:210px;background:#0f172a;display:flex;flex-direction:column;flex-shrink:0}
+.sb-logo{padding:16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-logo .t{color:#f1f5f9;font-weight:800;font-size:14px}
+.sb-logo .s{color:#64748b;font-size:11px;margin-top:2px}
+.sb-item{display:flex;align-items:center;gap:9px;padding:10px 16px;color:#94a3b8;cursor:pointer;font-size:12.5px;transition:.15s;border-left:3px solid transparent}
+.sb-item:hover{background:rgba(255,255,255,.06);color:#e2e8f0}
+.sb-item.active{background:rgba(59,130,246,.12);color:#93c5fd;border-left-color:#3b82f6;font-weight:600}
+.sb-footer{margin-top:auto;padding:12px 14px;border-top:1px solid rgba(255,255,255,.06)}
+.sb-user{display:flex;align-items:center;gap:8px}
+.sb-user .av{width:30px;height:30px;border-radius:50%;background:#1d4ed8;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px;flex-shrink:0}
+.sb-user .nm{color:#e2e8f0;font-size:12px;font-weight:600}
+.sb-user .rl{color:#64748b;font-size:10.5px}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar-left h2{font-size:15px;font-weight:800}
+.topbar-left .sub{font-size:11px;color:var(--text2);margin-top:1px}
+
+/* ── PERSON HEADER ── */
+.person-strip{background:var(--card);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.av-lg{width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex-shrink:0}
+.person-strip .name{font-weight:800;font-size:14px}
+.person-strip .role{font-size:11.5px;color:var(--text2);margin-top:1px}
+.kpi-score-chip{margin-left:auto;text-align:right;flex-shrink:0}
+.kpi-score-chip .lbl{font-size:10.5px;color:var(--text2)}
+.kpi-score-chip .val{font-size:22px;font-weight:900;color:var(--warn);line-height:1}
+.kpi-score-chip .sub{font-size:10px;color:var(--text2)}
+.prog-mini{width:100px;margin-top:4px}
+.prog-wrap{height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px}
+.pg{background:var(--success)}.pw{background:var(--warn)}.pr{background:var(--danger)}
+
+/* ── STATS ROW ── */
+.stats-strip{background:var(--card);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;gap:10px;flex-shrink:0}
+.sc{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;text-align:center}
+.sc .n{font-size:20px;font-weight:900}
+.sc .l{font-size:10.5px;color:var(--text2);margin-top:1px;white-space:nowrap}
+.sc.blue .n{color:var(--primary)}.sc.green .n{color:var(--success)}.sc.red .n{color:var(--danger)}.sc.orange .n{color:var(--warn)}
+
+/* ── INNER TABS (KEY COMPONENT) ── */
+.inner-tabs{background:var(--card);border-bottom:2px solid var(--border);padding:0 20px;display:flex;gap:0;flex-shrink:0}
+.itab{display:flex;align-items:center;gap:6px;padding:11px 16px;font-size:12.5px;font-weight:600;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;white-space:nowrap}
+.itab:hover{color:var(--text1)}
+.itab.active{color:var(--primary);border-bottom-color:var(--primary)}
+.itab .cnt{background:#f1f5f9;color:#475569;border-radius:10px;padding:1px 6px;font-size:10.5px;font-weight:700}
+.itab.active .cnt{background:var(--primary-light);color:var(--primary)}
+.itab .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.dot-warn{background:var(--warn)}.dot-danger{background:var(--danger)}.dot-ok{background:var(--success)}
+
+/* ── TAB PANELS ── */
+.tab-panels{flex:1;overflow-y:auto}
+.tab-panel{display:none;padding:16px 20px}
+.tab-panel.active{display:block}
+
+/* ── FILTER BAR ── */
+.filter-bar{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}
+.filter-bar input,.filter-bar select{font-size:12px;border:1px solid var(--border);border-radius:6px;padding:6px 9px;background:var(--card);color:var(--text1);outline:none;font-family:inherit}
+.filter-bar input:focus,.filter-bar select:focus{border-color:#93c5fd}
+
+/* ── ALERT BANNER ── */
+.alert-banner{border-radius:8px;padding:9px 12px;font-size:12px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.ab-red{background:#fff5f5;border:1px solid #fca5a5;color:#7f1d1d}
+.ab-yellow{background:#fffbeb;border:1px solid #fcd34d;color:#78350f}
+
+/* ── TASK CARD ── */
+.task-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.task-card:hover{border-color:#93c5fd;box-shadow:0 2px 8px rgba(29,78,216,.08)}
+.task-card.overdue{border-left:3px solid var(--danger)}
+.task-card.soon{border-left:3px solid var(--warn)}
+.tc-row1{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px}
+.tc-title{flex:1;font-weight:700;font-size:13px;line-height:1.4}
+.tc-meta{display:flex;flex-wrap:wrap;gap:5px;align-items:center}
+.chip{display:inline-flex;align-items:center;border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600}
+.chip-green{background:var(--success-light);color:var(--success)}
+.chip-orange{background:var(--warn-light);color:var(--warn)}
+.chip-blue{background:var(--primary-light);color:var(--primary)}
+.chip-gray{background:#f1f5f9;color:#475569}
+.chip-red{background:var(--danger-light);color:var(--danger)}
+.chip-teal{background:var(--teal-light);color:var(--teal)}
+.chip-purple{background:var(--purple-light);color:var(--purple)}
+.chip-navy{background:#1e3a8a;color:#bfdbfe}
+.kpi-tag{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#eff6ff,#f0f9ff);border:1px solid #93c5fd;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:700;color:var(--primary)}
+.okr-tag{display:inline-flex;align-items:center;gap:3px;background:linear-gradient(135deg,#f0fdf4,#ccfbf1);border:1px solid #6ee7b7;border-radius:6px;padding:2px 7px;font-size:10.5px;font-weight:700;color:var(--teal)}
+
+/* ── KPI PANEL ── */
+.kpi-section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.kpi-section-header h3{font-size:13px;font-weight:800}
+.kpi-total-score{display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700}
+.kpi-total-score .s{font-size:18px;font-weight:900}
+
+.kpi-group{margin-bottom:14px}
+.kpi-grp-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;background:#f8fafc;border-radius:5px;padding:4px 8px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between}
+.kpi-grp-score{font-size:11px;font-weight:700;color:var(--primary);text-transform:none;letter-spacing:0}
+
+/* ── KPI ITEM ── */
+.kpi-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:6px;border-left:3px solid #cbd5e1;transition:.15s}
+.kpi-item:hover{border-color:#93c5fd}
+.kpi-item.ok{border-left-color:var(--success)}
+.kpi-item.warn{border-left-color:var(--warn)}
+.kpi-item.bad{border-left-color:var(--danger)}
+.kpi-item.na{border-left-color:#cbd5e1}
+
+.ki-row1{display:flex;align-items:center;gap:6px;margin-bottom:5px}
+.ki-name{font-weight:600;font-size:12.5px;flex:1}
+.ki-badges{display:flex;gap:4px;flex-shrink:0}
+
+.badge{display:inline-flex;align-items:center;border-radius:10px;padding:2px 7px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.b-ok{background:var(--success-light);color:var(--success)}
+.b-warn{background:var(--warn-light);color:var(--warn)}
+.b-bad{background:var(--danger-light);color:var(--danger)}
+.b-blue{background:var(--primary-light);color:var(--primary)}
+.b-gray{background:#f1f5f9;color:#475569}
+.b-teal{background:var(--teal-light);color:var(--teal)}
+
+.ki-prog-row{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.ki-prog-row .prog-wrap{flex:1;height:6px}
+.ki-prog-pct{font-size:11px;font-weight:800;min-width:30px;text-align:right}
+
+.ki-nums{display:flex;gap:12px;font-size:11px;color:var(--text2);flex-wrap:wrap}
+.ki-nums strong{color:var(--text1)}
+.ki-nums .actual-val{font-weight:800;font-size:12px}
+.ki-nums .actual-val.ok{color:var(--success)}
+.ki-nums .actual-val.warn{color:var(--warn)}
+.ki-nums .actual-val.bad{color:var(--danger)}
+
+/* ── LINKED TASKS (trong KPI tab) ── */
+.linked-tasks-row{margin-top:7px;display:flex;flex-wrap:wrap;gap:4px;align-items:center}
+.lt-label{font-size:10.5px;color:var(--text2);margin-right:2px;white-space:nowrap}
+.lt-chip{display:inline-flex;align-items:center;gap:4px;background:#f8fafc;border:1px solid var(--border);border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer;transition:.15s;max-width:220px}
+.lt-chip:hover{background:#eff6ff;border-color:#93c5fd}
+.lt-chip.done{background:#f0fdf4;border-color:#86efac}
+.lt-chip.doing{background:#fffbeb;border-color:#fde68a}
+.lt-chip.review{background:var(--purple-light);border-color:#c4b5fd}
+.lt-chip .lt-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:130px}
+.lt-chip .lt-val{background:var(--primary-light);color:var(--primary);border-radius:4px;padding:1px 5px;font-weight:700;font-size:10.5px;flex-shrink:0}
+.lt-chip.done .lt-val{background:var(--success-light);color:var(--success)}
+.lt-chip.doing .lt-val{background:var(--warn-light);color:var(--warn)}
+.lt-chip.review .lt-val{background:var(--purple-light);color:var(--purple)}
+.lt-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.ld-done{background:var(--success)}.ld-doing{background:var(--warn)}.ld-todo{background:#94a3b8}.ld-review{background:var(--purple)}
+.lt-more{font-size:10.5px;color:var(--text2);cursor:pointer;white-space:nowrap}
+.lt-more:hover{color:var(--primary)}
+
+/* ── OKR ── */
+.okr-obj{background:var(--card);border:1px solid #bae6fd;border-radius:var(--r);margin-bottom:10px;overflow:hidden}
+.okr-obj-hdr{background:linear-gradient(135deg,#f0f9ff,#e0f2fe);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.okr-obj-name{font-weight:700;font-size:13px;color:#0369a1;flex:1}
+.okr-obj-prog{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.okr-obj-prog .prog-wrap{width:80px;height:6px}
+.okr-obj-pct{font-size:13px;font-weight:800;min-width:36px;text-align:right}
+.okr-krs{padding:8px 14px}
+.okr-kr{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px dashed #f1f5f9}
+.okr-kr:last-child{border-bottom:none}
+.okr-kr-left{flex:1;min-width:0}
+.okr-kr-name{font-size:12.5px;font-weight:600;margin-bottom:5px}
+.okr-kr-prog{display:flex;align-items:center;gap:6px;flex-shrink:0;min-width:120px}
+.okr-kr-prog .prog-wrap{width:80px;height:5px}
+.okr-kr-pct{font-size:11px;font-weight:700;min-width:32px;text-align:right}
+.okr-kr-nums{font-size:11px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap}
+
+/* ── EMPTY ── */
+.empty{text-align:center;padding:40px 20px;color:var(--text2)}
+.empty-icon{font-size:32px;margin-bottom:8px}
+.empty-sub{font-size:12px;margin-top:4px}
+
+/* ── SECTION DIVIDER ── */
+.sdiv{display:flex;align-items:center;gap:8px;margin:14px 0 10px;font-size:11.5px;font-weight:700;color:var(--text2)}
+.sdiv::before,.sdiv::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* MOBILE */
+@media(max-width:680px){
+  .sidebar{display:none}
+  .stats-strip{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .person-strip{flex-wrap:wrap}
+  .kpi-score-chip{margin-left:0}
+  .itab{padding:10px 10px;font-size:11.5px;gap:4px}
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-logo">
+    <div class="t">🛡️ QLCV Trung Gia</div>
+    <div class="s">Quản lý nhiệm vụ CSKV</div>
+  </div>
+  <div class="sb-item active">🏠 Dashboard</div>
+  <div class="sb-item">👥 Tất cả CBCS</div>
+  <div class="sb-item">📄 Tất cả CV</div>
+  <div class="sb-item">📊 Báo cáo</div>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="av">TH</div>
+      <div>
+        <div class="nm">Th.úy Trần Văn Hùng</div>
+        <div class="rl">CSKV · Tổ 3</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <h2>Dashboard của tôi</h2>
+      <div class="sub">Tháng 4/2026 · Cập nhật 09:45</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div class="av" style="width:32px;height:32px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:11px">TH</div>
+    </div>
+  </div>
+
+  <!-- PERSON STRIP -->
+  <div class="person-strip">
+    <div class="av-lg">TH</div>
+    <div>
+      <div class="name">Trần Văn Hùng
+        <span class="chip chip-navy" style="font-size:11px;margin-left:5px">Tổ 3 – CSKV</span>
+      </div>
+      <div class="role">Cán bộ Cảnh sát khu vực · Công an xã Trung Gia</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:6px">
+        <div class="prog-mini">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+            <span style="font-size:10.5px;color:var(--text2)">Tiến độ tổng</span>
+            <span style="font-size:10.5px;font-weight:700;color:var(--warn)">62%</span>
+          </div>
+          <div class="prog-wrap" style="width:130px;height:5px"><div class="prog-fill pw" style="width:62%"></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="kpi-score-chip">
+      <div class="lbl">Điểm KPI tháng</div>
+      <div class="val">72.4</div>
+      <div class="sub">/100 điểm</div>
+    </div>
+  </div>
+
+  <!-- STATS STRIP -->
+  <div class="stats-strip">
+    <div class="sc blue"><div class="n">18</div><div class="l">Tổng CV</div></div>
+    <div class="sc green"><div class="n">11</div><div class="l">Hoàn thành</div></div>
+    <div class="sc red"><div class="n">2</div><div class="l">Quá hạn</div></div>
+    <div class="sc orange"><div class="n">5</div><div class="l">Đang làm</div></div>
+  </div>
+
+  <!-- ══════════════ INNER TABS ══════════════ -->
+  <div class="inner-tabs">
+    <div class="itab active" id="itab-tasks" onclick="switchTab('tasks')">
+      📋 Công việc
+      <span class="cnt">18</span>
+      <span class="dot dot-danger" title="Có việc quá hạn"></span>
+    </div>
+    <div class="itab" id="itab-kpi" onclick="switchTab('kpi')">
+      📊 Chỉ tiêu KPI
+      <span class="cnt">19 CT</span>
+      <span class="dot dot-warn" title="Một số KPI chưa đạt"></span>
+    </div>
+    <div class="itab" id="itab-okr" onclick="switchTab('okr')">
+      🎯 OKR Cao điểm
+      <span class="cnt">2 CD</span>
+      <span class="dot dot-warn"></span>
+    </div>
+  </div>
+
+  <!-- ══════════════ TAB PANELS ══════════════ -->
+  <div class="tab-panels">
+
+    <!-- ────── TAB: CÔNG VIỆC ────── -->
+    <div class="tab-panel active" id="panel-tasks">
+
+      <div class="alert-banner ab-red" style="margin-top:4px">
+        🚨 <strong>Bạn có 2 công việc quá hạn!</strong> Vui lòng cập nhật tiến độ ngay.
+      </div>
+      <div class="alert-banner ab-yellow">
+        ⏰ <strong>3 công việc sắp đến hạn</strong> trong 3 ngày tới.
+      </div>
+
+      <div class="filter-bar">
+        <input type="text" placeholder="🔍 Tìm tên công việc...">
+        <select>
+          <option>Đang làm (Ẩn đã xong)</option>
+          <option>Tất cả</option>
+          <option>⚠️ Quá hạn</option>
+          <option>⏳ Sắp hết hạn</option>
+          <option>✅ Hoàn thành</option>
+        </select>
+        <select>
+          <option>Tất cả ưu tiên</option>
+          <option>🔥 Khẩn cấp</option>
+          <option>Bình thường</option>
+          <option>↓ Thấp</option>
+        </select>
+        <select>
+          <option>Theo hạn</option>
+          <option>Theo ưu tiên</option>
+        </select>
+        <span style="font-size:11.5px;color:var(--text2);margin-left:2px">5/18 việc</span>
+      </div>
+
+      <!-- Task 1 – quá hạn + có KPI -->
+      <div class="task-card overdue">
+        <div class="tc-row1">
+          <span class="chip chip-red">⚠ Quá hạn</span>
+          <div class="tc-title">Báo cáo biến động nhân khẩu tháng 3/2026</div>
+          <span class="chip chip-orange">🔥 Khẩn cấp</span>
+        </div>
+        <div class="tc-meta">
+          <span class="chip chip-red">📆 HĐ: 05/4 – Quá 17 ngày</span>
+          <span class="chip chip-teal">📁 Quản lý CSDL</span>
+          <!-- KPI tag trong card task: hiện tên chỉ tiêu + giá trị + đơn vị -->
+          <span class="kpi-tag">📊 KPI: Biến động nhân khẩu CSDL · <strong>100%</strong></span>
+        </div>
+      </div>
+
+      <!-- Task 2 – sắp hạn + có KPI -->
+      <div class="task-card soon">
+        <div class="tc-row1">
+          <span class="chip chip-orange">🔄 Đang làm</span>
+          <div class="tc-title">Thăm hỏi hộ khu 2 – Đợt 2 tháng 4/2026</div>
+          <span class="chip chip-gray">Bình thường</span>
+        </div>
+        <div class="tc-meta">
+          <span class="chip chip-orange">📆 HĐ: 28/4 – Còn 6 ngày</span>
+          <span class="chip chip-teal">📁 Quản lý địa bàn</span>
+          <!-- Gắn KPI: đơn vị là "hộ" -->
+          <span class="kpi-tag">📊 KPI: Hộ dân được thăm hỏi · <strong>15 hộ</strong></span>
+        </div>
+      </div>
+
+      <!-- Task 3 – trình duyệt + OKR -->
+      <div class="task-card">
+        <div class="tc-row1">
+          <span class="chip chip-purple">📋 Trình duyệt</span>
+          <div class="tc-title">Kiểm tra cơ sở kinh doanh khu chợ tháng 4</div>
+          <span class="chip chip-gray">Bình thường</span>
+        </div>
+        <div class="tc-meta">
+          <span class="chip chip-gray">📆 HĐ: 25/4</span>
+          <span class="chip chip-teal">📁 Trật tự đô thị</span>
+          <!-- OKR tag: đơn vị là "lượt" -->
+          <span class="okr-tag">🎯 OKR: Ra quân TTĐT Q2 · <strong>8 lượt</strong></span>
+        </div>
+      </div>
+
+      <!-- Task 4 – chưa làm -->
+      <div class="task-card">
+        <div class="tc-row1">
+          <span class="chip chip-gray">📌 Chưa làm</span>
+          <div class="tc-title">Hướng dẫn Tổ BVANTQ khu 3 – Tháng 4</div>
+          <span class="chip chip-gray">TB</span>
+        </div>
+        <div class="tc-meta">
+          <span class="chip chip-gray">📆 HĐ: 30/4</span>
+          <span class="chip chip-teal">📁 BVANTQ</span>
+          <span class="kpi-tag">📊 KPI: Hướng dẫn BVANTQ · <strong>1 buổi</strong></span>
+        </div>
+      </div>
+
+      <!-- Task 5 – đang làm, không có KPI -->
+      <div class="task-card">
+        <div class="tc-row1">
+          <span class="chip chip-orange">🔄 Đang làm</span>
+          <div class="tc-title">Tổng hợp hồ sơ địa bàn phục vụ họp giao ban</div>
+          <span class="chip chip-orange">🔥 Khẩn cấp</span>
+        </div>
+        <div class="tc-meta">
+          <span class="chip chip-gray">📆 HĐ: 24/4</span>
+          <span class="chip chip-teal">📁 Hành chính</span>
+          <span class="chip chip-gray" style="font-size:10.5px;opacity:.7">Không tính KPI</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ────── TAB: KPI ────── -->
+    <div class="tab-panel" id="panel-kpi">
+
+      <div class="kpi-section-header">
+        <h3>📊 Chỉ tiêu KPI thường xuyên – Tháng 4/2026</h3>
+        <div class="kpi-total-score">
+          Tổng điểm: <span class="s">72.4</span> / 100
+        </div>
+      </div>
+
+      <!-- GROUP 1 -->
+      <div class="kpi-group">
+        <div class="kpi-grp-title">
+          🏠 Nhóm 1: Quản lý địa bàn & hộ dân
+          <span class="kpi-grp-score">Nhóm: 17.5 / 25đ</span>
+        </div>
+
+        <!-- KPI 1.1 – đơn vị: hộ, warn -->
+        <div class="kpi-item warn">
+          <div class="ki-row1">
+            <div class="ki-name">Tỷ lệ hộ dân được thăm hỏi</div>
+            <div class="ki-badges">
+              <span class="badge b-blue">Hàng tháng</span>
+              <span class="badge b-warn">⚠ 78%</span>
+            </div>
+          </div>
+          <div class="ki-prog-row">
+            <div class="prog-wrap"><div class="prog-fill pw" style="width:78%"></div></div>
+            <span class="ki-prog-pct" style="color:var(--warn)">78%</span>
+          </div>
+          <div class="ki-nums">
+            <span>Min: <strong>80%</strong></span>
+            <span>Mục tiêu: <strong>100%</strong></span>
+            <span>Thực hiện: <span class="actual-val warn">78 hộ</span> / 100 hộ</span>
+            <span>TrS: <strong>5%</strong></span>
+          </div>
+          <!-- LINKED TASKS -->
+          <div class="linked-tasks-row">
+            <span class="lt-label">🔗 Nhiệm vụ:</span>
+            <span class="lt-chip done">
+              <span class="lt-dot ld-done"></span>
+              <span class="lt-name">Thăm hỏi hộ khu 1 tháng 4</span>
+              <span class="lt-val">45 hộ</span>
+            </span>
+            <span class="lt-chip done">
+              <span class="lt-dot ld-done"></span>
+              <span class="lt-name">Thăm hỏi hộ CS chính sách</span>
+              <span class="lt-val">18 hộ</span>
+            </span>
+            <span class="lt-chip doing">
+              <span class="lt-dot ld-doing"></span>
+              <span class="lt-name">Thăm hỏi hộ khu 2 – Đợt 2</span>
+              <span class="lt-val">15 hộ</span>
+            </span>
+          </div>
+        </div>
+
+        <!-- KPI 1.2 – đơn vị: lần/tuần, ok -->
+        <div class="kpi-item ok">
+          <div class="ki-row1">
+            <div class="ki-name">Cập nhật Sổ nhật ký địa bàn</div>
+            <div class="ki-badges">
+              <span class="badge b-blue">Hàng tuần</span>
+              <span class="badge b-ok">✓ Đạt</span>
+            </div>
+          </div>
+          <div class="ki-prog-row">
+            <div class="prog-wrap"><div class="prog-fill pg" style="width:100%"></div></div>
+            <span class="ki-prog-pct" style="color:var(--success)">100%</span>
+          </div>
+          <div class="ki-nums">
+            <span>Min: <strong>3 lần/tuần</strong></span>
+            <span>Mục tiêu: <strong>5 lần/tuần</strong></span>
+            <span>Thực hiện: <span class="actual-val ok">5 lần/tuần</span></span>
+          </div>
+          <div class="linked-tasks-row">
+            <span class="lt-label">🔗 Nhiệm vụ:</span>
+            <span class="lt-chip done"><span class="lt-dot ld-done"></span><span class="lt-name">Cập nhật NKĐ tuần 14</span><span class="lt-val">5 lần/tuần</span></span>
+            <span class="lt-chip done"><span class="lt-dot ld-done"></span><span class="lt-name">Cập nhật NKĐ tuần 15</span><span class="lt-val">5 lần/tuần</span></span>
+          </div>
+        </div>
+
+        <!-- KPI 1.3 – đơn vị: %, chưa có data -->
+        <div class="kpi-item na">
+          <div class="ki-row1">
+            <div class="ki-name">Cập nhật biến động nhân khẩu CSDL</div>
+            <div class="ki-badges">
+              <span class="badge b-blue">Hàng tháng</span>
+              <span class="badge b-gray">Chưa có dữ liệu</span>
+            </div>
+          </div>
+          <div class="ki-prog-row">
+            <div class="prog-wrap"><div class="prog-fill" style="width:0%;background:#cbd5e1"></div></div>
+            <span class="ki-prog-pct" style="color:var(--text2)">0%</span>
+          </div>
+          <div class="ki-nums">
+            <span>Min: <strong>95%</strong></span>
+            <span>Mục tiêu: <strong>100%</strong></span>
+            <span>Thực hiện: <span class="actual-val" style="color:var(--text2)">0%</span></span>
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:var(--text2);font-style:italic">
+            ⚠ Chưa có nhiệm vụ nào gắn chỉ tiêu này.
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUP 2 -->
+      <div class="kpi-group">
+        <div class="kpi-grp-title">
+          🎯 Nhóm 2: Quản lý đối tượng
+          <span class="kpi-grp-score">Nhóm: 19.5 / 20đ</span>
+        </div>
+
+        <!-- KPI 2.2 – đơn vị: lần/ĐT, vượt mục tiêu -->
+        <div class="kpi-item ok">
+          <div class="ki-row1">
+            <div class="ki-name">Gặp gỡ, giáo dục đối tượng</div>
+            <div class="ki-badges">
+              <span class="badge b-blue">Hàng tháng</span>
+              <span class="badge b-ok">✓ Vượt 150%</span>
+            </div>
+          </div>
+          <div class="ki-prog-row">
+            <div class="prog-wrap"><div class="prog-fill pg" style="width:100%"></div></div>
+            <span class="ki-prog-pct" style="color:var(--success)">150%</span>
+          </div>
+          <div class="ki-nums">
+            <span>Min: <strong>1 lần/ĐT</strong></span>
+            <span>Mục tiêu: <strong>2 lần/ĐT</strong></span>
+            <span>Thực hiện: <span class="actual-val ok">3 lần/ĐT</span></span>
+          </div>
+          <div class="linked-tasks-row">
+            <span class="lt-label">🔗 Nhiệm vụ:</span>
+            <span class="lt-chip done"><span class="lt-dot ld-done"></span><span class="lt-name">Gặp gỡ ĐT Nguyễn Văn A</span><span class="lt-val">1 lần/ĐT</span></span>
+            <span class="lt-chip done"><span class="lt-dot ld-done"></span><span class="lt-name">Gặp gỡ ĐT Trần Thị B</span><span class="lt-val">2 lần/ĐT</span></span>
+          </div>
+        </div>
+
+        <!-- KPI 2.4 – đơn vị: vụ, text target -->
+        <div class="kpi-item warn">
+          <div class="ki-row1">
+            <div class="ki-name">Số đối tượng vi phạm phát hiện</div>
+            <div class="ki-badges">
+              <span class="badge b-blue">Hàng tháng</span>
+              <span class="badge b-warn">Phát hiện đủ</span>
+            </div>
+          </div>
+          <div class="ki-nums" style="margin-top:2px;margin-bottom:4px">
+            <span>Yêu cầu: <strong>Phát hiện đủ</strong></span>
+            <span>Thực hiện: <span class="actual-val warn">2 vụ</span></span>
+          </div>
+          <div class="linked-tasks-row">
+            <span class="lt-label">🔗 Nhiệm vụ:</span>
+            <span class="lt-chip done"><span class="lt-dot ld-done"></span><span class="lt-name">Xử lý VPHC khu 1/4</span><span class="lt-val">2 vụ</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUP 3 -->
+      <div class="kpi-group">
+        <div class="kpi-grp-title">
+          📢 Nhóm 3: Tiếp nhận tin báo & xử lý vi phạm
+          <span class="kpi-grp-score">Nhóm: 9 / 15đ</span>
+        </div>
+        <!-- 2-column compact view for groups with many items -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div class="kpi-item ok" style="margin-bottom:0">
+            <div class="ki-name" style="font-size:12px;margin-bottom:5px">Tin báo xử lý kịp thời</div>
+            <div class="ki-prog-row"><div class="prog-wrap"><div class="prog-fill pg" style="width:100%"></div></div><span class="ki-prog-pct" style="color:var(--success)">100%</span></div>
+            <div style="font-size:11px;color:var(--text2)">Thực hiện: <strong style="color:var(--success)">100%</strong> · TrS 6%</div>
+          </div>
+          <div class="kpi-item bad" style="margin-bottom:0">
+            <div class="ki-name" style="font-size:12px;margin-bottom:5px">VPHC xử lý đúng hạn</div>
+            <div class="ki-prog-row"><div class="prog-wrap"><div class="prog-fill pr" style="width:60%"></div></div><span class="ki-prog-pct" style="color:var(--danger)">60%</span></div>
+            <div style="font-size:11px;color:var(--text2)">Thực hiện: <strong style="color:var(--danger)">60%</strong> / 100% · TrS 5%</div>
+          </div>
+          <div class="kpi-item ok" style="margin-bottom:0">
+            <div class="ki-name" style="font-size:12px;margin-bottom:5px">Hồ sơ giáo dục xã/phường</div>
+            <div class="ki-prog-row"><div class="prog-wrap"><div class="prog-fill pg" style="width:100%"></div></div><span class="ki-prog-pct" style="color:var(--success)">100%</span></div>
+            <div style="font-size:11px;color:var(--text2)">Thực hiện: <strong style="color:var(--success)">100%</strong> · TrS 4%</div>
+          </div>
+          <div class="kpi-item na" style="margin-bottom:0">
+            <div class="ki-name" style="font-size:12px;margin-bottom:5px">Bắt giữ người phạm tội QT</div>
+            <div style="font-size:11px;color:var(--text2);margin-top:4px">Yêu cầu: <strong>Theo KH</strong></div>
+            <div style="font-size:11px;color:var(--text2)">Thực hiện: <strong>0 vụ</strong></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- GROUP 4 + 5 compact -->
+      <div class="kpi-group">
+        <div class="kpi-grp-title">🛡️ Nhóm 4 & 5: BVANTQ & Tuyên truyền<span class="kpi-grp-score">Nhóm: 14 / 18đ</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div class="kpi-item ok" style="margin-bottom:0">
+            <div class="ki-name" style="font-size:12px;margin-bottom:5px">Hướng dẫn Tổ BVANTQ</div>
+            <div class="ki-prog-row"><div class="prog-wrap"><div class="prog-fill pg" style="width:100%"></div></div><span class="ki-prog-pct" style="color:var(--success)">100%</span></div>
+            <div style="font-size:11px;color:var(--text2)">4/4 <strong>buổi</strong> · TrS 3%</div>
+          </div>
+          <div class="kpi-item warn" style="margin-bottom:0">
+            <div class="ki-name" style="font-size:12px;margin-bottom:5px">Người dân tiếp cận TT</div>
+            <div class="ki-prog-row"><div class="prog-wrap"><div class="prog-fill pw" style="width:70%"></div></div><span class="ki-prog-pct" style="color:var(--warn)">70%</span></div>
+            <div style="font-size:11px;color:var(--text2)">70/100 <strong>người</strong> · TrS 2%</div>
+          </div>
+          <div class="kpi-item ok" style="margin-bottom:0">
+            <div class="ki-name" style="font-size:12px;margin-bottom:5px">Tuyên truyền pháp luật ANTT</div>
+            <div class="ki-prog-row"><div class="prog-wrap"><div class="prog-fill pg" style="width:100%"></div></div><span class="ki-prog-pct" style="color:var(--success)">100%</span></div>
+            <div style="font-size:11px;color:var(--text2)">4/4 <strong>buổi</strong> · TrS 3%</div>
+          </div>
+          <div class="kpi-item ok" style="margin-bottom:0">
+            <div class="ki-name" style="font-size:12px;margin-bottom:5px">Mâu thuẫn giải quyết thành công</div>
+            <div class="ki-prog-row"><div class="prog-wrap"><div class="prog-fill pg" style="width:90%"></div></div><span class="ki-prog-pct" style="color:var(--success)">90%</span></div>
+            <div style="font-size:11px;color:var(--text2)">90% / 95% mục tiêu · TrS 4%</div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /panel-kpi -->
+
+    <!-- ────── TAB: OKR ────── -->
+    <div class="tab-panel" id="panel-okr">
+
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h3 style="font-size:13px;font-weight:800">🎯 Chiến dịch OKR Cao điểm – Q2/2026</h3>
+        <div style="background:linear-gradient(135deg,#064e3b,#0d9488);color:#fff;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700">
+          Tiến độ TB: <span style="font-size:16px;font-weight:900">55%</span>
+        </div>
+      </div>
+
+      <!-- OKR 1 -->
+      <div class="okr-obj">
+        <div class="okr-obj-hdr">
+          <div>
+            <div class="okr-obj-name">🏘 Rà soát 100% hộ dân không có CCCD</div>
+            <div style="font-size:11px;color:#0369a1;margin-top:2px">Hạn: 30/04/2026 · Còn 8 ngày</div>
+          </div>
+          <div class="okr-obj-prog">
+            <div class="prog-wrap" style="height:7px"><div class="prog-fill pg" style="width:80%"></div></div>
+            <span class="okr-obj-pct" style="color:var(--success)">80%</span>
+          </div>
+        </div>
+        <div class="okr-krs">
+
+          <!-- KR1 -->
+          <div class="okr-kr">
+            <div class="okr-kr-left">
+              <div class="okr-kr-name">KR1: Rà soát đủ số hộ trong danh sách</div>
+              <div class="okr-kr-nums">
+                <span>Mục tiêu: <strong>120 hộ</strong></span>
+                <span>Thực hiện: <strong style="color:var(--success)">120 hộ</strong></span>
+              </div>
+              <!-- Linked tasks trong OKR KR -->
+              <div class="linked-tasks-row" style="margin-top:5px">
+                <span class="lt-label">🔗</span>
+                <span class="lt-chip done"><span class="lt-dot ld-done"></span><span class="lt-name">Rà soát danh sách khu 1</span><span class="lt-val">55 hộ</span></span>
+                <span class="lt-chip done"><span class="lt-dot ld-done"></span><span class="lt-name">Rà soát danh sách khu 2</span><span class="lt-val">65 hộ</span></span>
+              </div>
+            </div>
+            <div class="okr-kr-prog">
+              <div class="prog-wrap"><div class="prog-fill pg" style="width:100%"></div></div>
+              <span class="okr-kr-pct" style="color:var(--success)">100%</span>
+            </div>
+          </div>
+
+          <!-- KR2 -->
+          <div class="okr-kr">
+            <div class="okr-kr-left">
+              <div class="okr-kr-name">KR2: Vận động 80% số người đến làm CCCD</div>
+              <div class="okr-kr-nums">
+                <span>Mục tiêu: <strong>96 người</strong></span>
+                <span>Thực hiện: <strong style="color:var(--warn)">48 người</strong></span>
+              </div>
+              <div class="linked-tasks-row" style="margin-top:5px">
+                <span class="lt-label">🔗</span>
+                <span class="lt-chip review"><span class="lt-dot ld-review"></span><span class="lt-name">Vận động đợt 1 tháng 4</span><span class="lt-val">48 người</span></span>
+                <span class="lt-chip doing"><span class="lt-dot ld-doing"></span><span class="lt-name">Vận động đợt 2 (đang làm)</span><span class="lt-val">—</span></span>
+              </div>
+            </div>
+            <div class="okr-kr-prog">
+              <div class="prog-wrap"><div class="prog-fill pw" style="width:50%"></div></div>
+              <span class="okr-kr-pct" style="color:var(--warn)">50%</span>
+            </div>
+          </div>
+
+          <!-- KR3 -->
+          <div class="okr-kr">
+            <div class="okr-kr-left">
+              <div class="okr-kr-name">KR3: Báo cáo kết quả lên Công an xã</div>
+              <div class="okr-kr-nums"><span>Thực hiện: <strong style="color:var(--text2)">0 / 1 lần</strong></span></div>
+              <div style="font-size:11px;color:var(--text2);font-style:italic;margin-top:4px">Chưa có nhiệm vụ gắn KR này</div>
+            </div>
+            <div class="okr-kr-prog">
+              <div class="prog-wrap"><div class="prog-fill pr" style="width:0%"></div></div>
+              <span class="okr-kr-pct" style="color:var(--text2)">0%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- OKR 2 -->
+      <div class="okr-obj">
+        <div class="okr-obj-hdr">
+          <div>
+            <div class="okr-obj-name">🛡️ Ra quân trật tự đô thị Q2/2026</div>
+            <div style="font-size:11px;color:#0369a1;margin-top:2px">Hạn: 15/05/2026 · Còn 23 ngày</div>
+          </div>
+          <div class="okr-obj-prog">
+            <div class="prog-wrap" style="height:7px"><div class="prog-fill pr" style="width:30%"></div></div>
+            <span class="okr-obj-pct" style="color:var(--danger)">30%</span>
+          </div>
+        </div>
+        <div class="okr-krs">
+          <div class="okr-kr">
+            <div class="okr-kr-left">
+              <div class="okr-kr-name">KR1: Kiểm tra 50 cơ sở kinh doanh</div>
+              <div class="okr-kr-nums">
+                <span>Mục tiêu: <strong>50 lượt</strong></span>
+                <span>Thực hiện: <strong style="color:var(--warn)">15 lượt</strong></span>
+              </div>
+              <div class="linked-tasks-row" style="margin-top:5px">
+                <span class="lt-label">🔗</span>
+                <span class="lt-chip review"><span class="lt-dot ld-review"></span><span class="lt-name">KT CSKD khu chợ T4</span><span class="lt-val">8 lượt</span></span>
+                <span class="lt-chip done"><span class="lt-dot ld-done"></span><span class="lt-name">KT CSKD đường Xuân Đỉnh</span><span class="lt-val">7 lượt</span></span>
+              </div>
+            </div>
+            <div class="okr-kr-prog">
+              <div class="prog-wrap"><div class="prog-fill pw" style="width:30%"></div></div>
+              <span class="okr-kr-pct" style="color:var(--warn)">30%</span>
+            </div>
+          </div>
+          <div class="okr-kr">
+            <div class="okr-kr-left">
+              <div class="okr-kr-name">KR2: Xử lý vi phạm không GPKD</div>
+              <div class="okr-kr-nums">
+                <span>Mục tiêu: <strong>Theo KH (5 vụ)</strong></span>
+                <span>Thực hiện: <strong style="color:var(--danger)">1 vụ</strong></span>
+              </div>
+              <div class="linked-tasks-row" style="margin-top:5px">
+                <span class="lt-label">🔗</span>
+                <span class="lt-chip done"><span class="lt-dot ld-done"></span><span class="lt-name">Xử lý VPHC karaoke TG-01</span><span class="lt-val">1 vụ</span></span>
+              </div>
+            </div>
+            <div class="okr-kr-prog">
+              <div class="prog-wrap"><div class="prog-fill pr" style="width:20%"></div></div>
+              <span class="okr-kr-pct" style="color:var(--danger)">20%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /panel-okr -->
+
+  </div><!-- /tab-panels -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+function switchTab(name) {
+  // Deactivate all
+  ['tasks','kpi','okr'].forEach(function(t){
+    document.getElementById('itab-'+t).classList.remove('active');
+    document.getElementById('panel-'+t).classList.remove('active');
+  });
+  // Activate target
+  document.getElementById('itab-'+name).classList.add('active');
+  document.getElementById('panel-'+name).classList.add('active');
+  // Scroll to top of panel area
+  document.querySelector('.tab-panels').scrollTop = 0;
+}
+</script>
+</body>
+</html>
