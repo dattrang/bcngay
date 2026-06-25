@@ -5374,7 +5374,7 @@
                                 if (!groups[cat]) groups[cat] = {};
                                 const tName = (t.tenCongViec || '').trim();
                                 if (!groups[cat][tName]) {
-                                    groups[cat][tName] = { chiTieu: 0, thucTe: 0, dvt: t.dvt || '' };
+                                    groups[cat][tName] = { chiTieu: 0, thucTe: 0, dvt: t.dvt || '', notes: new Set() };
                                 }
                                 const chiTieuVal = parseFloat(t.chiTieu) || 0;
                                 const dg = t.dg || {};
@@ -5382,6 +5382,9 @@
                                 
                                 groups[cat][tName].chiTieu += chiTieuVal;
                                 groups[cat][tName].thucTe += thucTeVal;
+
+                                if (t.ghiChu && t.ghiChu.trim()) groups[cat][tName].notes.add(t.ghiChu.trim());
+                                if (dg.lyDoKhongDat && dg.lyDoKhongDat.trim()) groups[cat][tName].notes.add(dg.lyDoKhongDat.trim());
                             });
                             let reportLines = [];
                             reportLines.push(`BÁO CÁO TỔNG HỢP CÔNG VIỆC (Từ ngày ${formatDMY(startStr)} đến ${formatDMY(endStr)})`);
@@ -5397,7 +5400,11 @@
                                     const stats = groups[cat][tName];
                                     let pct = stats.chiTieu > 0 ? Math.round((stats.thucTe / stats.chiTieu) * 100) : (stats.thucTe > 0 ? 100 : 0);
                                     let dvtStr = stats.dvt ? ` ${stats.dvt}` : '';
-                                    reportLines.push(`   - ${tName}: Đã làm ${stats.thucTe} / ${stats.chiTieu}${dvtStr} (Đạt ${pct}%)`);
+                                    let noteStr = '';
+                                    if (stats.notes.size > 0) {
+                                        noteStr = ` (Ghi chú: ${Array.from(stats.notes).join('; ')})`;
+                                    }
+                                    reportLines.push(`   - ${tName}: Đã làm ${stats.thucTe} / ${stats.chiTieu}${dvtStr} (Đạt ${pct}%)${noteStr}`);
                                 }
                                 groupIndex++;
                             }
