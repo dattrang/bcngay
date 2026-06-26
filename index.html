@@ -2770,8 +2770,8 @@
                                 yestTasks = yestTasks.filter(t => t.nguoiPhuTrach === DEVICE_USER);
                             }
                             document.getElementById('dash-today-total').innerText = todayTasks.length;
-                            document.getElementById('dash-today-done').innerText = todayTasks.filter(t => t.danhGia?.thoiDiemDanhGia).length;
-                            document.getElementById('dash-yest-late').innerText = yestTasks.filter(t => !t.danhGia?.thoiDiemDanhGia || t.danhGia?.ketQua === 'Chưa thực hiện').length;
+                            document.getElementById('dash-today-done').innerText = todayTasks.filter(t => t.danhGia?.thoiDiemDanhGia && (t.danhGia.tiLeHoanThanh >= 100 || t.danhGia.ketQua === 'Chuyển sang ngày khác')).length;
+                            document.getElementById('dash-yest-late').innerText = yestTasks.filter(t => !t.danhGia?.thoiDiemDanhGia || (t.danhGia.tiLeHoanThanh < 100 && t.danhGia.ketQua !== 'Chuyển sang ngày khác') || t.danhGia?.ketQua === 'Chưa thực hiện').length;
                         } catch (e) { console.error("Lỗi Dashboard:", e); }
                     }
 
@@ -4820,7 +4820,7 @@
                         const dg = task.danhGia || { ketQua: 'Chưa thực hiện', tiLeHoanThanh: 0, soLuongThucTe: 0 };
                         let badgeClass = task.mucDoUuTien === 'Cao' ? 'badge-high' : (task.mucDoUuTien === 'Thấp' ? 'badge-low' : 'badge-medium');
 
-                        const isUnevaluated = !dg.thoiDiemDanhGia;
+                        const isUnevaluated = !dg.thoiDiemDanhGia || (dg.tiLeHoanThanh < 100 && dg.ketQua !== 'Chuyển sang ngày khác');
 
                         const chiTieu = task.chiTieu || 100;
                         const dvt = task.dvt || '%';
@@ -5505,8 +5505,10 @@
                                                 if (!taskStaff || taskStaff.nhom !== fGroup) return;
                                             }
 
-                                            st.totalCV++;
                                             const dg = t.danhGia || {};
+                                            if (dg.ketQua === 'Chuyển sang ngày khác') return;
+                                            
+                                            st.totalCV++;
                                             const w = getPriorityWeight(t.mucDoUuTien);
                                             const p = parseInt(dg.tiLeHoanThanh) || 0;
                                             let pForAvg = p > 100 ? 100 : p;
@@ -5562,8 +5564,10 @@
                                                 if (!taskStaff || taskStaff.nhom !== fGroup) return;
                                             }
 
-                                            typeCounts[t.loaiCongViec] = (typeCounts[t.loaiCongViec] || 0) + 1;
                                             const dg = t.danhGia || {};
+                                            if (dg.ketQua === 'Chuyển sang ngày khác') return;
+
+                                            typeCounts[t.loaiCongViec] = (typeCounts[t.loaiCongViec] || 0) + 1;
                                             const w = getPriorityWeight(t.mucDoUuTien);
                                             const p = parseInt(dg.tiLeHoanThanh) || 0;
                                             let pForAvg = p > 100 ? 100 : p;
