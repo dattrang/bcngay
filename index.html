@@ -2018,7 +2018,7 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label>Đơn vị tính</label>
-                                    <input type="text" id="reg-dvt" readonly value="%">
+                                    <input type="text" id="reg-dvt" value="%">
                                 </div>
                                 <div class="form-group">
                                     <label>Chỉ tiêu trong ngày <span>*</span></label>
@@ -4028,12 +4028,18 @@
                         const inp = document.getElementById('reg-ten-input');
                         const dvt = document.getElementById('reg-dvt');
                         const chitieu = document.getElementById('reg-chitieu');
+                        const uutien = document.getElementById('reg-uutien');
 
                         if (isCustom) {
                             sel.style.display = 'none';
                             sel.removeAttribute('required');
                             inp.style.display = 'block';
                             inp.setAttribute('required', 'true');
+                            
+                            dvt.readOnly = false;
+                            chitieu.readOnly = false;
+                            uutien.disabled = false;
+
                             if (!dvt.value) dvt.value = '%';
                             if (!chitieu.value) chitieu.value = '100';
                         } else {
@@ -4041,6 +4047,11 @@
                             inp.removeAttribute('required');
                             sel.style.display = 'block';
                             sel.setAttribute('required', 'true');
+                            
+                            dvt.readOnly = true;
+                            chitieu.readOnly = true;
+                            uutien.disabled = true;
+
                             filterRegTasks();
                         }
                     }
@@ -4617,15 +4628,26 @@
                         const inp = document.getElementById('ps-ten-input');
                         const dvt = document.getElementById('ps-dvt');
                         const chitieu = document.getElementById('ps-chitieu');
+                        const uutien = document.getElementById('ps-uutien');
 
                         if (isCustom) {
                             sel.style.display = 'none';
                             inp.style.display = 'block';
+                            
+                            dvt.readOnly = false;
+                            chitieu.readOnly = false;
+                            uutien.disabled = false;
+
                             if (!dvt.value) dvt.value = 'lượt';
                             if (!chitieu.value) chitieu.value = '1';
                         } else {
                             inp.style.display = 'none';
                             sel.style.display = 'block';
+                            
+                            dvt.readOnly = true;
+                            chitieu.readOnly = true;
+                            uutien.disabled = true;
+
                             filterPSTasks();
                         }
                     }
@@ -5271,13 +5293,17 @@
 
                             const taskDateStr = isInboxMode && t.dateStr ? t.dateStr : defaultDateStr;
 
+                            // Đánh giá xong chỉ khi >= 100% hoặc chuyển ngày
+                            const isDone = prog >= 100 || res === 'Chuyển sang ngày khác';
+                            const thoiDiem = isDone ? (oldDg.thoiDiemDanhGia || Date.now()) : null;
+
                             if (isChanged) {
                                 updates[`keHoachNgay/${taskDateStr}/${key}/danhGia`] = {
                                     ketQua: res, tiLeHoanThanh: prog, soLuongThucTe: thucTe,
                                     lyDoKhongDat: reason,
                                     nguyenNhanKhachQuan, nguyenNhanChuQuan, baiHocKinhNghiem,
                                     chuyenSangNgay: res === 'Chuyển sang ngày khác' ? transDate : '',
-                                    thoiDiemDanhGia: Date.now(),
+                                    thoiDiemDanhGia: thoiDiem,
                                     lichSu: history,
                                     daChuyenTiep: t.danhGia?.daChuyenTiep || false,
                                     daDuyet: t.danhGia?.daDuyet || false // ← Giữ nguyên trạng thái đã duyệt!
