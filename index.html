@@ -2075,11 +2075,18 @@
                             style="justify-content: space-between; align-items: center; display: flex; flex-wrap: wrap; gap: 10px;">
                             <h3><i class="fas fa-list"></i> Danh sách dự kiến (Hôm nay: <span
                                     id="reg-date-label"></span>)</h3>
-                            <div class="form-group autocomplete-wrapper" style="max-width: 250px; margin-bottom: 0;">
-                                <input type="text" id="reg-filter-staff" placeholder="-- Lọc theo cán bộ --"
-                                    autocomplete="off" oninput="renderRegTable()"
-                                    style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
-                                <div id="reg-filter-staff-list" class="autocomplete-items"></div>
+                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <select id="reg-filter-sync" onchange="renderRegTable()" style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
+                                    <option value="">-- Tất cả trạng thái --</option>
+                                    <option value="synced">Đã đồng bộ</option>
+                                    <option value="unsynced">Chưa đồng bộ</option>
+                                </select>
+                                <div class="form-group autocomplete-wrapper" style="max-width: 250px; margin-bottom: 0;">
+                                    <input type="text" id="reg-filter-staff" placeholder="-- Lọc theo cán bộ --"
+                                        autocomplete="off" oninput="renderRegTable()"
+                                        style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
+                                    <div id="reg-filter-staff-list" class="autocomplete-items"></div>
+                                </div>
                             </div>
                         </div>
                         <div class="table-responsive scroll-table">
@@ -4154,6 +4161,8 @@
 
                                 tempRegTasks.push(task);
                             });
+                            
+                            showToast('Đã thêm vào danh sách dự kiến thành công!', 'success');
                         }
 
                         renderRegTable();
@@ -4267,6 +4276,14 @@
                         const filterStaff = (document.getElementById('reg-filter-staff')?.value || '').toLowerCase().trim();
                         if (filterStaff) {
                             displayTasks = displayTasks.filter(t => (t.nguoiPhuTrach || '').toLowerCase().includes(filterStaff));
+                        }
+
+                        // Lọc theo trạng thái đồng bộ
+                        const filterSync = document.getElementById('reg-filter-sync')?.value || '';
+                        if (filterSync === 'synced') {
+                            displayTasks = displayTasks.filter(t => t.isSynced === true);
+                        } else if (filterSync === 'unsynced') {
+                            displayTasks = displayTasks.filter(t => t.isSynced !== true);
                         }
 
                         document.getElementById('reg-total-count').innerText = `${displayTasks.length} / ${tempRegTasks.length}`;
