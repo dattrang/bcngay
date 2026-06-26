@@ -4053,6 +4053,29 @@
 
                         if (isCustom) {
                             tenCV = document.getElementById('reg-ten-input').value.trim();
+                            const loaiCV = document.getElementById('reg-loai').value;
+                            
+                            // Tự động đồng bộ sang danh mục quản trị nếu chưa có
+                            const exists = Object.values(masterTasks).some(t => 
+                                t.tenNhiemVu.toLowerCase() === tenCV.toLowerCase() && 
+                                t.nhomNhiemVu === loaiCV
+                            );
+                            if (!exists && tenCV) {
+                                const newMasterId = 'CFG-' + Date.now();
+                                const newMasterTask = {
+                                    nhomNhiemVu: loaiCV,
+                                    tenNhiemVu: tenCV,
+                                    donViTinh: document.getElementById('reg-dvt').value || '%',
+                                    chiTieuMacDinh: parseFloat(document.getElementById('reg-chitieu').value) || 1,
+                                    uutienMacDinh: document.getElementById('reg-uutien').value
+                                };
+                                set(ref(db, `cauHinhNhiemVu/${newMasterId}`), newMasterTask)
+                                    .then(() => {
+                                        masterTasks[newMasterId] = newMasterTask;
+                                        filterRegTasks(); // Cập nhật lại dropdown ngầm
+                                    }).catch(console.error);
+                            }
+
                         } else {
                             const sel = document.getElementById('reg-ten-select');
                             if (!sel.value) { showToast('Vui lòng chọn công việc!', 'warning'); return; }
@@ -4657,6 +4680,28 @@
 
                         if (isCustom) {
                             ten = document.getElementById('ps-ten-input').value.trim();
+                            
+                            // Tự động đồng bộ sang danh mục quản trị nếu chưa có
+                            const exists = Object.values(masterTasks).some(t => 
+                                t.tenNhiemVu.toLowerCase() === ten.toLowerCase() && 
+                                t.nhomNhiemVu === nhom
+                            );
+                            if (!exists && ten) {
+                                const newMasterId = 'CFG-' + Date.now();
+                                const newMasterTask = {
+                                    nhomNhiemVu: nhom,
+                                    tenNhiemVu: ten,
+                                    donViTinh: document.getElementById('ps-dvt').value || 'lượt',
+                                    chiTieuMacDinh: parseFloat(document.getElementById('ps-chitieu').value) || 1,
+                                    uutienMacDinh: document.getElementById('ps-uutien').value
+                                };
+                                set(ref(db, `cauHinhNhiemVu/${newMasterId}`), newMasterTask)
+                                    .then(() => {
+                                        masterTasks[newMasterId] = newMasterTask;
+                                        filterRegTasks(); // Cập nhật lại dropdown ngầm
+                                    }).catch(console.error);
+                            }
+
                         } else {
                             const selId = document.getElementById('ps-ten-select').value;
                             if (!selId) { showToast('Vui lòng chọn công việc!', 'warning'); return; }
