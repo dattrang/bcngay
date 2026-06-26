@@ -5194,7 +5194,7 @@
                             const taskStr = `${icon} ${t.tenCongViec} (Đạt: ${thucte}/${chiTieu} ${dvt} - ${tienDo}%)${ghiChuText}`;
 
                             if (t.isPhatSinh) {
-                                psTasks.push(`   + [Đ/c ${t.nguoiPhuTrach}] ${taskStr}`);
+                                psTasks.push(`   + [*Đ/c ${t.nguoiPhuTrach}*] ${taskStr}`);
                             } else {
                                 if (!tasksByStaff[t.nguoiPhuTrach]) tasksByStaff[t.nguoiPhuTrach] = [];
                                 tasksByStaff[t.nguoiPhuTrach].push(`   + ${taskStr}`);
@@ -5205,7 +5205,7 @@
                         let staffCount = 0;
                         for (let staff in tasksByStaff) {
                             staffCount++;
-                            report += `${staffCount}. Đ/c ${staff}:\n`;
+                            report += `${staffCount}. *Đ/c ${staff}:*\n`;
                             report += tasksByStaff[staff].join('\n') + '\n';
                         }
                         if (staffCount === 0) report += `(Không có)\n`;
