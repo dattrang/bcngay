@@ -27,7 +27,8 @@ jobs:
         working-directory: scripts
 
       - name: Gửi thông báo nhắc nhở
+        working-directory: scripts
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           APP_URL: ${{ secrets.APP_URL }}
-        run: node scripts/send-daily-reminder.js
+        run: node send-daily-reminder.js
