@@ -1805,6 +1805,8 @@
                                     %</button>
                                 <button type="button" class="btn btn-danger btn-sm" style="background:#7c3aed;"
                                     onclick="manualAutoFail()"><i class="fas fa-robot"></i> Chốt quá hạn</button>
+                                <button type="button" class="btn btn-info btn-sm" onclick="showRenameGroupModal()"><i
+                                        class="fas fa-edit"></i> Đổi tên Nhóm</button>
                                 <button type="button" class="btn btn-primary btn-sm" onclick="showAdminForm()"><i
                                         class="fas fa-plus"></i> Thêm Nhiệm Vụ Mẫu</button>
                                 <button type="button" class="btn btn-danger btn-sm" onclick="resetDeviceLock()"><i
@@ -1821,6 +1823,10 @@
                                 <div class="form-group" style="flex: 1;">
                                     <label>Nhóm / Chỉ tiêu nhiệm vụ <span>*</span></label>
                                     <select id="admin-nhom" required></select>
+                                    <input type="text" id="admin-nhom-input" placeholder="Nhập tên nhóm mới..." style="display:none; margin-top:5px;">
+                                    <div style="margin-top: 6px;">
+                                        <label class="checkbox-label"><input type="checkbox" id="admin-is-custom-nhom" onchange="toggleCustomAdminNhom()"> Nhóm mới</label>
+                                    </div>
                                 </div>
                                 <div class="form-group" style="flex: 2;">
                                     <label>Tên / Nội dung nhiệm vụ cụ thể <span>*</span></label>
@@ -1849,6 +1855,26 @@
                                 <button type="button" class="btn btn-secondary" onclick="hideAdminForm()">Hủy</button>
                                 <button type="button" class="btn btn-primary" id="btn-save-admin"
                                     onclick="saveAdminTask()"><i class="fas fa-save"></i> Lưu Cấu Hình</button>
+                            </div>
+                        </div>
+                        <div id="rename-group-overlay"
+                            style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center;">
+                            <div style="background:white; padding:25px; border-radius:10px; width:90%; max-width:500px;">
+                                <h3 style="color:var(--primary); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                                    <i class="fas fa-edit"></i> Đổi tên Nhóm chuyên đề
+                                </h3>
+                                <div class="form-group">
+                                    <label>Chọn Nhóm hiện tại <span>*</span></label>
+                                    <select id="rename-group-old" required></select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tên Nhóm mới <span>*</span></label>
+                                    <input type="text" id="rename-group-new" placeholder="Nhập tên nhóm mới..." required>
+                                </div>
+                                <div style="text-align:right; margin-top: 15px;">
+                                    <button type="button" class="btn btn-secondary" onclick="closeRenameGroupModal()">Hủy</button>
+                                    <button type="button" class="btn btn-primary" onclick="saveRenameGroup()"><i class="fas fa-save"></i> Lưu Thay Đổi</button>
+                                </div>
                             </div>
                         </div>
 
@@ -2553,7 +2579,7 @@
                     let STAFFS = [];
 
                     // DATA CONSTANTS
-                    const TASK_CATEGORIES = window.SHARED_TASK_CATEGORIES || [
+                    let TASK_CATEGORIES = window.SHARED_TASK_CATEGORIES || [
                         "01. QUẢN LÝ ĐỊA BÀN & DÂN CƯ", "02. QUẢN LÝ & GIÁO DỤC ĐỐI TƯỢNG",
                         "03. XỬ LÝ VI PHẠM HÀNH CHÍNH & TỐ GIÁC", "04. PHONG TRÀO TOÀN DÂN BVANTQ",
                         "05. TUYÊN TRUYỀN & HÒA GIẢI", "06. NGHIỆP VỤ CƠ BẢN & PHỐI HỢP",
@@ -3022,17 +3048,36 @@
                         document.getElementById('current-date').innerText = new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                         document.getElementById('reg-date-label').innerText = formatDMY(getTodayYMD());
 
-                        // Populates Admin/Reg Category Selects
-                        const sTypeReg = document.getElementById('reg-loai');
-                        const sTypeAdm = document.getElementById('admin-nhom');
-                        const sTypeRpt = document.getElementById('rpt-filter-type');
-                        const sTypeEval = document.getElementById('eval-filter-type');
-                        TASK_CATEGORIES.forEach(c => {
-                            sTypeReg.appendChild(new Option(c, c));
-                            sTypeAdm.appendChild(new Option(c, c));
-                            if (sTypeRpt) sTypeRpt.appendChild(new Option(c, c));
-                            if (sTypeEval) sTypeEval.appendChild(new Option(c, c));
-                        });
+                        // Initial Populates Admin/Reg Category Selects
+                        window.updateCategoryDropdowns = function() {
+                            const sTypeReg = document.getElementById('reg-loai');
+                            const sTypeAdm = document.getElementById('admin-nhom');
+                            const sTypeRpt = document.getElementById('rpt-filter-type');
+                            const sTypeEval = document.getElementById('eval-filter-type');
+                            
+                            const valReg = sTypeReg ? sTypeReg.value : '';
+                            const valAdm = sTypeAdm ? sTypeAdm.value : '';
+                            const valRpt = sTypeRpt ? sTypeRpt.value : '';
+                            const valEval = sTypeEval ? sTypeEval.value : '';
+
+                            if (sTypeReg) sTypeReg.innerHTML = '';
+                            if (sTypeAdm) sTypeAdm.innerHTML = '';
+                            if (sTypeRpt) sTypeRpt.innerHTML = '<option value="">-- Tất cả --</option>';
+                            if (sTypeEval) sTypeEval.innerHTML = '<option value="">-- Tất cả nhóm --</option>';
+
+                            TASK_CATEGORIES.forEach(c => {
+                                if (sTypeReg) sTypeReg.appendChild(new Option(c, c));
+                                if (sTypeAdm) sTypeAdm.appendChild(new Option(c, c));
+                                if (sTypeRpt) sTypeRpt.appendChild(new Option(c, c));
+                                if (sTypeEval) sTypeEval.appendChild(new Option(c, c));
+                            });
+
+                            if (sTypeReg && valReg) sTypeReg.value = valReg;
+                            if (sTypeAdm && valAdm) sTypeAdm.value = valAdm;
+                            if (sTypeRpt && valRpt) sTypeRpt.value = valRpt;
+                            if (sTypeEval && valEval) sTypeEval.value = valEval;
+                        };
+                        updateCategoryDropdowns();
 
                         setupAutocomplete('reg-filter-staff', true);
                         setupAutocomplete('eval-filter-staff', true);
@@ -3746,6 +3791,15 @@
                         try {
                             const snapshot = await get(child(ref(db), `cauHinhNhiemVu`));
                             masterTasks = snapshot.exists() ? snapshot.val() : {};
+
+                            // Update dynamic categories
+                            const groupSet = new Set();
+                            Object.values(masterTasks).forEach(t => groupSet.add(t.nhomNhiemVu));
+                            if (groupSet.size > 0) {
+                                TASK_CATEGORIES = Array.from(groupSet).sort();
+                                if (window.updateCategoryDropdowns) window.updateCategoryDropdowns();
+                            }
+
                             renderAdminTable();
                             filterRegTasks(); // Update Reg dropdown based on default category
                         } catch (e) { console.error(e); }
@@ -3790,6 +3844,9 @@
                         document.getElementById('admin-ten').value = '';
                         document.getElementById('admin-dvt').value = '';
                         document.getElementById('admin-chitieu').value = '1';
+                        document.getElementById('admin-is-custom-nhom').checked = false;
+                        toggleCustomAdminNhom();
+                        document.getElementById('admin-nhom-input').value = '';
                         document.getElementById('admin-form-title').innerText = 'Thêm nhiệm vụ mẫu mới';
                         document.getElementById('admin-form-container').style.display = 'block';
                     }
@@ -3798,10 +3855,30 @@
                         document.getElementById('admin-form-container').style.display = 'none';
                     }
 
+                    window.toggleCustomAdminNhom = function() {
+                        const isCustom = document.getElementById('admin-is-custom-nhom').checked;
+                        const sel = document.getElementById('admin-nhom');
+                        const inp = document.getElementById('admin-nhom-input');
+                        if (isCustom) {
+                            sel.style.display = 'none';
+                            sel.removeAttribute('required');
+                            inp.style.display = 'block';
+                            inp.setAttribute('required', 'true');
+                        } else {
+                            inp.style.display = 'none';
+                            inp.removeAttribute('required');
+                            sel.style.display = 'block';
+                            sel.setAttribute('required', 'true');
+                        }
+                    };
+
                     async function saveAdminTask() {
                         const id = document.getElementById('admin-id').value || 'CFG-' + Date.now();
+                        const isCustomNhom = document.getElementById('admin-is-custom-nhom').checked;
+                        const nhom = isCustomNhom ? document.getElementById('admin-nhom-input').value.trim() : document.getElementById('admin-nhom').value;
+
                         const task = {
-                            nhomNhiemVu: document.getElementById('admin-nhom').value,
+                            nhomNhiemVu: nhom,
                             tenNhiemVu: document.getElementById('admin-ten').value.trim(),
                             donViTinh: document.getElementById('admin-dvt').value.trim() || 'lượt',
                             chiTieuMacDinh: parseFloat(document.getElementById('admin-chitieu').value) || 1,
@@ -3830,6 +3907,8 @@
                         const t = masterTasks[id];
                         document.getElementById('admin-id').value = id;
                         document.getElementById('admin-nhom').value = t.nhomNhiemVu;
+                        document.getElementById('admin-is-custom-nhom').checked = false;
+                        toggleCustomAdminNhom();
                         document.getElementById('admin-ten').value = t.tenNhiemVu;
                         document.getElementById('admin-dvt').value = t.donViTinh;
                         document.getElementById('admin-chitieu').value = t.chiTieuMacDinh || 1;
@@ -3842,6 +3921,8 @@
                         const t = masterTasks[id];
                         document.getElementById('admin-id').value = '';
                         document.getElementById('admin-nhom').value = t.nhomNhiemVu;
+                        document.getElementById('admin-is-custom-nhom').checked = false;
+                        toggleCustomAdminNhom();
                         document.getElementById('admin-ten').value = t.tenNhiemVu + ' (Copy)';
                         document.getElementById('admin-dvt').value = t.donViTinh;
                         document.getElementById('admin-chitieu').value = t.chiTieuMacDinh || 1;
@@ -3860,6 +3941,56 @@
                         } catch (e) { showToast('Lỗi xóa!', 'error'); }
                         showLoader(false);
                     }
+
+                    window.showRenameGroupModal = function() {
+                        const oldSel = document.getElementById('rename-group-old');
+                        oldSel.innerHTML = '';
+                        const groups = new Set();
+                        Object.values(masterTasks).forEach(t => groups.add(t.nhomNhiemVu));
+                        Array.from(groups).sort().forEach(g => {
+                            oldSel.appendChild(new Option(g, g));
+                        });
+                        document.getElementById('rename-group-new').value = '';
+                        document.getElementById('rename-group-overlay').style.display = 'flex';
+                    };
+
+                    window.closeRenameGroupModal = function() {
+                        document.getElementById('rename-group-overlay').style.display = 'none';
+                    };
+
+                    window.saveRenameGroup = async function() {
+                        const oldName = document.getElementById('rename-group-old').value;
+                        const newName = document.getElementById('rename-group-new').value.trim();
+                        
+                        if (!oldName || !newName) {
+                            showToast("Vui lòng nhập tên nhóm mới!", "warning");
+                            return;
+                        }
+                        if (oldName === newName) {
+                            showToast("Tên mới phải khác tên cũ!", "warning");
+                            return;
+                        }
+                        if (!confirm(`Bạn có chắc muốn đổi tên nhóm "${oldName}" thành "${newName}"?`)) return;
+
+                        showLoader(true);
+                        try {
+                            const updates = {};
+                            Object.keys(masterTasks).forEach(k => {
+                                if (masterTasks[k].nhomNhiemVu === oldName) {
+                                    updates[`cauHinhNhiemVu/${k}/nhomNhiemVu`] = newName;
+                                }
+                            });
+                            
+                            await update(ref(db), updates);
+                            showToast("Đổi tên nhóm thành công!");
+                            closeRenameGroupModal();
+                            await loadAdminTasks();
+                        } catch (e) {
+                            console.error(e);
+                            showToast("Lỗi khi đổi tên nhóm!", "error");
+                        }
+                        showLoader(false);
+                    };
 
                     // ================= MODULE 1: ĐĂNG KÝ =================
                     function filterRegTasks() {
