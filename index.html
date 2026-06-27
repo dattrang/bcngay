@@ -1811,8 +1811,6 @@
                                 <button type="button" class="btn btn-warning btn-sm"
                                     onclick="recalculateAllPercentages()"><i class="fas fa-sync"></i> Ép tính lại
                                     %</button>
-                                <button type="button" class="btn btn-danger btn-sm" style="background:#7c3aed;"
-                                    onclick="manualAutoFail()"><i class="fas fa-robot"></i> Chốt quá hạn</button>
                                 <button type="button" class="btn btn-info btn-sm" onclick="showRenameGroupModal()"><i
                                         class="fas fa-edit"></i> Đổi tên Nhóm</button>
                                 <button type="button" class="btn btn-primary btn-sm" onclick="showAdminForm()"><i
@@ -2172,7 +2170,9 @@
                     <div class="card">
                         <div class="card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                             <h3><i class="fas fa-clipboard-check"></i> Đánh giá tiến độ công việc</h3>
-                            <div style="display:flex; gap:10px;">
+                            <div style="display:flex; gap:10px; flex-wrap: wrap;">
+                                <button type="button" class="btn btn-danger btn-sm" id="btn-admin-autofail" style="display:none; background:#7c3aed; padding: 6px 12px; font-size: 0.85rem;"
+                                    onclick="manualAutoFail()"><i class="fas fa-robot"></i> Chốt quá hạn</button>
                                 <button type="button" class="btn btn-outline btn-sm" id="btn-load-inbox"
                                     onclick="loadInboxEvals()" style="padding: 6px 12px; font-size: 0.85rem;"><i
                                         class="fas fa-inbox"></i> Việc tồn (7 ngày)</button>
@@ -3136,6 +3136,8 @@
                             if (adminBtn) adminBtn.style.display = 'none';
                         } else if (IS_ADMIN) {
                             loadDeviceBindings();
+                            const btnAdminAutoFail = document.getElementById('btn-admin-autofail');
+                            if (btnAdminAutoFail) btnAdminAutoFail.style.display = 'inline-block';
                         }
 
                         loadSavedViews();
@@ -4935,10 +4937,12 @@
                             onclick="${isApproved ? 'event.stopPropagation();' : `onQuickAction('${task.id}',${chiTieu},'none');event.stopPropagation();`}">
                         ❌ Chưa TH
                     </button>
+                    ${IS_ADMIN ? `
                     <button class="eval-quick-btn ${btnMoveClass}" id="qbtn-move-${task.id}" ${disAttr}
                             onclick="${isApproved ? 'event.stopPropagation();' : `onQuickAction('${task.id}',${chiTieu},'move');event.stopPropagation();`}">
                         📅 Chuyển ngày
                     </button>
+                    ` : ''}
                     <div class="eval-inline-input" id="eval-inline-${task.id}" style="${showInline ? '' : 'display:none;'}">
                         <label>Thực tế (${dvt}):</label>
                         <input type="number" step="0.1" min="0" id="eval-thucte-${task.id}" ${disAttr}
