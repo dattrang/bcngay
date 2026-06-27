@@ -9,6 +9,7 @@ baocaongay-78245-firebase-adminsdk-fbsvc-3daef61ec5.json
 !package.json
 !package-lock.json
 !firebase.json
+!firebase.rules.json
 
 # Các file hệ thống khác
 .DS_Store

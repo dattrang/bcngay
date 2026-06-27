@@ -4555,17 +4555,30 @@
 
       function renderCopyPersonList(query) {
         var q = (query || '').toLowerCase();
+        var isSeparate = (window._copyMode || 'separate') === 'separate';
         return persons
           .filter(function (p) { return !q || p.name.toLowerCase().includes(q); })
           .slice().sort(function (a, b) { return a.name.localeCompare(b.name, 'vi'); })
           .map(function (p) {
             var checked = (window._copyPids || []).includes(p.id); // [FIX] đọc từ window._copyPids khi re-render
             var initAv = p.name.trim().split(/\s+/).map(function (w) { return w[0]; }).slice(-2).join('').toUpperCase();
+            var qtyVal = ((window._copyQtys || {})[p.id]) || (t.kpiValue || 1);
+            // Qty input chỉ hiện khi mode = separate
+            var qtyHtml = isSeparate
+              ? '<div id="qty-wrap-' + p.id + '" style="display:' + (checked ? 'flex' : 'none') + ';align-items:center;gap:4px;flex-shrink:0;margin-left:4px">'
+                + '<span style="font-size:10px;color:var(--text2);white-space:nowrap">Chỉ tiêu:</span>'
+                + '<input type="number" id="qty-' + p.id + '" min="1" value="' + qtyVal + '" '
+                + 'onchange="(function(el){if(!window._copyQtys)window._copyQtys={};window._copyQtys[\'' + p.id + '\']=parseInt(el.value)||1;})(this)" '
+                + 'onclick="event.stopPropagation()" '
+                + 'style="width:52px;border:1px solid #cbd5e1;border-radius:6px;padding:2px 5px;font-size:12px;font-family:inherit;text-align:center;outline:none;color:var(--primary);font-weight:700">'
+                + '</div>'
+              : '';
             return '<label style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;transition:background .1s" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">'
-              + '<input type="checkbox" id="cp-cb-' + p.id + '" ' + (checked ? 'checked' : '') + ' onchange="(function(el){var pid=\'' + p.id + '\';var arr=window._copyPids;var i=arr.indexOf(pid);if(el.checked){if(i<0)arr.push(pid);}else{if(i>-1)arr.splice(i,1);}document.getElementById(\'copy-sel-count\').textContent=arr.length+\' người được chọn\';})(this)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary)">'
+              + '<input type="checkbox" id="cp-cb-' + p.id + '" ' + (checked ? 'checked' : '') + ' onchange="(function(el){var pid=\'' + p.id + '\';var arr=window._copyPids;var i=arr.indexOf(pid);if(el.checked){if(i<0)arr.push(pid);var w=document.getElementById(\'qty-wrap-\'+pid);if(w)w.style.display=\'flex\';}else{if(i>-1)arr.splice(i,1);var w=document.getElementById(\'qty-wrap-\'+pid);if(w)w.style.display=\'none\';}document.getElementById(\'copy-sel-count\').textContent=arr.length+\' người được chọn\';})(this)" style="width:16px;height:16px;cursor:pointer;accent-color:var(--primary)">'
               + '<div style="width:28px;height:28px;border-radius:50%;background:' + getColor(p.name) + ';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">' + initAv + '</div>'
               + '<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600">' + p.name + '</div>'
               + '<div style="font-size:10px;color:var(--text2)">' + (p.role || p.dept || p.cluster || '—') + '</div></div>'
+              + qtyHtml
               + '</label>';
           }).join('');
       }
@@ -4588,12 +4601,12 @@
         + '<div style="margin-top:10px;padding:10px;background:#f8fafc;border-radius:8px;border:1px solid var(--border)">'
         +   '<div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">⚙️ Chế độ sao chép</div>'
         +   '<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;margin-bottom:8px">'
-        +     '<input type="radio" name="copy-mode" id="cm-separate" value="separate" checked onchange="window._copyMode=this.value" style="margin-top:3px;accent-color:var(--primary)">'
+        +     '<input type="radio" name="copy-mode" id="cm-separate" value="separate" checked onchange="window._copyMode=this.value;document.getElementById(\'copy-list\').innerHTML=renderCopyPersonListExt(document.getElementById(\'copy-search\').value||\'\')" style="margin-top:3px;accent-color:var(--primary)">'
         +     '<div><div style="font-size:12px;font-weight:600">📋 Mỗi người 1 nhiệm vụ riêng</div>'
         +     '<div style="font-size:10px;color:var(--text2)">Tạo N nhiệm vụ độc lập, mỗi người chịu trách nhiệm 1 bản</div></div>'
         +   '</label>'
         +   '<label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer">'
-        +     '<input type="radio" name="copy-mode" id="cm-shared" value="shared" onchange="window._copyMode=this.value" style="margin-top:3px;accent-color:var(--primary)">'
+        +     '<input type="radio" name="copy-mode" id="cm-shared" value="shared" onchange="window._copyMode=this.value;document.getElementById(\'copy-list\').innerHTML=renderCopyPersonListExt(document.getElementById(\'copy-search\').value||\'\')" style="margin-top:3px;accent-color:var(--primary)">'
         +     '<div><div style="font-size:12px;font-weight:600">👥 1 nhiệm vụ chung cho tất cả</div>'
         +     '<div style="font-size:10px;color:var(--text2)">Tạo 1 nhiệm vụ, tất cả người được chọn cùng thực hiện</div></div>'
         +   '</label>'
@@ -4609,6 +4622,7 @@
       // Expose copyPids và mode cho doCopyTask
       window._copyPids = copyPids;
       window._copyMode = 'separate'; // Mặc định: mỗi người 1 task riêng
+      window._copyQtys = {};        // Số lượng chỉ tiêu riêng cho từng người
 
       modal.onclick = function (e) { if (e.target === modal) modal.remove(); };
       document.body.appendChild(modal);
@@ -4661,8 +4675,10 @@
           // Thêm delay nhỏ để id không trùng nhau khi tạo nhiều task cùng lúc
           setTimeout(function () {
             var newTask = makeTaskBase([pid]);
+            // Ghi đè kpiValue bằng số lượng chỉ tiêu riêng của người này (nếu có)
+            var perQty = window._copyQtys && parseInt(window._copyQtys[pid]);
+            if (perQty && perQty > 0) newTask.kpiValue = perQty;
             tasks.push(newTask);
-            var p = personById(pid);
             var isLast = (idx === pids.length - 1);
             syncSingleTaskFB(newTask, isLast ? ('📋 Đã tạo ' + pids.length + ' nhiệm vụ riêng cho: ' + pNames) : null);
             created++;
@@ -4680,6 +4696,7 @@
       if (m) m.remove();
       window._copyPids = [];
       window._copyMode = 'separate';
+      window._copyQtys = {};
 
       setTimeout(function () {
         if (typeof debouncedRender === 'function') debouncedRender(); else renderAll();

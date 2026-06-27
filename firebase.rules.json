@@ -1,0 +1,29 @@
+{
+  "rules": {
+    // 1. TẮT quyền đọc/ghi toàn cục để các luật con bên dưới có tác dụng
+    ".read": false,
+    ".write": false,
+
+    // 2. Mở quyền đọc/ghi cho TẤT CẢ các nhánh dữ liệu của ứng dụng
+    "keHoachNgay": { ".read": true, ".write": true },
+    "nhiemVuDaiHan": { ".read": true, ".write": true },
+    "staffBindings": { ".read": true, ".write": true },
+    "deviceBindings": { ".read": true, ".write": true },
+    "giaiDoan": { ".read": true, ".write": true },
+    "danhMucCanBo": { ".read": true, ".write": true },
+    "cauHinhNhiemVu": { ".read": true, ".write": true },
+    "fcmTokens": { ".read": true, ".write": true },
+
+    // 3. Phân quyền chặt chẽ cho nhánh cấu hình hệ thống (QUAN TRỌNG)
+    "config": {
+      "adminPasswordHash": {
+        ".read": true,  // App cần đọc để kiểm tra mật khẩu Admin
+        ".write": false // KHÔNG cho phép sửa mã hash từ App (Chống hacker đổi pass).
+      },
+      "autoLockFlags": {
+        ".read": true,
+        ".write": true  // Mở ghi cho cờ giao dịch chống xung đột lúc 12:00
+      }
+    }
+  }
+}

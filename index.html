@@ -1495,9 +1495,11 @@
                     <select id="ps-ten-select" required onchange="onSelectPSTask()">
                         <option value="">-- Chọn công việc --</option>
                     </select>
-                    <input type="text" id="ps-ten-input" placeholder="Nhập tên công việc ngoài danh mục..." style="display:none;">
+                    <input type="text" id="ps-ten-input" placeholder="Nhập tên công việc ngoài danh mục..."
+                        style="display:none;">
                     <div style="margin-top: 6px;">
-                        <label class="checkbox-label"><input type="checkbox" id="ps-is-custom" onchange="toggleCustomPSTask()"> Công việc khác (nhập ngoài danh mục)</label>
+                        <label class="checkbox-label"><input type="checkbox" id="ps-is-custom"
+                                onchange="toggleCustomPSTask()"> Công việc khác (nhập ngoài danh mục)</label>
                     </div>
                 </div>
             </div>
@@ -1743,6 +1745,13 @@
                                 <h2 style="font-size:2.5rem; color:#15803d; margin:0;" id="dash-today-done">0</h2>
                             </div>
                             <div class="card"
+                                style="flex:1; background: #fef9c3; text-align:center; padding:20px; border:1px solid #fde047; box-shadow:none;">
+                                <h4 style="color:#a16207; margin-bottom:10px; font-weight:600;"><i
+                                        class="fas fa-calendar-day"></i> Chuyển sang ngày khác</h4>
+                                <h2 style="font-size:2.5rem; color:#854d0e; margin:0;" id="dash-today-transferred">0
+                                </h2>
+                            </div>
+                            <div class="card"
                                 style="flex:1; background: #fee2e2; text-align:center; padding:20px; border:1px solid #fecaca; box-shadow:none;">
                                 <h4 style="color:#dc2626; margin-bottom:10px; font-weight:600;"><i
                                         class="fas fa-exclamation-triangle"></i> Tồn đọng hôm qua</h4>
@@ -1823,9 +1832,11 @@
                                 <div class="form-group" style="flex: 1;">
                                     <label>Nhóm / Chỉ tiêu nhiệm vụ <span>*</span></label>
                                     <select id="admin-nhom" required></select>
-                                    <input type="text" id="admin-nhom-input" placeholder="Nhập tên nhóm mới..." style="display:none; margin-top:5px;">
+                                    <input type="text" id="admin-nhom-input" placeholder="Nhập tên nhóm mới..."
+                                        style="display:none; margin-top:5px;">
                                     <div style="margin-top: 6px;">
-                                        <label class="checkbox-label"><input type="checkbox" id="admin-is-custom-nhom" onchange="toggleCustomAdminNhom()"> Nhóm mới</label>
+                                        <label class="checkbox-label"><input type="checkbox" id="admin-is-custom-nhom"
+                                                onchange="toggleCustomAdminNhom()"> Nhóm mới</label>
                                     </div>
                                 </div>
                                 <div class="form-group" style="flex: 2;">
@@ -1859,8 +1870,10 @@
                         </div>
                         <div id="rename-group-overlay"
                             style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center;">
-                            <div style="background:white; padding:25px; border-radius:10px; width:90%; max-width:500px;">
-                                <h3 style="color:var(--primary); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                            <div
+                                style="background:white; padding:25px; border-radius:10px; width:90%; max-width:500px;">
+                                <h3
+                                    style="color:var(--primary); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
                                     <i class="fas fa-edit"></i> Đổi tên Nhóm chuyên đề
                                 </h3>
                                 <div class="form-group">
@@ -1869,11 +1882,14 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Tên Nhóm mới <span>*</span></label>
-                                    <input type="text" id="rename-group-new" placeholder="Nhập tên nhóm mới..." required>
+                                    <input type="text" id="rename-group-new" placeholder="Nhập tên nhóm mới..."
+                                        required>
                                 </div>
                                 <div style="text-align:right; margin-top: 15px;">
-                                    <button type="button" class="btn btn-secondary" onclick="closeRenameGroupModal()">Hủy</button>
-                                    <button type="button" class="btn btn-primary" onclick="saveRenameGroup()"><i class="fas fa-save"></i> Lưu Thay Đổi</button>
+                                    <button type="button" class="btn btn-secondary"
+                                        onclick="closeRenameGroupModal()">Hủy</button>
+                                    <button type="button" class="btn btn-primary" onclick="saveRenameGroup()"><i
+                                            class="fas fa-save"></i> Lưu Thay Đổi</button>
                                 </div>
                             </div>
                         </div>
@@ -2076,12 +2092,14 @@
                             <h3><i class="fas fa-list"></i> Danh sách dự kiến (Hôm nay: <span
                                     id="reg-date-label"></span>)</h3>
                             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                                <select id="reg-filter-sync" onchange="renderRegTable()" style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
+                                <select id="reg-filter-sync" onchange="renderRegTable()"
+                                    style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
                                     <option value="">-- Tất cả trạng thái --</option>
                                     <option value="synced">Đã đồng bộ</option>
                                     <option value="unsynced">Chưa đồng bộ</option>
                                 </select>
-                                <div class="form-group autocomplete-wrapper" style="max-width: 250px; margin-bottom: 0;">
+                                <div class="form-group autocomplete-wrapper"
+                                    style="max-width: 250px; margin-bottom: 0;">
                                     <input type="text" id="reg-filter-staff" placeholder="-- Lọc theo cán bộ --"
                                         autocomplete="off" oninput="renderRegTable()"
                                         style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
@@ -2776,9 +2794,12 @@
                                 todayTasks = todayTasks.filter(t => t.nguoiPhuTrach === DEVICE_USER);
                                 yestTasks = yestTasks.filter(t => t.nguoiPhuTrach === DEVICE_USER);
                             }
-                            document.getElementById('dash-today-total').innerText = todayTasks.length;
-                            document.getElementById('dash-today-done').innerText = todayTasks.filter(t => t.danhGia?.thoiDiemDanhGia && (t.danhGia.tiLeHoanThanh >= 100 || t.danhGia.ketQua === 'Chuyển sang ngày khác')).length;
-                            document.getElementById('dash-yest-late').innerText = yestTasks.filter(t => !t.danhGia?.thoiDiemDanhGia || (t.danhGia.tiLeHoanThanh < 100 && t.danhGia.ketQua !== 'Chuyển sang ngày khác') || t.danhGia?.ketQua === 'Chưa thực hiện').length;
+                            const todayTransferred = todayTasks.filter(t => t.danhGia?.ketQua === 'Chuyển sang ngày khác').length;
+                            const todayEffective = todayTasks.filter(t => t.danhGia?.ketQua !== 'Chuyển sang ngày khác');
+                            document.getElementById('dash-today-total').innerText = todayEffective.length;
+                            document.getElementById('dash-today-done').innerText = todayEffective.filter(t => t.danhGia?.thoiDiemDanhGia && t.danhGia.tiLeHoanThanh >= 100).length;
+                            if (document.getElementById('dash-today-transferred')) document.getElementById('dash-today-transferred').innerText = todayTransferred;
+                            document.getElementById('dash-yest-late').innerText = yestTasks.filter(t => t.danhGia?.ketQua !== 'Chuyển sang ngày khác' && (!t.danhGia?.thoiDiemDanhGia || (t.danhGia.tiLeHoanThanh < 100 && t.danhGia.ketQua !== 'Chưa thực hiện') || t.danhGia?.ketQua === 'Chưa thực hiện')).length;
                         } catch (e) { console.error("Lỗi Dashboard:", e); }
                     }
 
@@ -3056,12 +3077,12 @@
                         document.getElementById('reg-date-label').innerText = formatDMY(getTodayYMD());
 
                         // Initial Populates Admin/Reg Category Selects
-                        window.updateCategoryDropdowns = function() {
+                        window.updateCategoryDropdowns = function () {
                             const sTypeReg = document.getElementById('reg-loai');
                             const sTypeAdm = document.getElementById('admin-nhom');
                             const sTypeRpt = document.getElementById('rpt-filter-type');
                             const sTypeEval = document.getElementById('eval-filter-type');
-                            
+
                             const valReg = sTypeReg ? sTypeReg.value : '';
                             const valAdm = sTypeAdm ? sTypeAdm.value : '';
                             const valRpt = sTypeRpt ? sTypeRpt.value : '';
@@ -3863,7 +3884,7 @@
                         document.getElementById('admin-form-container').style.display = 'none';
                     }
 
-                    window.toggleCustomAdminNhom = function() {
+                    window.toggleCustomAdminNhom = function () {
                         const isCustom = document.getElementById('admin-is-custom-nhom').checked;
                         const sel = document.getElementById('admin-nhom');
                         const inp = document.getElementById('admin-nhom-input');
@@ -3950,7 +3971,7 @@
                         showLoader(false);
                     }
 
-                    window.showRenameGroupModal = function() {
+                    window.showRenameGroupModal = function () {
                         const oldSel = document.getElementById('rename-group-old');
                         oldSel.innerHTML = '';
                         const groups = new Set();
@@ -3962,14 +3983,14 @@
                         document.getElementById('rename-group-overlay').style.display = 'flex';
                     };
 
-                    window.closeRenameGroupModal = function() {
+                    window.closeRenameGroupModal = function () {
                         document.getElementById('rename-group-overlay').style.display = 'none';
                     };
 
-                    window.saveRenameGroup = async function() {
+                    window.saveRenameGroup = async function () {
                         const oldName = document.getElementById('rename-group-old').value;
                         const newName = document.getElementById('rename-group-new').value.trim();
-                        
+
                         if (!oldName || !newName) {
                             showToast("Vui lòng nhập tên nhóm mới!", "warning");
                             return;
@@ -3988,7 +4009,7 @@
                                     updates[`cauHinhNhiemVu/${k}/nhomNhiemVu`] = newName;
                                 }
                             });
-                            
+
                             await update(ref(db), updates);
                             showToast("Đổi tên nhóm thành công!");
                             closeRenameGroupModal();
@@ -4043,7 +4064,7 @@
                             sel.removeAttribute('required');
                             inp.style.display = 'block';
                             inp.setAttribute('required', 'true');
-                            
+
                             dvt.readOnly = false;
                             chitieu.readOnly = false;
                             uutien.disabled = false;
@@ -4055,7 +4076,7 @@
                             inp.removeAttribute('required');
                             sel.style.display = 'block';
                             sel.setAttribute('required', 'true');
-                            
+
                             dvt.readOnly = true;
                             chitieu.readOnly = true;
                             uutien.disabled = true;
@@ -4073,10 +4094,10 @@
                         if (isCustom) {
                             tenCV = document.getElementById('reg-ten-input').value.trim();
                             const loaiCV = document.getElementById('reg-loai').value;
-                            
+
                             // Tự động đồng bộ sang danh mục quản trị nếu chưa có
-                            const exists = Object.values(masterTasks).some(t => 
-                                t.tenNhiemVu.toLowerCase() === tenCV.toLowerCase() && 
+                            const exists = Object.values(masterTasks).some(t =>
+                                t.tenNhiemVu.toLowerCase() === tenCV.toLowerCase() &&
                                 t.nhomNhiemVu === loaiCV
                             );
                             if (!exists && tenCV) {
@@ -4162,7 +4183,7 @@
 
                                 tempRegTasks.push(task);
                             });
-                            
+
                             showToast('Đã thêm vào danh sách dự kiến thành công!', 'success');
                         }
 
@@ -4651,7 +4672,7 @@
                         if (isCustom) {
                             sel.style.display = 'none';
                             inp.style.display = 'block';
-                            
+
                             dvt.readOnly = false;
                             chitieu.readOnly = false;
                             uutien.disabled = false;
@@ -4661,7 +4682,7 @@
                         } else {
                             inp.style.display = 'none';
                             sel.style.display = 'block';
-                            
+
                             dvt.readOnly = true;
                             chitieu.readOnly = true;
                             uutien.disabled = true;
@@ -4688,7 +4709,7 @@
 
                         document.getElementById('ps-is-custom').checked = false;
                         toggleCustomPSTask();
-                        
+
                         document.getElementById('ps-chitieu').value = '1';
                         document.getElementById('ps-dvt').value = 'lượt';
                         document.getElementById('ps-uutien').value = 'Trung bình';
@@ -4720,10 +4741,10 @@
 
                         if (isCustom) {
                             ten = document.getElementById('ps-ten-input').value.trim();
-                            
+
                             // Tự động đồng bộ sang danh mục quản trị nếu chưa có
-                            const exists = Object.values(masterTasks).some(t => 
-                                t.tenNhiemVu.toLowerCase() === ten.toLowerCase() && 
+                            const exists = Object.values(masterTasks).some(t =>
+                                t.tenNhiemVu.toLowerCase() === ten.toLowerCase() &&
                                 t.nhomNhiemVu === nhom
                             );
                             if (!exists && ten) {
@@ -4852,8 +4873,10 @@
 
                         const phatSinhBadge = task.isPhatSinh
                             ? `<span class="badge" style="background:#fff3cd;color:#856404;border:1px solid #ffeeba;"><i class="fas fa-bolt"></i> Phát sinh</span>` : '';
+                        const soLanChuyen = task.soLanChuyen || 0;
+                        const ngayGocLabel = task.ngayGoc ? ` | Gốc: ${formatDMY(task.ngayGoc)}` : '';
                         const chuyenTiepBadge = task.tenCongViec && task.tenCongViec.includes('[Chuyển tiếp]')
-                            ? `<span class="badge" style="background:#17a2b8;color:white;border:1px solid #117a8b;"><i class="fas fa-history"></i> Từ hôm qua</span>` : '';
+                            ? `<span class="badge" style="background:#17a2b8;color:white;border:1px solid #117a8b;"><i class="fas fa-history"></i> Chuyển tiếp${soLanChuyen > 1 ? ` (lần ${soLanChuyen})` : ''}${ngayGocLabel}</span>` : '';
 
                         const btnDoneClass = dg.ketQua === 'Hoàn thành' ? 'active-done' : '';
                         const btnPartClass = dg.ketQua === 'Hoàn thành một phần' ? 'active-part' : '';
@@ -4932,8 +4955,8 @@
 
                     <div class="form-row">
                         <div class="form-group full">
-                            <label>Lý do (bắt buộc nếu &lt; 100%)</label>
-                            <input type="text" id="eval-reason-${task.id}" value="${esc(dg.lyDoKhongDat || '')}" placeholder="Nhập lý do chưa hoàn thành..." ${disAttr}>
+                            <label>Lý do (bắt buộc nếu &lt; 100% hoặc chuyển ngày)</label>
+                            <input type="text" id="eval-reason-${task.id}" value="${esc(dg.lyDoKhongDat || '')}" placeholder="Nhập lý do chưa hoàn thành / lý do chuyển ngày..." ${disAttr}>
                         </div>
                     </div>
 
@@ -4953,9 +4976,10 @@
 
                     <div class="form-row" id="eval-transfer-row-${task.id}" style="${showTransfer ? '' : 'display:none;'}">
                         <div class="form-group">
-                            <label>Chuyển sang ngày <span>*</span></label>
-                            <input type="date" id="eval-transfer-${task.id}" value="${dg.chuyenSangNgay || ''}" ${disAttr}>
+                            <label>Chuyển sang ngày <span style="color:red">*</span> <span style="font-size:0.78rem;color:var(--gray);font-weight:400;">(tối đa 5 ngày tới)</span></label>
+                            <input type="date" id="eval-transfer-${task.id}" value="${dg.chuyenSangNgay || ''}" min="${getTodayYMD()}" max="${(() => { const d = new Date(); d.setDate(d.getDate() + 5); return d.toISOString().slice(0, 10) })()}" ${disAttr}>
                         </div>
+                        ${soLanChuyen >= 2 ? `<div style="font-size:0.78rem;color:#b45309;background:#fef3c7;padding:4px 8px;border-radius:4px;margin-top:4px;">⚠️ Nhiệm vụ đã chuyển ${soLanChuyen} lần. Hạn chuyển tối đa 5 lần.</div>` : ''}
                     </div>
                 </div>
             `;
@@ -5093,6 +5117,10 @@
 
                             const chiTieu = t.chiTieu || 100;
                             const dg = t.danhGia || {};
+                            // [FIX] Bỏ qua task đã được đánh dấu "Chuyển ngày" (kể cả chưa lưu)
+                            const resEl = document.getElementById(`eval-res-${id}`);
+                            const curKQ = resEl ? resEl.value : (dg.ketQua || '');
+                            if (curKQ === 'Chuyển sang ngày khác') continue;
                             if (!dg.ketQua || dg.ketQua === 'Chưa thực hiện') {
                                 onQuickAction(id, chiTieu, 'done');
                             }
@@ -5102,11 +5130,17 @@
 
                     function updateEvalSummaryUI() {
                         let sumWeight = 0; let sumWeightedProg = 0;
+                        let chuyenNgayCount = 0;
                         for (let key in currentEvalTasks) {
                             const t = currentEvalTasks[key];
                             const id = t.id || key;
                             const wrap = document.getElementById(`eval-wrap-${id}`);
                             if (!wrap || wrap.style.display === 'none') continue;
+
+                            // [FIX] Loại task "Chuyển ngày" ra khỏi tính điểm ngày hiện tại
+                            const resEl = document.getElementById(`eval-res-${id}`);
+                            const curKQ = resEl ? resEl.value : (t.danhGia?.ketQua || '');
+                            if (curKQ === 'Chuyển sang ngày khác') { chuyenNgayCount++; continue; }
 
                             const w = getPriorityWeight(t.mucDoUuTien);
                             const progEl = document.getElementById(`eval-prog-${id}`);
@@ -5188,10 +5222,13 @@
                             total++;
                             if (ketQua === 'Hoàn thành' || parseInt(tienDo) >= 100) done++;
 
-                            let icon = parseInt(tienDo) >= 100 ? '✅' : (parseInt(tienDo) > 0 ? '⏳' : '❌');
+                            // [FIX] Task chuyển ngày: dùng icon 📅, không tính vào total/done
+                            if (ketQua === 'Chuyển sang ngày khác') { total--; }
+                            let icon = ketQua === 'Chuyển sang ngày khác' ? '📅' : (parseInt(tienDo) >= 100 ? '✅' : (parseInt(tienDo) > 0 ? '⏳' : '❌'));
                             const chiTieu = t.chiTieu || 100;
                             const dvt = t.dvt || '%';
-                            const taskStr = `${icon} ${t.tenCongViec} (Đạt: ${thucte}/${chiTieu} ${dvt} - ${tienDo}%)${ghiChuText}`;
+                            const chuyenNote = ketQua === 'Chuyển sang ngày khác' ? ` → Chuyển ngày${lyDo ? ': ' + lyDo : ''}` : '';
+                            const taskStr = `${icon} ${t.tenCongViec}${ketQua !== 'Chuyển sang ngày khác' ? ` (Đạt: ${thucte}/${chiTieu} ${dvt} - ${tienDo}%)` : ''}${chuyenNote || ghiChuText}`;
 
                             if (t.isPhatSinh) {
                                 psTasks.push(`   + [Đ/c ${t.nguoiPhuTrach.toUpperCase()}] ${taskStr}`);
@@ -5217,8 +5254,13 @@
                             report += `(Không có)\n`;
                         }
 
+                        // [FIX] Đếm task chuyển ngày riêng
+                        const transferred = Object.values(currentEvalTasks).filter(t2 => {
+                            const el = document.getElementById(`eval-res-${t2.id || t2}`);
+                            return (el ? el.value : t2.danhGia?.ketQua) === 'Chuyển sang ngày khác';
+                        }).length;
                         report += `------------------------------------\n`;
-                        report += `*TỔNG KẾT:* Hoàn thành ${done}/${total} việc (${total > 0 ? Math.round((done / total) * 100) : 0}%)\n`;
+                        report += `*TỔNG KẾT:* Hoàn thành ${done}/${total} việc (${total > 0 ? Math.round((done / total) * 100) : 0}%)${transferred > 0 ? ` | Chuyển ngày: ${transferred} việc (không tính vào điểm)` : ''}\n`;
 
                         navigator.clipboard.writeText(report).then(() => {
                             showToast('Đã copy báo cáo vào khay nhớ tạm!');
@@ -5282,13 +5324,31 @@
                                     baiHocKinhNghiem = document.getElementById(`eval-baihoc-${id}`)?.value || '';
                                 }
 
-                                if (prog < 100 && !reason.trim() && res !== 'Chuyển sang ngày khác' && res !== 'Chưa thực hiện') {
-                                    showToast(`Công việc "${t.tenCongViec}" chưa hoàn thành phải nhập nguyên nhân!`, 'error');
+                                // [FIX] Yêu cầu lý do cho cả trường hợp chuyển ngày
+                                if (prog < 100 && !reason.trim() && res !== 'Chưa thực hiện') {
+                                    const msgSuffix = res === 'Chuyển sang ngày khác' ? 'chuyển ngày phải nhập lý do!' : 'chưa hoàn thành phải nhập nguyên nhân!';
+                                    showToast(`Công việc "${t.tenCongViec}" ${msgSuffix}`, 'error');
                                     toggleEvalForm(key); hasError = true; continue;
                                 }
-                                if (res === 'Chuyển sang ngày khác' && !transDate) {
-                                    showToast(`Công việc "${t.tenCongViec}" chưa chọn ngày chuyển!`, 'error');
-                                    hasError = true; continue;
+                                if (res === 'Chuyển sang ngày khác') {
+                                    if (!transDate) {
+                                        showToast(`Công việc "${t.tenCongViec}" chưa chọn ngày chuyển!`, 'error');
+                                        hasError = true; continue;
+                                    }
+                                    // [FIX] Giới hạn chuyển tối đa 5 ngày tới
+                                    const maxAllowed = new Date(); maxAllowed.setDate(maxAllowed.getDate() + 5);
+                                    if (new Date(transDate) > maxAllowed) {
+                                        showToast(`"${t.tenCongViec}": chỉ được chuyển tối đa 5 ngày tới!`, 'error');
+                                        hasError = true; continue;
+                                    }
+                                    // [FIX] Giới hạn số lần chuyển tối đa 5 lần
+                                    if ((t.soLanChuyen || 0) >= 5) {
+                                        showToast(`"${t.tenCongViec}": đã chuyển ${t.soLanChuyen} lần, đã đạt giới hạn! Hãy xử lý dứt điểm.`, 'error');
+                                        hasError = true; continue;
+                                    }
+                                    if ((t.soLanChuyen || 0) >= 2) {
+                                        showToast(`Lưu ý: "${t.tenCongViec}" đã chuyển ${t.soLanChuyen} lần.`, 'warning');
+                                    }
                                 }
                             }
 
@@ -5311,7 +5371,8 @@
 
                             const taskDateStr = isInboxMode && t.dateStr ? t.dateStr : defaultDateStr;
 
-                            // Đánh giá xong chỉ khi >= 100% hoặc chuyển ngày
+                            // [FIX] isDone chỉ khi >= 100%; "Chuyển ngày" vẫn set thoiDiemDanhGia để tránh auto-lock
+                            // nhưng KHÔNG được tính vào điểm - xử lý ở scoring functions
                             const isDone = prog >= 100 || res === 'Chuyển sang ngày khác';
                             const thoiDiem = isDone ? (oldDg.thoiDiemDanhGia || Date.now()) : null;
 
@@ -5329,7 +5390,17 @@
 
                                 if (res === 'Chuyển sang ngày khác' && transDate && !t.danhGia?.daChuyenTiep) {
                                     const newId = `CV-${transDate.replace(/-/g, '')}-${Date.now().toString().slice(-5)}-${transferIdx++}`;
-                                    updates[`keHoachNgay/${transDate}/${newId}`] = { ...t, id: newId, tenCongViec: `[Chuyển tiếp] ${t.tenCongViec}`, isPhatSinh: false, trangThai: 'dang_thuc_hien', danhGia: null };
+                                    // [FIX] Bỏ prefix [Chuyển tiếp] trong tên nếu đã có (tránh chồng prefix)
+                                    const baseName = (t.tenCongViec || '').replace(/^\[Chuyển tiếp\]\s*/g, '');
+                                    updates[`keHoachNgay/${transDate}/${newId}`] = {
+                                        ...t, id: newId,
+                                        tenCongViec: `[Chuyển tiếp] ${baseName}`,
+                                        isPhatSinh: false,
+                                        trangThai: 'dang_thuc_hien',
+                                        danhGia: null,
+                                        soLanChuyen: (t.soLanChuyen || 0) + 1,       // [FIX] Đếm số lần chuyển
+                                        ngayGoc: t.ngayGoc || taskDateStr,             // [FIX] Lưu ngày gốc ban đầu
+                                    };
                                     updates[`keHoachNgay/${taskDateStr}/${key}/danhGia`].daChuyenTiep = true;
                                 }
 
@@ -5525,7 +5596,7 @@
 
                                             const dg = t.danhGia || {};
                                             if (dg.ketQua === 'Chuyển sang ngày khác') return;
-                                            
+
                                             st.totalCV++;
                                             const w = getPriorityWeight(t.mucDoUuTien);
                                             const p = parseInt(dg.tiLeHoanThanh) || 0;
@@ -6087,6 +6158,9 @@
 
                                 // Chưa đánh giá → chưa chốt → bỏ qua thống kê
                                 if (!dg.thoiDiemDanhGia) return null;
+
+                                // [FIX] Chuyển ngày → loại ra khỏi thống kê (không tính vào điểm ngày đó)
+                                if (ketQua === 'Chuyển sang ngày khác') return null;
 
                                 // 1. Quá hạn (không hoàn thành + tự động chốt hoặc từ ngày trước)
                                 if (!isDone) {
@@ -6764,6 +6838,28 @@
                                             return; // Bỏ qua task này, không cộng vào tongCV hay tính điểm
                                         }
 
+                                        // [FIX] Chuyển ngày → chỉ đếm daChuyenNgay, KHÔNG tính vào tongCV/sumWP
+                                        const isTransferred = dg.ketQua === 'Chuyển sang ngày khác';
+                                        if (isTransferred) {
+                                            st.daChuyenNgay++;
+                                            // Vẫn lưu vào task list để admin xem chi tiết, nhưng đánh dấu rõ
+                                            st._tasks.push({
+                                                ten: t.tenCongViec || '(Không tên)',
+                                                ngay: formatDMY(dStr),
+                                                loai: t.loaiCongViec || '—',
+                                                uuTien: t.mucDoUuTien || '—',
+                                                chiTieu: t.chiTieu ?? 100,
+                                                dvt: t.dvt || '%',
+                                                thucTe: dg.soLuongThucTe,
+                                                tiLe: 0,
+                                                ketQua: 'Chuyển sang ngày khác',
+                                                lyDo: dg.lyDoKhongDat || '',
+                                                vuot: false, htSom: false, phatSinh: false, tuDongChot: false,
+                                                _dStr: dStr
+                                            });
+                                            return; // KHÔNG tính điểm ngày đó
+                                        }
+
                                         st.tongCV++;
                                         st.sumW += w;
                                         st.sumWP += pct * w;
@@ -6772,16 +6868,13 @@
                                             if (isDone) st.uuTienCaoHT++;
                                         }
 
-                                        // Phân loại
-                                        const isTransferred = dg.ketQua === 'Chuyển sang ngày khác';
-                                        if (isTransferred) {
-                                            st.daChuyenNgay++;
-                                        } else if (!isDone && pct === 0) { 
-                                            st.chuaThucHien++; 
-                                        } else if (!isDone && pct > 0) { 
-                                            st.htMotPhan++; 
-                                        } else { 
-                                            st.htDungHan++; 
+                                        // Phân loại (chỉ task không chuyển ngày)
+                                        if (!isDone && pct === 0) {
+                                            st.chuaThucHien++;
+                                        } else if (!isDone && pct > 0) {
+                                            st.htMotPhan++;
+                                        } else {
+                                            st.htDungHan++;
                                         }
 
                                         if (rawPct > 100) st.vuotChiTieu++;
