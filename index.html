@@ -1511,7 +1511,7 @@
                 </div>
                 <div class="form-group" style="flex:1">
                     <label>Khối lượng đã làm <span>*</span></label>
-                    <input type="number" step="0.1" id="ps-chitieu" value="1">
+                    <input type="number" step="1" id="ps-chitieu" value="1">
                 </div>
                 <div class="form-group" style="flex:1">
                     <label>Đơn vị tính <span>*</span></label>
@@ -2035,7 +2035,7 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Chỉ tiêu trong ngày <span>*</span></label>
-                                    <input type="number" id="reg-chitieu" required value="100" min="1" step="0.1">
+                                    <input type="number" id="reg-chitieu" required value="100" min="1" step="1">
                                 </div>
                                 <div class="form-group">
                                     <label>Mức độ Ưu tiên <span>*</span></label>
@@ -4945,7 +4945,7 @@
                     ` : ''}
                     <div class="eval-inline-input" id="eval-inline-${task.id}" style="${showInline ? '' : 'display:none;'}">
                         <label>Thực tế (${dvt}):</label>
-                        <input type="number" step="0.1" min="0" id="eval-thucte-${task.id}" ${disAttr}
+                        <input type="number" step="1" min="0" id="eval-thucte-${task.id}" ${disAttr}
                                value="${thucte}"
                                oninput="onThucTeChange('${task.id}',${chiTieu})"
                                onclick="event.stopPropagation()">
