@@ -1748,8 +1748,7 @@
                                 style="flex:1; background: #fef9c3; text-align:center; padding:20px; border:1px solid #fde047; box-shadow:none;">
                                 <h4 style="color:#a16207; margin-bottom:10px; font-weight:600;"><i
                                         class="fas fa-calendar-day"></i> Chuyển sang ngày khác</h4>
-                                <h2 style="font-size:2.5rem; color:#854d0e; margin:0;" id="dash-today-transferred">0
-                                </h2>
+                                <h2 style="font-size:2.5rem; color:#854d0e; margin:0;" id="dash-today-transferred">0</h2>
                             </div>
                             <div class="card"
                                 style="flex:1; background: #fee2e2; text-align:center; padding:20px; border:1px solid #fecaca; box-shadow:none;">
@@ -4977,7 +4976,7 @@
                     <div class="form-row" id="eval-transfer-row-${task.id}" style="${showTransfer ? '' : 'display:none;'}">
                         <div class="form-group">
                             <label>Chuyển sang ngày <span style="color:red">*</span> <span style="font-size:0.78rem;color:var(--gray);font-weight:400;">(tối đa 5 ngày tới)</span></label>
-                            <input type="date" id="eval-transfer-${task.id}" value="${dg.chuyenSangNgay || ''}" min="${getTodayYMD()}" max="${(() => { const d = new Date(); d.setDate(d.getDate() + 5); return d.toISOString().slice(0, 10) })()}" ${disAttr}>
+                            <input type="date" id="eval-transfer-${task.id}" value="${dg.chuyenSangNgay || ''}" min="${getTodayYMD()}" max="${(()=>{const d=new Date();d.setDate(d.getDate()+5);return d.toISOString().slice(0,10)})()}" ${disAttr}>
                         </div>
                         ${soLanChuyen >= 2 ? `<div style="font-size:0.78rem;color:#b45309;background:#fef3c7;padding:4px 8px;border-radius:4px;margin-top:4px;">⚠️ Nhiệm vụ đã chuyển ${soLanChuyen} lần. Hạn chuyển tối đa 5 lần.</div>` : ''}
                     </div>
@@ -5945,12 +5944,14 @@
                                     if (!t.danhGia || !t.danhGia.thoiDiemDanhGia) {
                                         updates[`keHoachNgay/${dStr}/${k}/danhGia`] = {
                                             ketQua: 'Chưa thực hiện', tiLeHoanThanh: 0, soLuongThucTe: 0,
-                                            lyDoKhongDat: 'Hệ thống tự động chốt (Quá hạn đánh giá)',
-                                            nguyenNhanKhachQuan: false, nguyenNhanChuQuan: true,
+                                            lyDoKhongDat: `Admin chốt quá hạn (${DEVICE_USER}) — nguyên nhân chờ xác nhận`,
+                                            nguyenNhanKhachQuan: false,
+                                            nguyenNhanChuQuan: false, // [FIX] Không tự kết luận, để Admin xét sau
                                             baiHocKinhNghiem: '', chuyenSangNgay: '',
                                             thoiDiemDanhGia: Date.now(),
                                             lichSu: [{ thoiGian: new Date().toLocaleString('vi-VN'), hanhDong: `Admin chốt quá hạn (${DEVICE_USER})` }],
-                                            daChuyenTiep: false, daDuyet: false
+                                            daChuyenTiep: false, daDuyet: false,
+                                            tuDongChot: true // [FIX] Flag phân biệt với cán bộ tự đánh giá
                                         };
                                         count++;
                                     }
@@ -6083,13 +6084,13 @@
                                         ketQua: 'Chưa thực hiện',
                                         tiLeHoanThanh: 0,
                                         soLuongThucTe: 0,
-                                        lyDoKhongDat: 'Hệ thống tự động chốt (quá 12:00 ngày hôm sau)',
+                                        lyDoKhongDat: 'Hệ thống tự động chốt (quá 12:00 ngày hôm sau) — chưa xác định nguyên nhân, Admin cần xem xét',
                                         nguyenNhanKhachQuan: false,
-                                        nguyenNhanChuQuan: true,
+                                        nguyenNhanChuQuan: false,   // [FIX] Không tự kết luận "chủ quan" — để Admin xét duyệt từng trường hợp
                                         baiHocKinhNghiem: '',
                                         chuyenSangNgay: '',
                                         thoiDiemDanhGia: Date.now(),
-                                        lichSu: [{ thoiGian: logTime, hanhDong: `Tự động chốt lúc 12:00 ngày hôm sau (${DEVICE_USER || 'hệ thống'})` }],
+                                        lichSu: [{ thoiGian: logTime, hanhDong: `Tự động chốt lúc 12:00 ngày hôm sau (${DEVICE_USER || 'hệ thống'}) — nguyên nhân chờ Admin xác nhận` }],
                                         daChuyenTiep: false,
                                         daDuyet: false,
                                         tuDongChot: true  // Flag để báo cáo phân biệt với cán bộ chủ động đánh giá
@@ -6537,7 +6538,7 @@
                         <table class="phase-summary-table">
                         <thead><tr>
                             <th style="text-align:left;">Cán bộ</th>
-                            <th title="Tổng công việc được giao">Tổng CV</th>
+                            <th title="Tổng công việc được giao (không tính task chuyển ngày)">Tổng CV</th>
                             <th title="Hoàn thành 100%">✅ Đúng hạn</th>
                             <th title="Hoàn thành một phần (>0% &lt;100%)">🟡 Một phần</th>
                             <th title="Chưa thực hiện / 0%">❌ Không HT</th>
@@ -6545,14 +6546,18 @@
                             <th title="Vượt số lượng chỉ tiêu (>100%)">⭐ Vượt CT</th>
                             <th title="Nhiệm vụ dài ngày hoàn thành trước hạn">🏁 HT sớm</th>
                             <th title="Công việc phát sinh đã hoàn thành">⚡ Phát sinh</th>
-                            <th title="Điểm tổng = Cơ bản + Thưởng khối lượng - Phạt">Điểm</th>
+                            <th title="Tỷ lệ hoàn thành chuẩn hoá: (HT + Phần*0.5) / Tổng × 100%. Dùng để so sánh công bằng giữa các cán bộ khác nhau về khối lượng.">% HT (kỷ luật)</th>
+                            <th title="Điểm tổng = Cơ bản + Thưởng khối lượng - Phạt. Đo tổng đóng góp, không dùng để so sánh trực tiếp.">Điểm KL</th>
                             <th title="Ưu tiên Cao: hoàn thành / tổng">Ưu tiên Cao</th>
                             ${IS_ADMIN ? '<th>Chi tiết</th>' : ''}
                         </tr></thead>
                         <tbody>`;
 
-                        // Sort rows descending by final score
+                        // Sort rows: ưu tiên % HT (kỷ luật) trước, rồi điểm khối lượng
                         rows.sort((a, b) => {
+                            const rateA = a.kq.tyLeHoanThanh ?? -1;
+                            const rateB = b.kq.tyLeHoanThanh ?? -1;
+                            if (rateB !== rateA) return rateB - rateA;
                             const scoreA = a.kq.diemCuoiCung ?? a.kq.diemTuDong ?? -9999;
                             const scoreB = b.kq.diemCuoiCung ?? b.kq.diemTuDong ?? -9999;
                             return scoreB - scoreA;
@@ -6564,6 +6569,8 @@
                             const clr = kqColor(pct);
                             const safe = n.replace(/\s/g, '_');
                             const prioHigh = kq.uuTienCaoTotal > 0 ? `${kq.uuTienCaoHT || 0}/${kq.uuTienCaoTotal}` : '—';
+                            const tyLe = kq.tyLeHoanThanh !== null && kq.tyLeHoanThanh !== undefined ? kq.tyLeHoanThanh : null;
+                            const tyLeColor = tyLe === null ? 'var(--gray)' : tyLe >= 90 ? '#16a34a' : tyLe >= 70 ? '#0369a1' : tyLe >= 50 ? '#b45309' : '#dc2626';
                             html += `<tr>
                                 <td>
                                     <div style="font-weight:600;">${n}</div>
@@ -6577,8 +6584,9 @@
                                 <td class="pst-num pst-star">${kq.vuotChiTieu || 0}</td>
                                 <td class="pst-num pst-good">${kq.htSomDaiNgay || 0}</td>
                                 <td class="pst-num" style="color:#0369a1;">${kq.phatSinhHT || 0}</td>
+                                <td style="font-weight:700;color:${tyLeColor};font-size:1.05em;">${tyLe !== null ? tyLe + '%' : '—'}</td>
                                 <td>
-                                    <div style="font-weight:700;color:${clr};font-size:1.1em;">${pct}</div>
+                                    <div style="font-weight:700;color:${clr};font-size:1.0em;">${pct}</div>
                                 </td>
                                 <td style="color:${kq.uuTienCaoTotal > 0 && (kq.uuTienCaoHT || 0) < kq.uuTienCaoTotal ? '#dc2626' : '#16a34a'}; font-weight:600;">${prioHigh}</td>
                                 ${IS_ADMIN ? `<td><button class="phase-detail-staff-btn" onclick="showPhaseStaffDetail('${safe}','${n}')">Xem</button></td>` : ''}
@@ -6586,7 +6594,10 @@
                         }
 
                         // Totals row
-                        const totPct = tot.tongCV > 0 ? Math.round(tot.htDungHan * 100 / tot.tongCV) : 0;
+                        const totDone = tot.htDungHan + tot.vuotChiTieu + tot.htSomDaiNgay + tot.phatSinhHT;
+                        const totTyLe = tot.tongCV > 0
+                            ? Math.round(((totDone + tot.htMotPhan * 0.5) / tot.tongCV) * 1000) / 10 : 0;
+                        const totClr = totTyLe >= 90 ? '#16a34a' : totTyLe >= 70 ? '#0369a1' : totTyLe >= 50 ? '#b45309' : '#dc2626';
                         html += `<tr class="totals-row">
                             <td>TỔNG ĐƠN VỊ (${rows.length} CB)</td>
                             <td>${tot.tongCV}</td>
@@ -6597,7 +6608,8 @@
                             <td class="pst-star">${tot.vuotChiTieu}</td>
                             <td class="pst-good">${tot.htSomDaiNgay}</td>
                             <td style="color:#0369a1;">${tot.phatSinhHT}</td>
-                            <td style="font-weight:700;color:${kqColor(totPct)};">—</td>
+                            <td style="font-weight:700;color:${totClr};">${totTyLe}%</td>
+                            <td style="font-weight:700;color:var(--gray);">—</td>
                             <td>—</td>${IS_ADMIN ? '<td></td>' : ''}
                         </tr>`;
 
@@ -6610,7 +6622,8 @@
                             🔒 Tự chốt = hệ thống tự đóng lúc 12h hôm sau &nbsp;·&nbsp;
                             ⭐ Vượt CT = thực tế &gt; chỉ tiêu &nbsp;·&nbsp;
                             🏁 HT sớm = NVXN xong trước hạn &nbsp;·&nbsp;
-                            Điểm = Điểm Cơ bản (Mỗi 100% HT được tính 1 điểm x Trọng số) + Thưởng (Vượt/Sớm/PS) - Phạt (Không HT)
+                            <strong>% HT (kỷ luật)</strong> = (HT + Phần×0.5) / Tổng — dùng để <u>so sánh công bằng</u> giữa các cán bộ &nbsp;·&nbsp;
+                            <strong>Điểm KL</strong> = Điểm Cơ bản (Mỗi 100% = 1đ × Trọng số) + Thưởng − Phạt — đo <u>tổng đóng góp khối lượng</u>
                         </div>`;
                         document.getElementById('pst-summary').innerHTML = html;
                     }
@@ -6639,7 +6652,8 @@
                                 <span style="background:#f1f5f9;padding:4px 10px;border-radius:6px;font-size:0.85rem;">Tổng: <strong>${kq.tongCV || 0}</strong> CV</span>
                                 <span style="background:#d1fae5;padding:4px 10px;border-radius:6px;font-size:0.85rem;">HT: <strong>${kq.htDungHan || 0}</strong></span>
                                 <span style="background:#fee2e2;padding:4px 10px;border-radius:6px;font-size:0.85rem;">Không HT: <strong>${kq.chuaThucHien || 0}</strong></span>
-                                <span style="background:#fef3c7;padding:4px 10px;border-radius:6px;font-size:0.85rem;">% HT: <strong>${kq.diemTuDong || 0}%</strong></span>
+                                <span style="background:#fef3c7;padding:4px 10px;border-radius:6px;font-size:0.85rem;">% HT (kỷ luật): <strong>${kq.tyLeHoanThanh !== null && kq.tyLeHoanThanh !== undefined ? kq.tyLeHoanThanh + '%' : '—'}</strong></span>
+                                <span style="background:#ede9fe;padding:4px 10px;border-radius:6px;font-size:0.85rem;">Điểm KL: <strong>${kq.diemTuDong || 0}</strong></span>
                                 ${xl ? `<span class="phase-xep-loai ${xl.cls}">${xl.label}</span>` : ''}
                             </div>
                         </div>`;
@@ -6712,16 +6726,17 @@
                             const diemAuto = kq.diemTuDong ?? '';
                             const diemAdmin = kq.diemAdmin !== undefined ? kq.diemAdmin : '';
                             const diemCuoi = kq.diemCuoiCung ?? kq.diemTuDong;
-                            // Không còn xếp loại
+                            const tyLe = kq.tyLeHoanThanh !== null && kq.tyLeHoanThanh !== undefined ? kq.tyLeHoanThanh + '%' : '—';
+                            const tyLeClr = kq.tyLeHoanThanh >= 90 ? '#16a34a' : kq.tyLeHoanThanh >= 70 ? '#0369a1' : kq.tyLeHoanThanh >= 50 ? '#b45309' : '#dc2626';
                             rows += `<tr>
                                 <td style="font-weight:600;">${name}</td>
+                                <td style="text-align:center;font-weight:700;color:${tyLeClr};">${tyLe}</td>
                                 <td style="text-align:center;color:#64748b;font-weight:600;">${diemAuto !== '' ? diemAuto : '—'}</td>
                                 <td style="text-align:center;">
                                     ${IS_ADMIN
                                     ? `<input type="number" min="-50" max="500" step="0.5" value="${diemAdmin}" id="ps-diem-${safe}" placeholder="Tự động" style="width:75px;padding:4px 6px;border:1px solid var(--border);border-radius:4px;text-align:center;" oninput="updatePhaseXL('${safe}')">`
                                     : `<strong>${diemAdmin !== '' ? diemAdmin : '—'}</strong>`}
                                 </td>
-                                <!-- Bỏ xếp loại -->
                                 <td>${IS_ADMIN
                                     ? `<textarea id="ps-nx-${safe}" rows="2" style="width:100%;padding:4px 6px;border:1px solid var(--border);border-radius:4px;font-size:0.82rem;resize:vertical;" placeholder="Nhận xét thành tích, hạn chế...">${kq.nhanXet || ''}</textarea>`
                                     : (kq.nhanXet || '<span style="color:#94a3b8;">—</span>')}
@@ -6732,14 +6747,16 @@
                         document.getElementById('pst-score').innerHTML = `
                             <p style="font-size:0.85rem;color:var(--gray);margin-bottom:12px;">
                                 <i class="fas fa-info-circle"></i>
-                                Cột <strong>"Điểm tự động"</strong> = kết quả tính từ dữ liệu (chỉ đọc).
-                                Cột <strong>"Điểm Admin"</strong> = Admin điều chỉnh nếu muốn. Nếu để trống, xếp loại sẽ theo điểm tự động.
+                                <strong>% HT (kỷ luật)</strong> = tỷ lệ hoàn thành chuẩn hoá, dùng để <em>so sánh công bằng</em> giữa các cán bộ.
+                                <strong>Điểm KL tự động</strong> = tổng đóng góp khối lượng (nhiều việc → điểm cao hơn, không so sánh trực tiếp).
+                                Admin có thể điều chỉnh điểm cuối nếu cần.
                             </p>
                             <div style="overflow-x:auto;">
                             <table class="phase-summary-table">
                                 <thead><tr>
                                     <th style="text-align:left;">Cán bộ</th>
-                                    <th>Điểm tự động</th>
+                                    <th title="Tỷ lệ hoàn thành chuẩn hoá: dùng để so sánh công bằng">% HT (kỷ luật)</th>
+                                    <th title="Điểm khối lượng tích luỹ tự động">Điểm KL tự động</th>
                                     <th>Điểm Admin điều chỉnh</th>
                                     <th style="text-align:left;min-width:200px;">Nhận xét</th>
                                 </tr></thead>
@@ -6915,7 +6932,7 @@
                                 // 1. Điểm Cơ bản theo khối lượng (Tích lũy từ 0, mỗi 100% = 1 điểm x trọng số)
                                 const diemCoBan = st.sumWP / 100;
 
-                                // 2. Điểm thưởng khối lượng (Chỉ thưởng những cái đặc biệt, việc HT đã tính ở Cơ bản)
+                                // 2. Điểm thưởng khối lượng
                                 const thuongVuot = st.vuotChiTieu * 1.0;
                                 const thuongSom = st.htSomDaiNgay * 1.0;
                                 const thuongPS = st.phatSinhHT * 0.5;
@@ -6927,13 +6944,22 @@
                                 // Tổng hợp (Làm tròn 1 chữ số thập phân, cho phép âm)
                                 const diemAuto = Math.round((diemCoBan + diemThuong - diemPhat) * 10) / 10;
 
+                                // [FIX] Tỷ lệ hoàn thành chuẩn hoá — để so sánh công bằng giữa các cán bộ
+                                // khác nhau về khối lượng. diemAuto đo "tổng đóng góp", tyLeHoanThanh đo "kỷ luật".
+                                // Công thức: số việc HT đúng hạn (+ HT một phần được tính 0.5) / tổng việc
+                                const soHTDayDu = st.htDungHan + st.vuotChiTieu + st.htSomDaiNgay + st.phatSinhHT;
+                                const soHTMotPhan = st.htMotPhan;
+                                const tyLeHoanThanh = st.tongCV > 0
+                                    ? Math.round(((soHTDayDu + soHTMotPhan * 0.5) / st.tongCV) * 1000) / 10  // 1 chữ số thập phân
+                                    : null; // null = không có dữ liệu
+
                                 const old = ketQua[name] || {};
                                 const diemCuoi = old.diemAdmin !== undefined ? old.diemAdmin : diemAuto;
                                 ketQua[name] = {
                                     ...old,
                                     diemTuDong: diemAuto,
                                     diemCuoiCung: diemCuoi,
-                                    // xepLoai removed
+                                    tyLeHoanThanh,                  // [FIX] % hoàn thành chuẩn hoá (so sánh công bằng)
                                     // Detailed stats
                                     tongCV: st.tongCV,
                                     htDungHan: st.htDungHan,
@@ -6947,7 +6973,7 @@
                                     uuTienCaoHT: st.uuTienCaoHT,
                                     uuTienCaoTotal: st.uuTienCaoTotal,
                                     taskCount: st.tongCV,
-                                    _tasks: st._tasks,   // task list giữ in-memory + Firebase
+                                    _tasks: st._tasks,
                                     autoComputed: true,
                                     computedAt: Date.now()
                                 };
