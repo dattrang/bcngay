@@ -5804,48 +5804,142 @@
                             let pLabels = Object.keys(typeCounts); let pData = Object.values(typeCounts);
                             pieChart = new Chart(document.getElementById('rptChartPie'), { type: 'doughnut', data: { labels: pLabels.length ? pLabels : ['Rỗng'], datasets: [{ data: pData.length ? pData : [1] }] }, options: { responsive: true, maintainAspectRatio: false } });
 
-                            // Text report generation
+                            // ── Báo cáo văn bản (đã sửa) ──
+                            // Phân biệt task lượng (dvt khác '%') vs task tỷ lệ (dvt='%' hoặc rỗng).
+                            // Task lượng: cộng dồn chiTieu/thucTe → hiển thị X/Y đơn vị.
+                            // Task tỷ lệ: đếm lần hoàn thành + tính trung bình % → hiển thị X/Y lần đạt (tb Z%).
                             const allFilteredTasks = [...overTasks, ...doneTasks, ...lateTasks];
+                            const isQtyBased = (dvt) => dvt && dvt.trim() !== '' && dvt.trim() !== '%';
+
+                            // groups: cat → tName → { count, countDone, countLate, dvt,
+                            //                          sumChiTieu, sumThucTe, sumPct, notDoneItems }
                             let groups = {};
                             allFilteredTasks.forEach(t => {
                                 const cat = t.loaiCongViec || 'Khác';
                                 if (!groups[cat]) groups[cat] = {};
                                 const tName = (t.tenCongViec || '').trim();
                                 if (!groups[cat][tName]) {
-                                    groups[cat][tName] = { chiTieu: 0, thucTe: 0, dvt: t.dvt || '', notes: new Set() };
+                                    groups[cat][tName] = {
+                                        count: 0, countDone: 0, countLate: 0,
+                                        dvt: t.dvt || '%',
+                                        sumChiTieu: 0, sumThucTe: 0, sumPct: 0,
+                                        notDoneItems: []
+                                    };
                                 }
-                                const chiTieuVal = parseFloat(t.chiTieu) || 0;
+                                const g = groups[cat][tName];
                                 const dg = t.dg || {};
+                                const chiTieuVal = parseFloat(t.chiTieu) || 100;
                                 const thucTeVal = parseFloat(dg.soLuongThucTe) || 0;
+                                const pct = t.p || 0;
+                                const isDone = pct >= 100 || dg.ketQua === 'Hoàn thành';
 
-                                groups[cat][tName].chiTieu += chiTieuVal;
-                                groups[cat][tName].thucTe += thucTeVal;
+                                g.count++;
+                                g.sumChiTieu += chiTieuVal;
+                                g.sumThucTe += thucTeVal;
+                                g.sumPct += Math.min(pct, 100);
 
-                                if (t.ghiChu && t.ghiChu.trim()) groups[cat][tName].notes.add(t.ghiChu.trim());
-                                if (dg.lyDoKhongDat && dg.lyDoKhongDat.trim()) groups[cat][tName].notes.add(dg.lyDoKhongDat.trim());
-                            });
-                            let reportLines = [];
-                            reportLines.push(`BÁO CÁO TỔNG HỢP CÔNG VIỆC (Từ ngày ${formatDMY(startStr)} đến ${formatDMY(endStr)})`);
-                            reportLines.push(`- Tổng số công việc: ${totalCV}`);
-                            reportLines.push(`- Đã hoàn thành: ${doneCV}`);
-                            reportLines.push(`- Tỷ lệ hoàn thành chung: ${currPct}%`);
-                            reportLines.push('');
-                            reportLines.push('CHI TIẾT CHỈ TIÊU THEO NHÓM CÔNG VIỆC:');
-                            let groupIndex = 1;
-                            for (const cat in groups) {
-                                reportLines.push(`${groupIndex}. Nhóm: ${cat.toUpperCase()}`);
-                                for (const tName in groups[cat]) {
-                                    const stats = groups[cat][tName];
-                                    let pct = stats.chiTieu > 0 ? Math.round((stats.thucTe / stats.chiTieu) * 100) : (stats.thucTe > 0 ? 100 : 0);
-                                    let dvtStr = stats.dvt ? ` ${stats.dvt}` : '';
-                                    let noteStr = '';
-                                    if (stats.notes.size > 0) {
-                                        noteStr = ` (Ghi chú: ${Array.from(stats.notes).join('; ')})`;
-                                    }
-                                    reportLines.push(`   - ${tName}: Đã làm ${stats.thucTe} / ${stats.chiTieu}${dvtStr} (Đạt ${pct}%)${noteStr}`);
+                                if (isDone) {
+                                    g.countDone++;
+                                } else {
+                                    g.countLate++;
+                                    const lyDo = (dg.lyDoKhongDat || '').trim();
+                                    const autoStr = dg.tuDongChot ? ' [tự chốt]' : '';
+                                    g.notDoneItems.push(
+                                        `Đ/c ${t.nguoiPhuTrach} (${formatDMY(t.date)}): ${pct}%${lyDo ? ' — ' + lyDo : ''}${autoStr}`
+                                    );
                                 }
-                                groupIndex++;
+                            });
+
+                            const SEP = '═'.repeat(52);
+                            const THIN = '─'.repeat(52);
+                            let reportLines = [];
+
+                            // Tiêu đề
+                            reportLines.push(`BÁO CÁO KẾT QUẢ THỰC HIỆN NHIỆM VỤ`);
+                            reportLines.push(`Từ ngày ${formatDMY(startStr)} đến ngày ${formatDMY(endStr)}`);
+                            reportLines.push(SEP);
+                            reportLines.push('');
+
+                            // I. Tổng quan
+                            const notDoneCount = totalCV - doneCV;
+                            const xepLoai = currPct >= 90 ? 'Xuất sắc' : currPct >= 75 ? 'Tốt' : currPct >= 60 ? 'Đạt yêu cầu' : 'Chưa đạt yêu cầu';
+                            reportLines.push(`I. TỔNG QUAN`);
+                            reportLines.push(`   - Tổng số đầu công việc đã thực hiện : ${totalCV} việc`);
+                            reportLines.push(`   - Hoàn thành đạt và vượt mức        : ${doneCV} việc`);
+                            reportLines.push(`   - Chưa hoàn thành / chậm tiến độ    : ${notDoneCount} việc`);
+                            reportLines.push(`   - Tỷ lệ hoàn thành chung            : ${currPct}% — ${xepLoai}`);
+                            reportLines.push('');
+
+                            // II. Kết quả theo lĩnh vực
+                            reportLines.push(`II. KẾT QUẢ THỰC HIỆN THEO TỪNG LĨNH VỰC`);
+                            reportLines.push(THIN);
+                            let gIdx = 1;
+                            for (const cat in groups) {
+                                reportLines.push(`${gIdx}. ${cat.toUpperCase()}`);
+                                for (const tName in groups[cat]) {
+                                    const g = groups[cat][tName];
+                                    let line = '';
+                                    const icon = g.countLate === 0 ? '✓' : g.countDone === 0 ? '✗' : '△';
+
+                                    if (isQtyBased(g.dvt)) {
+                                        // Task số lượng thực: cộng dồn rồi so sánh
+                                        const pctQty = g.sumChiTieu > 0
+                                            ? Math.round((g.sumThucTe / g.sumChiTieu) * 100)
+                                            : (g.sumThucTe > 0 ? 100 : 0);
+                                        line = `   ${icon} ${tName}: Thực hiện ${g.sumThucTe}/${g.sumChiTieu} ${g.dvt} (Đạt ${pctQty}%)`;
+                                    } else {
+                                        // Task tỷ lệ %: đếm lần hoàn thành + trung bình %
+                                        const avgPct = g.count > 0 ? Math.round(g.sumPct / g.count) : 0;
+                                        if (g.count === 1) {
+                                            line = `   ${icon} ${tName}: ${g.countDone > 0 ? 'Hoàn thành' : `Chưa hoàn thành (${avgPct}%)`}`;
+                                        } else {
+                                            line = `   ${icon} ${tName}: Hoàn thành ${g.countDone}/${g.count} lần (Trung bình ${avgPct}%)`;
+                                        }
+                                    }
+                                    reportLines.push(line);
+
+                                    // Liệt kê chi tiết lần chưa đạt (tối đa 3 dòng)
+                                    if (g.notDoneItems.length > 0 && g.notDoneItems.length <= 3) {
+                                        g.notDoneItems.forEach(nd => reportLines.push(`        → ${nd}`));
+                                    } else if (g.notDoneItems.length > 3) {
+                                        reportLines.push(`        → ${g.notDoneItems.length} lần chưa đạt (xem tab Chi tiết cán bộ để biết thêm)`);
+                                    }
+                                }
+                                gIdx++;
+                                reportLines.push('');
                             }
+
+                            // III. Tồn tại, hạn chế
+                            reportLines.push(THIN);
+                            reportLines.push(`III. TỒN TẠI, HẠN CHẾ`);
+                            const lateList = allFilteredTasks.filter(t => t.p < 100 && t.dg?.ketQua !== 'Hoàn thành');
+                            if (lateList.length === 0) {
+                                reportLines.push(`   Không có tồn tại — toàn bộ công việc trong giai đoạn đã được hoàn thành.`);
+                            } else {
+                                lateList.forEach((t, i) => {
+                                    const dg = t.dg || {};
+                                    const lyDo = (dg.lyDoKhongDat || '').trim();
+                                    const autoStr = dg.tuDongChot ? ' [tự chốt]' : '';
+                                    const lyDoStr = lyDo ? ` — ${lyDo}` : '';
+                                    reportLines.push(`   ${i + 1}. ${t.tenCongViec} — Đ/c ${t.nguoiPhuTrach} (${formatDMY(t.date)}): Đạt ${t.p}%${autoStr}${lyDoStr}`);
+                                });
+                            }
+                            reportLines.push('');
+
+                            // IV. Nhận xét, đánh giá
+                            reportLines.push(THIN);
+                            reportLines.push(`IV. NHẬN XÉT, ĐÁNH GIÁ`);
+                            let nxLine = `   Trong giai đoạn từ ${formatDMY(startStr)} đến ${formatDMY(endStr)}, đơn vị đã thực hiện ${totalCV} đầu việc, hoàn thành ${doneCV} việc, đạt tỷ lệ ${currPct}% — xếp loại: ${xepLoai}.`;
+                            reportLines.push(nxLine);
+                            if (notDoneCount > 0) {
+                                reportLines.push(`   Còn ${notDoneCount} công việc chưa hoàn thành, cần tăng cường kiểm tra, đôn đốc và có biện pháp khắc phục kịp thời.`);
+                            } else {
+                                reportLines.push(`   Toàn bộ nhiệm vụ được giao đều đã hoàn thành, thể hiện tinh thần trách nhiệm cao của cán bộ, chiến sĩ trong đơn vị.`);
+                            }
+                            reportLines.push('');
+                            reportLines.push(SEP);
+                            reportLines.push(`(Văn bản tổng hợp tự động — ${formatDMY(getTodayYMD())})`);
+
                             const rptTextEl = document.getElementById('rpt-text-content');
                             if (rptTextEl) rptTextEl.value = reportLines.join('\n');
 
