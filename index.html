@@ -7376,31 +7376,44 @@
                         if (nvxnAutoSyncing) return;
                         nvxnAutoSyncing = true;
                         try {
-                            const [personsSnap, tasksSnap] = await Promise.all([
+                            // CHỈ kéo những công việc chưa hoàn thành (todo, in_progress) để tránh lãng phí tải các task done
+                            const [personsSnap, todoSnap, inProgSnap] = await Promise.all([
                                 get(child(ref(dbQlcv), 'qlcv_persons')),
-                                get(child(ref(dbQlcv), 'qlcv_tasks'))
+                                get(query(ref(dbQlcv, 'qlcv_tasks'), orderByChild('status'), equalTo('todo'))),
+                                get(query(ref(dbQlcv, 'qlcv_tasks'), orderByChild('status'), equalTo('in_progress')))
                             ]);
                             const personsArr = personsSnap.exists() ? Object.values(personsSnap.val()).filter(Boolean) : [];
-                            const tasksRaw = tasksSnap.exists() ? tasksSnap.val() : {};
+                            const tasksRaw = { 
+                                ...(todoSnap.exists() ? todoSnap.val() : {}), 
+                                ...(inProgSnap.exists() ? inProgSnap.val() : {}) 
+                            };
                             const tasksArr = Object.keys(tasksRaw)
                                 .map(k => ({ id: k, ...tasksRaw[k] }))
-                                .filter(t => t && t.status !== 'done' && t.due);
+                                .filter(t => t && t.due);
 
                             const todayStr = getTodayYMD();
                             const updates = {};
                             let count = 0;
 
-                            // [FIX] Prefetch toàn bộ nhiemVuDaiHan 1 lần thay vì đọc tuần tự trong vòng lặp
-                            const existingNvxnSnap = await get(child(ref(db), 'nhiemVuDaiHan'));
-                            const existingNvxnKeys = new Set(existingNvxnSnap.exists() ? Object.keys(existingNvxnSnap.val()) : []);
-
+                            // Kiểm tra từng task xem đã có trong nhiemVuDaiHan chưa, thay vì tải toàn bộ node nhiemVuDaiHan
+                            const checkPromises = [];
                             for (const t of tasksArr) {
                                 const assignees = t.assignees || [];
                                 for (const pid of assignees) {
                                     const p = personsArr.find(pp => pp.id === pid);
                                     if (!p) continue;
                                     const detKey = `nvxn_auto_${t.id}_${pid}`;
-                                    if (existingNvxnKeys.has(detKey)) continue; // đã từng tạo (kể cả từng bị Admin hủy) → không tạo lại
+                                    checkPromises.push(
+                                        get(child(ref(db), `nhiemVuDaiHan/${detKey}/id`)).then(snap => ({ exists: snap.exists(), detKey, t, p }))
+                                    );
+                                }
+                            }
+                            
+                            const checkResults = await Promise.all(checkPromises);
+
+                            for (const res of checkResults) {
+                                if (res.exists) continue; // đã từng tạo
+                                const { detKey, t, p } = res;
 
                                     // [FIX] Lấy số lượng chỉ tiêu từ kpiValue của QLCV (mặc định 1)
                                     const qlcvQty = Math.max(1, Math.round(parseFloat(t.kpiValue) || 1));
@@ -7442,25 +7455,27 @@
 
                         showLoader(true);
                         try {
-                            // 1. Tải song song: tasks QLCV + danh sách nhiemVuDaiHan hiện tại
-                            const [tasksSnap, personsSnap, nvxnSnap] = await Promise.all([
-                                get(child(ref(dbQlcv), 'qlcv_tasks')),
+                            // 1. Chỉ tải task chưa xong từ QLCV và nhiemVuDaiHan đang thực hiện
+                            const [todoSnap, inProgSnap, personsSnap, nvxnSnap] = await Promise.all([
+                                get(query(ref(dbQlcv, 'qlcv_tasks'), orderByChild('status'), equalTo('todo'))),
+                                get(query(ref(dbQlcv, 'qlcv_tasks'), orderByChild('status'), equalTo('in_progress'))),
                                 get(child(ref(dbQlcv), 'qlcv_persons')),
-                                get(child(ref(db), 'nhiemVuDaiHan'))
+                                get(query(ref(db, 'nhiemVuDaiHan'), orderByChild('trangThai'), equalTo('dang_thuc_hien')))
                             ]);
 
                             if (!nvxnSnap.exists()) {
-                                showToast('Không có nhiệm vụ dài ngày nào để cập nhật.', 'warning');
+                                showToast('Không có nhiệm vụ dài ngày nào đang thực hiện để cập nhật.', 'warning');
                                 showLoader(false);
                                 return;
                             }
 
                             // 2. Build lookup QLCV tasks: id → task
                             const qlcvTasksMap = {};
-                            if (tasksSnap.exists()) {
-                                Object.entries(tasksSnap.val()).forEach(([k, v]) => {
-                                    if (v) qlcvTasksMap[k] = { id: k, ...v };
-                                });
+                            if (todoSnap.exists()) {
+                                Object.entries(todoSnap.val()).forEach(([k, v]) => { if (v) qlcvTasksMap[k] = { id: k, ...v }; });
+                            }
+                            if (inProgSnap.exists()) {
+                                Object.entries(inProgSnap.val()).forEach(([k, v]) => { if (v) qlcvTasksMap[k] = { id: k, ...v }; });
                             }
 
                             // 3. Build lookup persons: id → person
@@ -7557,7 +7572,8 @@
 
                     async function loadNVXNTasks() {
                         try {
-                            const snap = await get(child(ref(db), 'nhiemVuDaiHan'));
+                            const q = query(ref(db, 'nhiemVuDaiHan'), orderByChild('trangThai'), equalTo('dang_thuc_hien'));
+                            const snap = await get(q);
                             nvxnTasks = snap.exists() ? Object.values(snap.val()).filter(t => t && t.active !== false) : [];
                         } catch (e) { console.error('[NVDN] Lỗi tải danh sách:', e); nvxnTasks = []; }
                     }
