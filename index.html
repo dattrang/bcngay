@@ -6834,14 +6834,14 @@
                         </tr></thead>
                         <tbody>`;
 
-                        // Sort rows: ưu tiên % HT (kỷ luật) trước, rồi điểm khối lượng
+                        // Sort rows: ưu tiên Điểm KL (khối lượng) trước, sau đó đến % HT
                         rows.sort((a, b) => {
-                            const rateA = a.kq.tyLeHoanThanh ?? -1;
-                            const rateB = b.kq.tyLeHoanThanh ?? -1;
-                            if (rateB !== rateA) return rateB - rateA;
                             const scoreA = a.kq.diemCuoiCung ?? a.kq.diemTuDong ?? -9999;
                             const scoreB = b.kq.diemCuoiCung ?? b.kq.diemTuDong ?? -9999;
-                            return scoreB - scoreA;
+                            if (scoreB !== scoreA) return scoreB - scoreA;
+                            const rateA = a.kq.tyLeHoanThanh ?? -1;
+                            const rateB = b.kq.tyLeHoanThanh ?? -1;
+                            return rateB - rateA;
                         });
 
                         for (const { n, kq } of rows) {
