@@ -2192,6 +2192,12 @@
                                 tải danh sách.</div>
                         </div>
 
+                        <!-- Banner cảnh báo nhiệm vụ trùng -->
+                        <div id="dup-warning-banner" style="display:none; margin:10px 0 4px; padding:10px 14px; background:#fef9c3; border:1px solid #f59e0b; border-radius:8px; font-size:0.88rem; color:#78350f;">
+                            <strong><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> Phát hiện nhiệm vụ trùng lặp:</strong>
+                            <span id="dup-warning-detail"></span>
+                        </div>
+
                         <div id="eval-summary-container" style="display: none;">
                             <div class="score-box">
                                 <div class="score-circle" id="eval-score-circle" style="background: var(--gray);">0%
@@ -3029,7 +3035,7 @@
                                 if (count > 0) {
                                     await update(ref(db), updates);
                                     showToast(`Đã tính lại và cập nhật thành công ${count} công việc!`);
-                                    try { generateDashboard(); } catch (e) { }
+                                    try { rptDataCache = null; generateDashboard(); } catch (e) { }
                                 } else {
                                     showToast(`Tất cả công việc đều đã chuẩn xác, không có gì cần cập nhật.`);
                                 }
@@ -4459,6 +4465,70 @@
                     }
 
                     // ================= MODULE 2: ĐÁNH GIÁ =================
+                    // ── Phát hiện nhiệm vụ trùng lặp trong 1 ngày ──
+                    // Nhóm theo (nguoiPhuTrach, baseName) — baseName = tên sau khi bỏ prefix [Dài ngày]/[Chuyển tiếp].
+                    // Trả về Map: groupKey → mảng task trùng.
+                    function detectDuplicateTasks(tasksArr) {
+                        const groups = {};
+                        tasksArr.forEach(t => {
+                            const base = (t.tenCongViec || '')
+                                .replace(/^\[(Dài ngày|Chuyển tiếp)\]\s*/g, '')
+                                .trim().toLowerCase();
+                            const key = `${(t.nguoiPhuTrach || '').toLowerCase()}||${base}`;
+                            if (!groups[key]) groups[key] = [];
+                            groups[key].push(t);
+                        });
+                        // Chỉ giữ nhóm có ≥ 2 task
+                        const dupGroups = {};
+                        Object.entries(groups).forEach(([k, arr]) => {
+                            if (arr.length >= 2) dupGroups[k] = arr;
+                        });
+                        return dupGroups;
+                    }
+
+                    // Hiển thị cảnh báo trùng lặp trên banner và đánh dấu badge trên từng task
+                    function renderDuplicateWarning(tasksArr) {
+                        const banner = document.getElementById('dup-warning-banner');
+                        const detail = document.getElementById('dup-warning-detail');
+                        if (!banner || !detail) return;
+
+                        const dupGroups = detectDuplicateTasks(tasksArr);
+                        const dupGroupCount = Object.keys(dupGroups).length;
+
+                        if (dupGroupCount === 0) {
+                            banner.style.display = 'none';
+                            return;
+                        }
+
+                        const lines = Object.values(dupGroups).map(arr => {
+                            const baseName = (arr[0].tenCongViec || '')
+                                .replace(/^\[(Dài ngày|Chuyển tiếp)\]\s*/g, '').trim();
+                            return `"${baseName}" (${arr[0].nguoiPhuTrach}) — ${arr.length} bản`;
+                        });
+                        detail.innerHTML = ' ' + lines.join('; ');
+                        banner.style.display = 'block';
+
+                        // Đánh badge màu cam trên mỗi eval-item trùng
+                        const dupIds = new Set(Object.values(dupGroups).flat().map(t => t.id));
+                        dupIds.forEach(id => {
+                            const wrap = document.getElementById(`eval-wrap-${id}`);
+                            if (!wrap) return;
+                            const header = wrap.querySelector('.eval-header');
+                            if (!header) return;
+                            // Thêm badge nếu chưa có
+                            if (!wrap.querySelector('.dup-badge')) {
+                                const badge = document.createElement('span');
+                                badge.className = 'dup-badge';
+                                badge.title = 'Nhiệm vụ này có thể bị trùng lặp';
+                                badge.style.cssText = 'display:inline-block;padding:2px 7px;margin-left:6px;background:#f59e0b;color:#fff;border-radius:4px;font-size:0.72rem;font-weight:600;vertical-align:middle;';
+                                badge.textContent = '⚠ Trùng';
+                                const nameEl = header.querySelector('.task-name, span, strong');
+                                if (nameEl) nameEl.appendChild(badge);
+                                else header.appendChild(badge);
+                            }
+                        });
+                    }
+
                     async function loadTasksForEval() {
                         const dateStr = document.getElementById('eval-date').value;
                         if (!dateStr) return;
@@ -4502,6 +4572,8 @@
                                 document.getElementById('btn-complete-all').style.display = 'inline-flex';
                                 updateEvalSummaryUI();
                                 filterEvalList();
+                                // Phát hiện và cảnh báo nhiệm vụ trùng
+                                renderDuplicateWarning(tasksArr);
                             } else {
                                 container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--gray);">Không có công việc nào.</div>`;
                                 document.getElementById('eval-summary-container').style.display = 'none';
@@ -4569,6 +4641,7 @@
                                     document.getElementById('btn-complete-all').style.display = 'inline-flex';
                                     updateEvalSummaryUI();
                                     filterEvalList();
+                                    renderDuplicateWarning(tasksArr);
                                     showToast(`Đã tải ${tasksArr.length} việc tồn đọng.`, 'success');
                                 } else {
                                     container.innerHTML = `<div style="padding: 20px; text-align: center; color: var(--success);"><i class="fas fa-check-circle" style="font-size:2rem; margin-bottom:10px;"></i><br>Tuyệt vời! Không có việc nào tồn đọng.</div>`;
@@ -5392,18 +5465,25 @@
                                 };
 
                                 if (res === 'Chuyển sang ngày khác' && transDate && !t.danhGia?.daChuyenTiep) {
-                                    const newId = `CV-${transDate.replace(/-/g, '')}-${Date.now().toString().slice(-5)}-${transferIdx++}`;
-                                    // [FIX] Bỏ prefix [Chuyển tiếp] trong tên nếu đã có (tránh chồng prefix)
-                                    const baseName = (t.tenCongViec || '').replace(/^\[Chuyển tiếp\]\s*/g, '');
-                                    updates[`keHoachNgay/${transDate}/${newId}`] = {
-                                        ...t, id: newId,
-                                        tenCongViec: `[Chuyển tiếp] ${baseName}`,
-                                        isPhatSinh: false,
-                                        trangThai: 'dang_thuc_hien',
-                                        danhGia: null,
-                                        soLanChuyen: (t.soLanChuyen || 0) + 1,       // [FIX] Đếm số lần chuyển
-                                        ngayGoc: t.ngayGoc || taskDateStr,             // [FIX] Lưu ngày gốc ban đầu
-                                    };
+                                    if (!t.nvxnLinkId) {
+                                        // Task thường: tạo bản [Chuyển tiếp] trên ngày mới.
+                                        // ID tất định (gốc + transDate) → idempotent khi lưu nhiều lần.
+                                        const safeOriginId = (t.id || '').replace(/[^a-zA-Z0-9]/g, '').slice(-14);
+                                        const newId = `CT-${safeOriginId}-${transDate.replace(/-/g, '')}`;
+                                        const baseName = (t.tenCongViec || '').replace(/^\[Chuyển tiếp\]\s*/g, '');
+                                        updates[`keHoachNgay/${transDate}/${newId}`] = {
+                                            ...t, id: newId,
+                                            tenCongViec: `[Chuyển tiếp] ${baseName}`,
+                                            isPhatSinh: false,
+                                            trangThai: 'dang_thuc_hien',
+                                            danhGia: null,
+                                            soLanChuyen: (t.soLanChuyen || 0) + 1,
+                                            ngayGoc: t.ngayGoc || taskDateStr,
+                                        };
+                                    }
+                                    // Task NVXN (nvxnLinkId có giá trị): KHÔNG tạo bản sao thủ công.
+                                    // nvxnSyncDailyEntries sẽ tự sinh entry trên transDate với chỉ tiêu
+                                    // tính lại đúng (remaining / daysLeft) — tránh tạo 2 nhiệm vụ trùng.
                                     updates[`keHoachNgay/${taskDateStr}/${key}/danhGia`].daChuyenTiep = true;
                                 }
 
@@ -5542,6 +5622,12 @@
                         }
                     }
 
+                    // Cache dữ liệu báo cáo theo [startStr|endStr]
+                    // Filter thay đổi (nhóm, loại CV, cán bộ) sẽ xử lý client-side từ data đã tải
+                    // → tránh re-fetch Firebase mỗi lần đổi dropdown
+                    let rptDataCache = null; // { key, currVal, prevVal }
+                    const rptMakeSnap = (val) => ({ exists: () => !!val, val: () => val });
+
                     window.generateDashboard = async function () {
                         const startStr = document.getElementById('rpt-start').value;
                         const endStr = document.getElementById('rpt-end').value;
@@ -5569,11 +5655,25 @@
                             const pStartStr = formatLocalYMD(prevStartDateObj);
                             const pEndStr = formatLocalYMD(prevEndDateObj);
 
-                            // Fetch both periods in parallel if possible, or sequential
-                            const qCurr = query(ref(db, 'keHoachNgay'), orderByKey(), startAt(startStr), endAt(endStr));
-                            const qPrev = query(ref(db, 'keHoachNgay'), orderByKey(), startAt(pStartStr), endAt(pEndStr));
-
-                            const [snapCurr, snapPrev] = await Promise.all([get(qCurr), get(qPrev)]);
+                            // Cache theo [startStr|endStr]: chỉ fetch Firebase khi date range thay đổi.
+                            // Đổi filter (fStaff / fType / fGroup) → dùng lại data đã tải, không gọi Firebase.
+                            let snapCurr, snapPrev;
+                            const _cacheKey = `${startStr}|${endStr}`;
+                            if (rptDataCache && rptDataCache.key === _cacheKey) {
+                                snapCurr = rptMakeSnap(rptDataCache.currVal);
+                                snapPrev = rptMakeSnap(rptDataCache.prevVal);
+                            } else {
+                                const qCurr = query(ref(db, 'keHoachNgay'), orderByKey(), startAt(startStr), endAt(endStr));
+                                const qPrev = query(ref(db, 'keHoachNgay'), orderByKey(), startAt(pStartStr), endAt(pEndStr));
+                                const [sc, sp] = await Promise.all([get(qCurr), get(qPrev)]);
+                                rptDataCache = {
+                                    key: _cacheKey,
+                                    currVal: sc.exists() ? sc.val() : null,
+                                    prevVal: sp.exists() ? sp.val() : null
+                                };
+                                snapCurr = sc;
+                                snapPrev = sp;
+                            }
 
                             // Helper to process stats for a period
                             const processStats = (snapshot, startD, endD) => {
@@ -7128,6 +7228,7 @@
                     let nvxnInited = false;
                     let nvxnSyncing = false;
                     let nvxnAutoSyncing = false;
+                    let nvxnLastSyncDate = null; // Guard: bỏ qua nếu đã sync hôm nay rồi
 
                     const NVXN_LAPLAI_LABEL = { khong: 'Không lặp lại', tuan: 'Hàng tuần', thang: 'Hàng tháng', quy: 'Hàng quý', nam: 'Hàng năm' };
 
@@ -7161,6 +7262,7 @@
                             document.getElementById('btn-nvxn-reload').addEventListener('click', async () => {
                                 showToast('Đang đồng bộ lại...');
                                 await nvxnAutoSyncFromQlcv();
+                                nvxnLastSyncDate = null; // Bỏ guard để buộc sync lại
                                 await nvxnSyncDailyEntries();
                                 await loadNVXNTasks();
                                 await renderNVXNList();
@@ -7350,6 +7452,7 @@
                             await update(ref(db), updates);
 
                             // Re-sync daily entries để áp dụng chỉ tiêu mới ngay hôm nay
+                            nvxnLastSyncDate = null; // Chỉ tiêu thay đổi → buộc sync lại
                             await nvxnSyncDailyEntries();
                             await loadNVXNTasks();
                             await renderNVXNList();
@@ -7405,6 +7508,9 @@
                     // ── Engine chính: sinh đầu việc hôm nay (quá hạn vẫn tiếp tục sinh mỗi ngày) ──
                     async function nvxnSyncDailyEntries(preFetchedTodaySnap = null) {
                         if (nvxnSyncing) return;
+                        // Guard: bỏ qua nếu đã sync trong ngày hôm nay rồi (trừ khi có snap từ startup)
+                        // → tránh re-fetch keHoachNgay mỗi lần user click tab
+                        if (!preFetchedTodaySnap && nvxnLastSyncDate === getTodayYMD()) return;
                         nvxnSyncing = true;
                         try {
                             await loadNVXNTasks();
@@ -7412,11 +7518,16 @@
                             const updates = {};
 
                             // [PERF FIX] Dùng snap đã tải từ startup nếu có, nếu không thì mới đọc Firebase
-                            let todayPlanSnap = preFetchedTodaySnap;
-                            if (!todayPlanSnap) {
-                                todayPlanSnap = await get(child(ref(db), `keHoachNgay/${todayStr}`));
-                            }
-                            const todayPlanKeys = new Set(todayPlanSnap?.exists() ? Object.keys(todayPlanSnap.val()) : []);
+                            const todayPlanSnap = preFetchedTodaySnap || await get(child(ref(db), `keHoachNgay/${todayStr}`));
+                            const todayPlanData = todayPlanSnap?.exists() ? todayPlanSnap.val() : {};
+                            const todayPlanKeys = new Set(Object.keys(todayPlanData));
+                            // [FIX duplicate] Set nvxnLinkId của các entry chưa đánh giá đã tồn tại hôm nay.
+                            // Bắt cả bản "[Chuyển tiếp]" cũ (tạo trước khi có fix) để tránh sinh thêm entry trùng.
+                            const todayNvxnLinkIds = new Set(
+                                Object.values(todayPlanData)
+                                    .filter(item => item?.nvxnLinkId && !item?.danhGia?.thoiDiemDanhGia)
+                                    .map(item => item.nvxnLinkId)
+                            );
 
                             // [PERF FIX] Batch load keHoachNgay cho TẤT CẢ qty-mode tasks trong 1 lần đọc
                             // Thay vì gọi nvxnDerivedProgress() riêng lẻ cho từng task (N lần đọc Firebase)
@@ -7470,6 +7581,7 @@
 
                                     const detId = nvxnDailyId(task.id, todayStr);
                                     if (todayPlanKeys.has(detId)) continue; // [FIX] check local thay vì gọi Firebase
+                                    if (todayNvxnLinkIds.has(task.id)) continue; // [FIX] entry cũ cùng nvxnLinkId đã tồn tại
 
                                     // daysLeft tối thiểu 1 → nếu đã quá hạn, dồn hết phần còn thiếu vào hôm nay
                                     // và NĂM SAU VẪN TIẾP TỤC sinh việc (vì remaining vẫn >0 cho tới khi đủ).
@@ -7505,6 +7617,7 @@
 
                                     const detId = nvxnDailyId(task.id, todayStr);
                                     if (todayPlanKeys.has(detId)) continue; // [FIX] check local thay vì gọi Firebase
+                                    if (todayNvxnLinkIds.has(task.id)) continue; // [FIX] entry cũ cùng nvxnLinkId đã tồn tại
 
                                     const overdue = daysUntil < 0;
                                     updates[`keHoachNgay/${todayStr}/${detId}`] = {
@@ -7534,6 +7647,7 @@
                             console.error('[NVDN] Lỗi đồng bộ đầu việc hôm nay:', e);
                         } finally {
                             nvxnSyncing = false;
+                            nvxnLastSyncDate = getTodayYMD(); // Đánh dấu đã sync hôm nay
                         }
                     }
 
@@ -7748,6 +7862,7 @@
                                 [`nhiemVuDaiHan/${id}/lapLai`]: lapLai
                             });
                             showToast('Đã cập nhật thiết lập!');
+                            nvxnLastSyncDate = null; // Cài đặt thay đổi → buộc sync lại hôm nay
                             await nvxnSyncDailyEntries();
                             await loadNVXNTasks();
                             await renderNVXNList();
