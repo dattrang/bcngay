@@ -2073,7 +2073,7 @@
                                 <textarea id="reg-ghichu" rows="1" placeholder="Chi tiết..."></textarea>
                             </div>
                             <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;">
-                                <div style="display:flex; align-items:center; gap:6px;">
+                                <div id="admin-target-date-wrap" style="display:none; align-items:center; gap:6px;">
                                     <label style="font-size:0.85rem; font-weight:600; color:#475569; white-space:nowrap; margin:0;" title="Mặc định là hôm nay. Chọn ngày khác để lên kế hoạch trước."><i class="fas fa-calendar-day" style="color:var(--primary);"></i> Ngày thực hiện:</label>
                                     <input type="date" id="reg-target-date" title="Ngày thực hiện nhiệm vụ (mặc định hôm nay, có thể chọn ngày tương lai để lên kế hoạch trước)" style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem; background:#f8fafc; min-width:140px;">
                                 </div>
@@ -3155,6 +3155,8 @@
                             loadDeviceBindings();
                             const btnAdminAutoFail = document.getElementById('btn-admin-autofail');
                             if (btnAdminAutoFail) btnAdminAutoFail.style.display = 'inline-block';
+                            const adminTargetDateWrap = document.getElementById('admin-target-date-wrap');
+                            if (adminTargetDateWrap) adminTargetDateWrap.style.display = 'flex';
                         }
 
                         loadSavedViews();
