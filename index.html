@@ -3216,6 +3216,44 @@
                         window.renderMultiStaffList = function () {
                             const list = document.getElementById('multi-staff-list');
                             list.innerHTML = '';
+                            
+                            const actionDiv = document.createElement('div');
+                            actionDiv.style.padding = '8px 10px';
+                            actionDiv.style.borderBottom = '1px solid var(--border)';
+                            actionDiv.style.display = 'flex';
+                            actionDiv.style.gap = '10px';
+                            actionDiv.style.background = '#f8fafc';
+                            actionDiv.style.position = 'sticky';
+                            actionDiv.style.top = '0';
+                            actionDiv.style.zIndex = '1';
+                            
+                            const btnSelectAll = document.createElement('button');
+                            btnSelectAll.type = 'button';
+                            btnSelectAll.className = 'btn btn-outline btn-sm';
+                            btnSelectAll.style.flex = '1';
+                            btnSelectAll.style.padding = '4px 8px';
+                            btnSelectAll.innerHTML = '<i class="fas fa-check-square"></i> Chọn tất cả';
+                            btnSelectAll.onclick = function(e) {
+                                e.stopPropagation();
+                                list.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
+                                onMultiStaffChange();
+                            };
+
+                            const btnDeselectAll = document.createElement('button');
+                            btnDeselectAll.type = 'button';
+                            btnDeselectAll.className = 'btn btn-outline btn-sm';
+                            btnDeselectAll.style.flex = '1';
+                            btnDeselectAll.style.padding = '4px 8px';
+                            btnDeselectAll.innerHTML = '<i class="far fa-square"></i> Bỏ chọn';
+                            btnDeselectAll.onclick = function(e) {
+                                e.stopPropagation();
+                                list.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
+                                onMultiStaffChange();
+                            };
+
+                            actionDiv.appendChild(btnSelectAll);
+                            actionDiv.appendChild(btnDeselectAll);
+                            list.appendChild(actionDiv);
 
                             let grouped = {};
                             STAFFS.forEach(s => {
@@ -3227,16 +3265,22 @@
                                 const grpDiv = document.createElement('div');
                                 grpDiv.innerHTML = `<small style="color:var(--gray); font-weight:bold;">${group}</small>`;
                                 grpDiv.style.padding = "5px 10px";
-                                grpDiv.style.background = "#f8fafc";
+                                grpDiv.style.background = "#f1f5f9";
                                 list.appendChild(grpDiv);
 
                                 grouped[group].forEach(ten => {
                                     const item = document.createElement('label');
-                                    item.style.display = 'block';
-                                    item.style.padding = '8px 10px';
+                                    item.style.display = 'flex';
+                                    item.style.alignItems = 'center';
+                                    item.style.gap = '8px';
+                                    item.style.padding = '10px';
                                     item.style.cursor = 'pointer';
                                     item.style.borderBottom = '1px solid #eee';
-                                    item.innerHTML = `<input type="checkbox" value="${ten}" onchange="onMultiStaffChange(this)"> ${ten}`;
+                                    item.style.margin = '0';
+                                    item.style.transition = 'background 0.2s';
+                                    item.onmouseover = () => item.style.background = '#f8fafc';
+                                    item.onmouseout = () => item.style.background = 'transparent';
+                                    item.innerHTML = `<input type="checkbox" value="${ten}" onchange="onMultiStaffChange(this)" style="width:16px;height:16px;cursor:pointer;margin:0;"> <span>${ten}</span>`;
                                     list.appendChild(item);
                                 });
                             }
