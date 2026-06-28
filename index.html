@@ -2072,7 +2072,11 @@
                                 <label>Ghi chú thêm</label>
                                 <textarea id="reg-ghichu" rows="1" placeholder="Chi tiết..."></textarea>
                             </div>
-                            <div style="text-align: right;">
+                            <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;">
+                                <div style="display:flex; align-items:center; gap:6px;">
+                                    <label style="font-size:0.85rem; font-weight:600; color:#475569; white-space:nowrap; margin:0;" title="Mặc định là hôm nay. Chọn ngày khác để lên kế hoạch trước."><i class="fas fa-calendar-day" style="color:var(--primary);"></i> Ngày thực hiện:</label>
+                                    <input type="date" id="reg-target-date" title="Ngày thực hiện nhiệm vụ (mặc định hôm nay, có thể chọn ngày tương lai để lên kế hoạch trước)" style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem; background:#f8fafc; min-width:140px;">
+                                </div>
                                 <button type="button" class="btn btn-secondary" id="btn-cancel-reg-edit"
                                     style="display:none;" onclick="cancelEditRegTask()"><i class="fas fa-times"></i> Hủy
                                     sửa</button>
@@ -2838,7 +2842,7 @@
                             }
 
                             if (snap && snap.exists()) {
-                                let serverTasks = Object.values(snap.val()).map(t => ({ ...t, isSynced: true }));
+                                let serverTasks = Object.values(snap.val()).map(t => ({ ...t, isSynced: true, targetDate: t.targetDate || dateStr }));
                                 if (!IS_ADMIN) serverTasks = serverTasks.filter(t => t.nguoiPhuTrach === DEVICE_USER);
                                 if (hasLocalUnsynced) {
                                     const localMap = {};
@@ -3080,6 +3084,13 @@
                     function initUI() {
                         document.getElementById('current-date').innerText = new Date().toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
                         document.getElementById('reg-date-label').innerText = formatDMY(getTodayYMD());
+
+                        // Khởi tạo date picker ngày thực hiện — mặc định hôm nay
+                        const regTargetDate = document.getElementById('reg-target-date');
+                        if (regTargetDate) {
+                            regTargetDate.value = getTodayYMD();
+                            regTargetDate.min = getTodayYMD();
+                        }
 
                         // Initial Populates Admin/Reg Category Selects
                         window.updateCategoryDropdowns = function () {
@@ -4129,7 +4140,7 @@
                             tenCV = masterTasks[sel.value].tenNhiemVu;
                         }
 
-                        const dateStr = getTodayYMD();
+                        const dateStr = document.getElementById('reg-target-date')?.value || getTodayYMD();
                         const phuTrachArr = document.getElementById('reg-phutrach').value.split(',').filter(Boolean);
                         if (phuTrachArr.length === 0) {
                             showToast('Vui lòng chọn ít nhất một cán bộ phụ trách!', 'warning');
@@ -4164,7 +4175,8 @@
                                     diaDiem: document.getElementById('reg-diadiem').value,
                                     mucDoUuTien: document.getElementById('reg-uutien').value,
                                     ghiChu: document.getElementById('reg-ghichu').value,
-                                    isSynced: false
+                                    isSynced: false,
+                                    targetDate: dateStr
                                 };
                                 showToast('Đã cập nhật công việc!');
                             }
@@ -4185,7 +4197,8 @@
                                     diaDiem: document.getElementById('reg-diadiem').value,
                                     mucDoUuTien: document.getElementById('reg-uutien').value,
                                     ghiChu: document.getElementById('reg-ghichu').value,
-                                    trangThai: 'dang_thuc_hien'
+                                    trangThai: 'dang_thuc_hien',
+                                    targetDate: dateStr
                                 };
 
                                 tempRegTasks.push(task);
@@ -4252,6 +4265,10 @@
                         document.getElementById('btn-submit-reg').innerHTML = '<i class="fas fa-save"></i> Cập nhật CV';
                         document.getElementById('btn-submit-reg').classList.replace('btn-secondary', 'btn-primary');
 
+                        // Set date picker theo ngày của task đang sửa (có thể là ngày tương lai)
+                        const regTargetDate = document.getElementById('reg-target-date');
+                        if (regTargetDate) { regTargetDate.value = task.targetDate || getTodayYMD(); regTargetDate.min = ''; }
+
                         document.getElementById('form-dang-ky').scrollIntoView({ behavior: 'smooth', block: 'start' });
                     };
 
@@ -4260,6 +4277,10 @@
                         document.getElementById('btn-cancel-reg-edit').style.display = 'none';
                         document.getElementById('btn-submit-reg').innerHTML = '<i class="fas fa-plus"></i> Thêm vào danh sách tạm';
                         document.getElementById('btn-submit-reg').classList.replace('btn-primary', 'btn-secondary');
+
+                        // Reset date picker về hôm nay
+                        const regTargetDate = document.getElementById('reg-target-date');
+                        if (regTargetDate) { regTargetDate.value = getTodayYMD(); regTargetDate.min = getTodayYMD(); }
 
                         // reset form gracefully
                         document.getElementById('reg-is-custom').checked = false;
@@ -4324,11 +4345,16 @@
 
                         displayTasks.forEach((t, i) => {
                             let badgeClass = t.mucDoUuTien === 'Cao' ? 'badge-high' : (t.mucDoUuTien === 'Thấp' ? 'badge-low' : 'badge-medium');
+                            const today = getTodayYMD();
+                            const isFuture = t.targetDate && t.targetDate > today;
+                            const dateBadge = isFuture
+                                ? `<span style="display:inline-block;font-size:0.72rem;font-weight:600;background:#e0f2fe;color:#0369a1;border-radius:4px;padding:1px 6px;margin-left:4px;vertical-align:middle;"><i class="fas fa-calendar-day"></i> ${formatDMY(t.targetDate)}</span>`
+                                : '';
                             tbody.innerHTML += `
-                    <tr style="cursor:pointer;" onclick="switchAndJumpToEval('${t.id}', event)" title="Nhấn để chuyển sang Đánh giá">
+                    <tr style="cursor:pointer;${isFuture ? 'opacity:0.85;' : ''}" onclick="switchAndJumpToEval('${t.id}', event)" title="${isFuture ? `Kế hoạch cho ${formatDMY(t.targetDate)} — nhấn để xem chi tiết` : 'Nhấn để chuyển sang Đánh giá'}">
                         <td>${i + 1}</td>
                         <td>
-                            <strong>${esc(t.tenCongViec)}</strong> ${t.isSynced ? '<i class="fas fa-check-circle" style="color:var(--success); font-size:0.85rem;" title="Đã đồng bộ lên hệ thống"></i>' : '<i class="fas fa-exclamation-circle" style="color:var(--warning); font-size:0.85rem;" title="Chưa đồng bộ"></i>'}<br>
+                            <strong>${esc(t.tenCongViec)}</strong>${dateBadge} ${t.isSynced ? '<i class="fas fa-check-circle" style="color:var(--success); font-size:0.85rem;" title="Đã đồng bộ lên hệ thống"></i>' : '<i class="fas fa-exclamation-circle" style="color:var(--warning); font-size:0.85rem;" title="Chưa đồng bộ"></i>'}<br>
                             <span style="font-size:0.8rem; color:var(--gray)">${esc(t.loaiCongViec)}</span>
                             ${t.ghiChu ? `<br><span style="font-size:0.8rem; color:#856404; background:#fff3cd; padding:2px 4px; border-radius:3px; display:inline-block; margin-top:3px;"><i class="fas fa-comment-dots"></i> ${esc(t.ghiChu)}</span>` : ''}
                         </td>
@@ -4349,8 +4375,9 @@
                     }
 
                     function delRegTask(id) {
+                        const task = tempRegTasks.find(t => t.id === id);
                         tempRegTasks = tempRegTasks.filter(t => t.id !== id);
-                        deletedRegTaskIds.push(id);
+                        deletedRegTaskIds.push({ id, targetDate: task?.targetDate || getTodayYMD() });
                         renderRegTable();
                     }
 
@@ -4360,6 +4387,11 @@
                         }
                         const task = tempRegTasks.find(t => t.id === taskId);
                         if (!task) return;
+                        // Task tương lai: không nhảy sang đánh giá
+                        if (task.targetDate && task.targetDate > getTodayYMD()) {
+                            showToast(`Nhiệm vụ này được lên kế hoạch cho ngày ${formatDMY(task.targetDate)} — chưa đến ngày đánh giá.`, 'warning');
+                            return;
+                        }
                         if (!task.isSynced) {
                             showToast('Vui lòng bấm Đồng bộ (đám mây) để đưa việc lên hệ thống trước khi Đánh giá!', 'warning');
                             return;
@@ -4393,7 +4425,7 @@
                         const task = tempRegTasks.find(t => t.id === id);
                         if (!task) return;
                         showLoader(true);
-                        const dateStr = getTodayYMD();
+                        const dateStr = task.targetDate || getTodayYMD();
                         try {
                             const taskToSave = { ...task };
                             delete taskToSave.isSynced;
@@ -4448,11 +4480,16 @@
 
                         try {
                             const updates = {};
-                            deletedRegTaskIds.forEach(id => { updates[`keHoachNgay/${dateStr}/${id}`] = null; });
+                            deletedRegTaskIds.forEach(item => {
+                                const d = typeof item === 'object' ? (item.targetDate || dateStr) : dateStr;
+                                const itemId = typeof item === 'object' ? item.id : item;
+                                updates[`keHoachNgay/${d}/${itemId}`] = null;
+                            });
                             tempRegTasks.forEach(t => {
+                                const taskDate = t.targetDate || dateStr;
                                 const taskToSave = { ...t };
                                 delete taskToSave.isSynced;
-                                updates[`keHoachNgay/${dateStr}/${t.id}`] = taskToSave;
+                                updates[`keHoachNgay/${taskDate}/${t.id}`] = taskToSave;
                             });
 
                             await update(ref(db), updates);
