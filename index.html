@@ -2019,8 +2019,7 @@
                                     </select>
                                     <input type="text" id="reg-ten-input"
                                         placeholder="Nhập tên công việc ngoài danh mục..." style="display:none;">
-                                    <div id="reg-history-chips"
-                                        style="margin-top: 6px; display:flex; flex-wrap:wrap; gap:5px;"></div>
+
                                     <div style="margin-top: 6px;">
                                         <label class="checkbox-label"><input type="checkbox" id="reg-is-custom"
                                                 onchange="toggleCustomRegTask()"> Công việc khác (nhập ngoài danh
@@ -3297,69 +3296,14 @@
                             input.value = names.join(',');
                             if (names.length === 0) {
                                 btn.innerText = '-- Chọn cán bộ --';
-                                const chipsDiv = document.getElementById('reg-history-chips');
-                                if (chipsDiv) chipsDiv.innerHTML = '';
                             } else if (names.length <= 2) {
                                 btn.innerText = names.join(', ');
                             } else {
                                 btn.innerText = `${names[0]} và ${names.length - 1} người khác`;
                             }
-
-                            if (names.length > 0) {
-                                loadStaffHistory(names[0]); // Load gợi ý cho người đầu tiên
-                            }
                         }
 
-                        window.loadStaffHistory = async function (staffName) {
-                            const chipsDiv = document.getElementById('reg-history-chips');
-                            if (!chipsDiv) return;
-                            chipsDiv.innerHTML = '<small style="color:var(--gray);">Đang tải gợi ý...</small>';
-                            try {
-                                const endDate = new Date();
-                                const startDate = new Date();
-                                startDate.setDate(startDate.getDate() - 14); // Quét 14 ngày
-                                const q = query(ref(db, 'keHoachNgay'), orderByKey(), startAt(formatLocalYMD(startDate)), endAt(formatLocalYMD(endDate)));
-                                const snap = await get(q);
-                                let taskCounts = {};
-                                if (snap.exists()) {
-                                    const allData = snap.val();
-                                    for (let d in allData) {
-                                        for (let k in allData[d]) {
-                                            const t = allData[d][k];
-                                            if (t.nguoiPhuTrach === staffName && t.tenCongViec) {
-                                                taskCounts[t.tenCongViec] = (taskCounts[t.tenCongViec] || 0) + 1;
-                                            }
-                                        }
-                                    }
-                                }
-                                const sorted = Object.keys(taskCounts).sort((a, b) => taskCounts[b] - taskCounts[a]).slice(0, 4);
-                                if (sorted.length > 0) {
-                                    chipsDiv.innerHTML = sorted.map(t => `<span class="badge badge-low" style="cursor:pointer; background:#e2e8f0; color:#334155; font-size:0.8rem; border:1px solid #cbd5e1;" onclick="applyHistoryTask('${t.replace(/'/g, "\\'")}')"><i class="fas fa-history"></i> ${t}</span>`).join('');
-                                } else {
-                                    chipsDiv.innerHTML = '';
-                                }
-                            } catch (e) { chipsDiv.innerHTML = ''; }
-                        }
 
-                        window.applyHistoryTask = function (taskName) {
-                            let isCustom = true;
-                            let matchedKey = '';
-                            for (let k in masterTasks) {
-                                if (masterTasks[k].tenNhiemVu === taskName) {
-                                    isCustom = false;
-                                    matchedKey = k;
-                                    break;
-                                }
-                            }
-                            document.getElementById('reg-is-custom').checked = isCustom;
-                            toggleCustomRegTask();
-                            if (isCustom) {
-                                document.getElementById('reg-ten-input').value = taskName;
-                            } else {
-                                document.getElementById('reg-ten-select').value = matchedKey;
-                                document.getElementById('reg-loai').value = masterTasks[matchedKey].nhomNhiemVu;
-                            }
-                        }
 
                         window.updateMultiStaffCheckboxes = function () {
                             const input = document.getElementById('reg-phutrach');
