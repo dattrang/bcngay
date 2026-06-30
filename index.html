@@ -1823,7 +1823,8 @@
                                 style="flex:1; background: #fef9c3; text-align:center; padding:20px; border:1px solid #fde047; box-shadow:none;">
                                 <h4 style="color:#a16207; margin-bottom:10px; font-weight:600;"><i
                                         class="fas fa-calendar-day"></i> Chuyển sang ngày khác</h4>
-                                <h2 style="font-size:2.5rem; color:#854d0e; margin:0;" id="dash-today-transferred">0</h2>
+                                <h2 style="font-size:2.5rem; color:#854d0e; margin:0;" id="dash-today-transferred">0
+                                </h2>
                             </div>
                             <div class="card"
                                 style="flex:1; background: #fee2e2; text-align:center; padding:20px; border:1px solid #fecaca; box-shadow:none;">
@@ -2106,7 +2107,8 @@
                                     </div>
                                     <div id="reg-dup-warning"
                                         style="display:none; margin-top:8px; background:#fff3cd; color:#856404; border:1px solid #ffeeba; border-radius:6px; padding:8px 10px; font-size:0.85rem;">
-                                        <i class="fas fa-exclamation-triangle"></i> <span id="reg-dup-warning-text"></span>
+                                        <i class="fas fa-exclamation-triangle"></i> <span
+                                            id="reg-dup-warning-text"></span>
                                     </div>
                                 </div>
                             </div>
@@ -2154,10 +2156,17 @@
                                 <label>Ghi chú thêm</label>
                                 <textarea id="reg-ghichu" rows="1" placeholder="Chi tiết..."></textarea>
                             </div>
-                            <div style="display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;">
+                            <div
+                                style="display:flex; justify-content:flex-end; align-items:center; gap:10px; flex-wrap:wrap;">
                                 <div id="admin-target-date-wrap" style="display:none; align-items:center; gap:6px;">
-                                    <label style="font-size:0.85rem; font-weight:600; color:#475569; white-space:nowrap; margin:0;" title="Mặc định là hôm nay. Chọn ngày khác để lên kế hoạch trước."><i class="fas fa-calendar-day" style="color:var(--primary);"></i> Ngày thực hiện:</label>
-                                    <input type="date" id="reg-target-date" title="Ngày thực hiện nhiệm vụ (mặc định hôm nay, có thể chọn ngày tương lai để lên kế hoạch trước)" style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem; background:#f8fafc; min-width:140px;">
+                                    <label
+                                        style="font-size:0.85rem; font-weight:600; color:#475569; white-space:nowrap; margin:0;"
+                                        title="Mặc định là hôm nay. Chọn ngày khác để lên kế hoạch trước."><i
+                                            class="fas fa-calendar-day" style="color:var(--primary);"></i> Ngày thực
+                                        hiện:</label>
+                                    <input type="date" id="reg-target-date"
+                                        title="Ngày thực hiện nhiệm vụ (mặc định hôm nay, có thể chọn ngày tương lai để lên kế hoạch trước)"
+                                        style="padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:0.85rem; background:#f8fafc; min-width:140px;">
                                 </div>
                                 <button type="button" class="btn btn-secondary" id="btn-cancel-reg-edit"
                                     style="display:none;" onclick="cancelEditRegTask()"><i class="fas fa-times"></i> Hủy
@@ -2174,9 +2183,13 @@
                             style="justify-content: space-between; align-items: center; display: flex; flex-wrap: wrap; gap: 10px;">
                             <div style="display:flex; align-items:center; gap:12px;">
                                 <h3 style="margin:0;"><i class="fas fa-list"></i> Danh sách dự kiến</h3>
-                                <div style="display:flex; align-items:center; background:#f1f5f9; padding:4px 10px; border-radius:6px; border:1px solid #cbd5e1; transition:all 0.2s; box-shadow:inset 0 1px 2px rgba(0,0,0,0.05);">
-                                    <i class="fas fa-calendar-alt" style="color:var(--primary); margin-right:8px; font-size:0.9rem;"></i>
-                                    <input type="date" id="reg-view-date" onchange="loadTodayTasks()" style="border:none; background:transparent; font-size:0.85rem; outline:none; color:var(--dark); cursor:pointer; font-weight:600;" title="Chọn ngày để xem kế hoạch">
+                                <div
+                                    style="display:flex; align-items:center; background:#f1f5f9; padding:4px 10px; border-radius:6px; border:1px solid #cbd5e1; transition:all 0.2s; box-shadow:inset 0 1px 2px rgba(0,0,0,0.05);">
+                                    <i class="fas fa-calendar-alt"
+                                        style="color:var(--primary); margin-right:8px; font-size:0.9rem;"></i>
+                                    <input type="date" id="reg-view-date" onchange="loadTodayTasks()"
+                                        style="border:none; background:transparent; font-size:0.85rem; outline:none; color:var(--dark); cursor:pointer; font-weight:600;"
+                                        title="Chọn ngày để xem kế hoạch">
                                 </div>
                             </div>
                             <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
@@ -2272,7 +2285,8 @@
                         <div class="card-header" style="justify-content: space-between; flex-wrap: wrap; gap: 10px;">
                             <h3><i class="fas fa-clipboard-check"></i> Đánh giá tiến độ công việc</h3>
                             <div style="display:flex; gap:10px; flex-wrap: wrap;">
-                                <button type="button" class="btn btn-danger btn-sm" id="btn-admin-autofail" style="display:none; background:#7c3aed; padding: 6px 12px; font-size: 0.85rem;"
+                                <button type="button" class="btn btn-danger btn-sm" id="btn-admin-autofail"
+                                    style="display:none; background:#7c3aed; padding: 6px 12px; font-size: 0.85rem;"
                                     onclick="manualAutoFail()"><i class="fas fa-robot"></i> Chốt quá hạn</button>
                                 <button type="button" class="btn btn-outline btn-sm" id="btn-load-inbox"
                                     onclick="loadInboxEvals()" style="padding: 6px 12px; font-size: 0.85rem;"><i
@@ -2294,8 +2308,10 @@
                         </div>
 
                         <!-- Banner cảnh báo nhiệm vụ trùng -->
-                        <div id="dup-warning-banner" style="display:none; margin:10px 0 4px; padding:10px 14px; background:#fef9c3; border:1px solid #f59e0b; border-radius:8px; font-size:0.88rem; color:#78350f;">
-                            <strong><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> Phát hiện nhiệm vụ trùng lặp:</strong>
+                        <div id="dup-warning-banner"
+                            style="display:none; margin:10px 0 4px; padding:10px 14px; background:#fef9c3; border:1px solid #f59e0b; border-radius:8px; font-size:0.88rem; color:#78350f;">
+                            <strong><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> Phát hiện nhiệm
+                                vụ trùng lặp:</strong>
                             <span id="dup-warning-detail"></span>
                         </div>
 
@@ -2914,7 +2930,7 @@
                         } catch (e) { console.error("Lỗi Dashboard:", e); }
                     }
 
-                    window.loadTodayTasks = async function() {
+                    window.loadTodayTasks = async function () {
                         const viewDateEl = document.getElementById('reg-view-date');
                         const dateStr = viewDateEl && viewDateEl.value ? viewDateEl.value : getTodayYMD();
                         try {
@@ -3387,7 +3403,7 @@
                             btnSelectAll.style.flex = '1';
                             btnSelectAll.style.padding = '4px 8px';
                             btnSelectAll.innerHTML = '<i class="fas fa-check-square"></i> Chọn tất cả (đang hiện)';
-                            btnSelectAll.onclick = function(e) {
+                            btnSelectAll.onclick = function (e) {
                                 e.stopPropagation();
                                 list.querySelectorAll('.ms-staff-item:not([style*="display: none"]) input[type="checkbox"]').forEach(c => c.checked = true);
                                 onMultiStaffChange();
@@ -3399,7 +3415,7 @@
                             btnDeselectAll.style.flex = '1';
                             btnDeselectAll.style.padding = '4px 8px';
                             btnDeselectAll.innerHTML = '<i class="far fa-square"></i> Bỏ chọn';
-                            btnDeselectAll.onclick = function(e) {
+                            btnDeselectAll.onclick = function (e) {
                                 e.stopPropagation();
                                 list.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = false);
                                 onMultiStaffChange();
@@ -5432,7 +5448,7 @@
                     <div class="form-row" id="eval-transfer-row-${task.id}" style="${showTransfer ? '' : 'display:none;'}">
                         <div class="form-group">
                             <label>Chuyển sang ngày <span style="color:red">*</span> <span style="font-size:0.78rem;color:var(--gray);font-weight:400;">(tối đa 5 ngày tới)</span></label>
-                            <input type="date" id="eval-transfer-${task.id}" value="${dg.chuyenSangNgay || ''}" min="${getTodayYMD()}" max="${(()=>{const d=new Date();d.setDate(d.getDate()+5);return d.toISOString().slice(0,10)})()}" ${disAttr}>
+                            <input type="date" id="eval-transfer-${task.id}" value="${dg.chuyenSangNgay || ''}" min="${getTodayYMD()}" max="${(() => { const d = new Date(); d.setDate(d.getDate() + 5); return d.toISOString().slice(0, 10) })()}" ${disAttr}>
                         </div>
                         ${soLanChuyen >= 2 ? `<div style="font-size:0.78rem;color:#b45309;background:#fef3c7;padding:4px 8px;border-radius:4px;margin-top:4px;">⚠️ Nhiệm vụ đã chuyển ${soLanChuyen} lần. Hạn chuyển tối đa 5 lần.</div>` : ''}
                     </div>
@@ -7831,9 +7847,9 @@
                                 get(query(ref(dbQlcv, 'qlcv_tasks'), orderByChild('status'), equalTo('in_progress')))
                             ]);
                             const personsArr = personsSnap.exists() ? Object.values(personsSnap.val()).filter(Boolean) : [];
-                            const tasksRaw = { 
-                                ...(todoSnap.exists() ? todoSnap.val() : {}), 
-                                ...(inProgSnap.exists() ? inProgSnap.val() : {}) 
+                            const tasksRaw = {
+                                ...(todoSnap.exists() ? todoSnap.val() : {}),
+                                ...(inProgSnap.exists() ? inProgSnap.val() : {})
                             };
                             const tasksArr = Object.keys(tasksRaw)
                                 .map(k => ({ id: k, ...tasksRaw[k] }))
@@ -7856,36 +7872,36 @@
                                     );
                                 }
                             }
-                            
+
                             const checkResults = await Promise.all(checkPromises);
 
                             for (const res of checkResults) {
                                 if (res.exists) continue; // đã từng tạo
                                 const { detKey, t, p } = res;
 
-                                    // [FIX] Lấy số lượng chỉ tiêu từ kpiValue của QLCV (mặc định 1)
-                                    const qlcvQty = Math.max(1, Math.round(parseFloat(t.kpiValue) || 1));
-                                    const qlcvDvt = qlcvQty > 1 ? 'Lần' : 'Lần'; // Có thể mở rộng từ KPI template nếu cần
+                                // [FIX] Lấy số lượng chỉ tiêu từ kpiValue của QLCV (mặc định 1)
+                                const qlcvQty = Math.max(1, Math.round(parseFloat(t.kpiValue) || 1));
+                                const qlcvDvt = qlcvQty > 1 ? 'Lần' : 'Lần'; // Có thể mở rộng từ KPI template nếu cần
 
-                                    updates[`nhiemVuDaiHan/${detKey}`] = {
-                                        id: detKey,
-                                        qlcvTaskId: t.id,
-                                        tenCongViec: t.title || '(Không có tên)',
-                                        nguoiPhuTrach: p.name,
-                                        ngayBatDau: todayStr,
-                                        hanHoanThanh: t.due,
-                                        tongSoLuong: qlcvQty,  // [FIX] Dùng kpiValue thay vì hardcode 1
-                                        dvt: qlcvDvt,
-                                        soNgayHienTruoc: 5,
-                                        lapLai: 'khong',
-                                        active: true,
-                                        trangThai: 'dang_thuc_hien',
-                                        lichSu: [{ thoiGian: new Date().toLocaleString('vi-VN'), hanhDong: `Tự động đồng bộ từ QLCV — hạn ${formatDMY(t.due)} — chỉ tiêu: ${qlcvQty} ${qlcvDvt}` }],
-                                        syncedBy: 'Hệ thống (tự động)',
-                                        syncedAt: Date.now()
-                                    };
-                                    count++;
-                                
+                                updates[`nhiemVuDaiHan/${detKey}`] = {
+                                    id: detKey,
+                                    qlcvTaskId: t.id,
+                                    tenCongViec: t.title || '(Không có tên)',
+                                    nguoiPhuTrach: p.name,
+                                    ngayBatDau: todayStr,
+                                    hanHoanThanh: t.due,
+                                    tongSoLuong: qlcvQty,  // [FIX] Dùng kpiValue thay vì hardcode 1
+                                    dvt: qlcvDvt,
+                                    soNgayHienTruoc: 5,
+                                    lapLai: 'khong',
+                                    active: true,
+                                    trangThai: 'dang_thuc_hien',
+                                    lichSu: [{ thoiGian: new Date().toLocaleString('vi-VN'), hanhDong: `Tự động đồng bộ từ QLCV — hạn ${formatDMY(t.due)} — chỉ tiêu: ${qlcvQty} ${qlcvDvt}` }],
+                                    syncedBy: 'Hệ thống (tự động)',
+                                    syncedAt: Date.now()
+                                };
+                                count++;
+
                             }
                             if (count > 0) await update(ref(db), updates);
                         } catch (e) {
