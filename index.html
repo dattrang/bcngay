@@ -2092,8 +2092,7 @@
                                     <input type="text" id="reg-ten-search"
                                         placeholder="Gõ để tìm nhiệm vụ đã có trong danh mục (không cần dấu)..."
                                         autocomplete="off" oninput="onRegTenSearchInput()"
-                                        onfocus="onRegTenSearchInput()"
-                                        onclick="clearRegTenSearchOnClick()">
+                                        onfocus="onRegTenSearchInput()" onclick="onRegTenSearchClick()">
                                     <div id="reg-ten-search-list" class="autocomplete-items"></div>
                                     <input type="hidden" id="reg-ten-select">
                                     <input type="text" id="reg-ten-input"
@@ -3369,7 +3368,6 @@
                             const searchInput = searchRow.querySelector('input');
                             searchInput.addEventListener('click', (e) => {
                                 e.stopPropagation();
-                                // Xóa text khi click để tìm mới ngay lập tức
                                 if (searchInput.value) {
                                     searchInput.value = '';
                                     filterMultiStaffList();
@@ -4232,6 +4230,17 @@
                         document.getElementById('reg-chitieu').value = '100';
                     }
 
+                    // Click vào ô tìm kiếm khi đã có sẵn text (do vừa chọn 1 nhiệm vụ) → xóa text, mở lại toàn bộ dropdown để tìm nhiệm vụ mới
+                    window.onRegTenSearchClick = function () {
+                        const input = document.getElementById('reg-ten-search');
+                        if (!input) return;
+                        if (input.value) {
+                            input.value = '';
+                            document.getElementById('reg-ten-select').value = '';
+                        }
+                        onRegTenSearchInput();
+                    };
+
                     // === [Tìm kiếm nhiệm vụ] Gõ không dấu để tìm nhiệm vụ đã có trong danh mục (mọi nhóm) ===
                     window.onRegTenSearchInput = function () {
                         const input = document.getElementById('reg-ten-search');
@@ -4272,18 +4281,6 @@
                             list.appendChild(more);
                         }
                         list.style.display = 'block';
-                    };
-
-                    // Xóa text khi click vào ô tìm kiếm đã có giá trị được chọn → cho phép tìm mới ngay lập tức
-                    window.clearRegTenSearchOnClick = function () {
-                        const sel = document.getElementById('reg-ten-select');
-                        const input = document.getElementById('reg-ten-search');
-                        if (sel && sel.value) {
-                            // Đã có lựa chọn trước → xóa để tìm mới
-                            sel.value = '';
-                            input.value = '';
-                            onRegTenSearchInput();
-                        }
                     };
 
                     // Chọn 1 nhiệm vụ từ ô tìm kiếm → tự gán Nhóm/Phân loại + DVT + Chỉ tiêu + Ưu tiên mặc định
