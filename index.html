@@ -2087,18 +2087,26 @@
                                     <label>Nhóm / Phân loại <span>*</span></label>
                                     <select id="reg-loai" required onchange="filterRegTasks()"></select>
                                 </div>
-                                <div class="form-group" style="flex: 2">
+                                <div class="form-group autocomplete-wrapper" style="flex: 2">
                                     <label>Tên / Nội dung công việc <span>*</span></label>
-                                    <select id="reg-ten-select" required onchange="onSelectRegTask()">
-                                        <option value="">-- Chọn công việc --</option>
-                                    </select>
+                                    <input type="text" id="reg-ten-search"
+                                        placeholder="Gõ để tìm nhiệm vụ đã có trong danh mục (không cần dấu)..."
+                                        autocomplete="off" oninput="onRegTenSearchInput()"
+                                        onfocus="onRegTenSearchInput()">
+                                    <div id="reg-ten-search-list" class="autocomplete-items"></div>
+                                    <input type="hidden" id="reg-ten-select">
                                     <input type="text" id="reg-ten-input"
-                                        placeholder="Nhập tên công việc ngoài danh mục..." style="display:none;">
+                                        placeholder="Nhập tên công việc ngoài danh mục..." style="display:none;"
+                                        oninput="checkRegDuplicateLive()">
 
                                     <div style="margin-top: 6px;">
                                         <label class="checkbox-label"><input type="checkbox" id="reg-is-custom"
                                                 onchange="toggleCustomRegTask()"> Công việc khác (nhập ngoài danh
                                             mục)</label>
+                                    </div>
+                                    <div id="reg-dup-warning"
+                                        style="display:none; margin-top:8px; background:#fff3cd; color:#856404; border:1px solid #ffeeba; border-radius:6px; padding:8px 10px; font-size:0.85rem;">
+                                        <i class="fas fa-exclamation-triangle"></i> <span id="reg-dup-warning-text"></span>
                                     </div>
                                 </div>
                             </div>
@@ -2732,6 +2740,11 @@
                     const getTodayYMD = () => formatLocalYMD(new Date());
                     const formatDMY = (ymd) => { if (!ymd) return ''; const p = ymd.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; };
                     window.esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                    // Bỏ dấu tiếng Việt + về chữ thường, dùng cho các ô tìm kiếm (gõ không dấu vẫn tìm được)
+                    window.vnNoTone = (s) => String(s == null ? '' : s)
+                        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                        .replace(/đ/gi, 'd')
+                        .toLowerCase().trim();
                     const getPriorityWeight = (prio) => { if (prio === 'Cao') return 3; if (prio === 'Trung bình') return 2; if (prio === 'Thấp') return 1; return 2; };
 
                     // INIT
@@ -3328,34 +3341,49 @@
                         window.toggleMultiStaff = function () {
                             const list = document.getElementById('multi-staff-list');
                             list.style.display = list.style.display === 'none' ? 'block' : 'none';
-                            if (list.style.display === 'block' && !list.querySelector('input')) {
+                            if (list.style.display === 'block' && !list.querySelector('.ms-group')) {
                                 renderMultiStaffList();
+                            }
+                            if (list.style.display === 'block') {
+                                const searchBox = document.getElementById('multi-staff-search');
+                                if (searchBox) { searchBox.value = ''; filterMultiStaffList(); searchBox.focus(); }
                             }
                         }
 
                         window.renderMultiStaffList = function () {
                             const list = document.getElementById('multi-staff-list');
                             list.innerHTML = '';
-                            
+
+                            const topBar = document.createElement('div');
+                            topBar.style.position = 'sticky';
+                            topBar.style.top = '0';
+                            topBar.style.zIndex = '1';
+                            topBar.style.background = '#f8fafc';
+                            topBar.style.borderBottom = '1px solid var(--border)';
+
+                            const searchRow = document.createElement('div');
+                            searchRow.style.padding = '8px 10px 4px 10px';
+                            searchRow.innerHTML = `<input type="text" id="multi-staff-search" placeholder="Tìm cán bộ (gõ không dấu cũng được)..." autocomplete="off"
+                                style="width:100%; padding:7px 9px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; box-sizing:border-box;">`;
+                            const searchInput = searchRow.querySelector('input');
+                            searchInput.addEventListener('click', (e) => e.stopPropagation());
+                            searchInput.addEventListener('input', filterMultiStaffList);
+                            topBar.appendChild(searchRow);
+
                             const actionDiv = document.createElement('div');
-                            actionDiv.style.padding = '8px 10px';
-                            actionDiv.style.borderBottom = '1px solid var(--border)';
+                            actionDiv.style.padding = '4px 10px 8px 10px';
                             actionDiv.style.display = 'flex';
                             actionDiv.style.gap = '10px';
-                            actionDiv.style.background = '#f8fafc';
-                            actionDiv.style.position = 'sticky';
-                            actionDiv.style.top = '0';
-                            actionDiv.style.zIndex = '1';
-                            
+
                             const btnSelectAll = document.createElement('button');
                             btnSelectAll.type = 'button';
                             btnSelectAll.className = 'btn btn-outline btn-sm';
                             btnSelectAll.style.flex = '1';
                             btnSelectAll.style.padding = '4px 8px';
-                            btnSelectAll.innerHTML = '<i class="fas fa-check-square"></i> Chọn tất cả';
+                            btnSelectAll.innerHTML = '<i class="fas fa-check-square"></i> Chọn tất cả (đang hiện)';
                             btnSelectAll.onclick = function(e) {
                                 e.stopPropagation();
-                                list.querySelectorAll('input[type="checkbox"]').forEach(c => c.checked = true);
+                                list.querySelectorAll('.ms-staff-item:not([style*="display: none"]) input[type="checkbox"]').forEach(c => c.checked = true);
                                 onMultiStaffChange();
                             };
 
@@ -3373,7 +3401,14 @@
 
                             actionDiv.appendChild(btnSelectAll);
                             actionDiv.appendChild(btnDeselectAll);
-                            list.appendChild(actionDiv);
+                            topBar.appendChild(actionDiv);
+                            list.appendChild(topBar);
+
+                            const emptyMsg = document.createElement('div');
+                            emptyMsg.id = 'ms-empty-msg';
+                            emptyMsg.style.cssText = 'display:none; padding:14px 10px; text-align:center; color:var(--gray); font-size:0.85rem;';
+                            emptyMsg.innerText = 'Không tìm thấy cán bộ phù hợp.';
+                            list.appendChild(emptyMsg);
 
                             let grouped = {};
                             STAFFS.forEach(s => {
@@ -3382,14 +3417,20 @@
                             });
 
                             for (const group in grouped) {
+                                const groupWrap = document.createElement('div');
+                                groupWrap.className = 'ms-group';
+                                groupWrap.dataset.group = vnNoTone(group);
+
                                 const grpDiv = document.createElement('div');
-                                grpDiv.innerHTML = `<small style="color:var(--gray); font-weight:bold;">${group}</small>`;
+                                grpDiv.innerHTML = `<small style="color:var(--gray); font-weight:bold;">${esc(group)}</small>`;
                                 grpDiv.style.padding = "5px 10px";
                                 grpDiv.style.background = "#f1f5f9";
-                                list.appendChild(grpDiv);
+                                groupWrap.appendChild(grpDiv);
 
                                 grouped[group].forEach(ten => {
                                     const item = document.createElement('label');
+                                    item.className = 'ms-staff-item';
+                                    item.dataset.name = vnNoTone(ten);
                                     item.style.display = 'flex';
                                     item.style.alignItems = 'center';
                                     item.style.gap = '8px';
@@ -3400,11 +3441,35 @@
                                     item.style.transition = 'background 0.2s';
                                     item.onmouseover = () => item.style.background = '#f8fafc';
                                     item.onmouseout = () => item.style.background = 'transparent';
-                                    item.innerHTML = `<input type="checkbox" value="${ten}" onchange="onMultiStaffChange(this)" style="width:16px;height:16px;cursor:pointer;margin:0;"> <span>${ten}</span>`;
-                                    list.appendChild(item);
+                                    item.innerHTML = `<input type="checkbox" value="${esc(ten)}" onchange="onMultiStaffChange(this)" style="width:16px;height:16px;cursor:pointer;margin:0;"> <span>${esc(ten)}</span>`;
+                                    groupWrap.appendChild(item);
                                 });
+                                list.appendChild(groupWrap);
                             }
                             updateMultiStaffCheckboxes();
+                        }
+
+                        // Lọc danh sách cán bộ theo từ khóa gõ vào ô tìm kiếm (không phân biệt dấu/hoa-thường)
+                        window.filterMultiStaffList = function () {
+                            const list = document.getElementById('multi-staff-list');
+                            const searchInput = document.getElementById('multi-staff-search');
+                            if (!list || !searchInput) return;
+                            const term = vnNoTone(searchInput.value);
+
+                            let anyVisible = false;
+                            list.querySelectorAll('.ms-group').forEach(groupWrap => {
+                                let groupHasVisible = false;
+                                groupWrap.querySelectorAll('.ms-staff-item').forEach(item => {
+                                    const match = !term || item.dataset.name.includes(term);
+                                    item.style.display = match ? 'flex' : 'none';
+                                    if (match) groupHasVisible = true;
+                                });
+                                groupWrap.style.display = groupHasVisible ? '' : 'none';
+                                if (groupHasVisible) anyVisible = true;
+                            });
+
+                            const emptyMsg = document.getElementById('ms-empty-msg');
+                            if (emptyMsg) emptyMsg.style.display = anyVisible ? 'none' : 'block';
                         }
 
                         window.onMultiStaffChange = function () {
@@ -3422,6 +3487,7 @@
                             } else {
                                 btn.innerText = `${names[0]} và ${names.length - 1} người khác`;
                             }
+                            checkRegDuplicateLive();
                         }
 
 
@@ -4151,37 +4217,81 @@
                     };
 
                     // ================= MODULE 1: ĐĂNG KÝ =================
+                    // filterRegTasks(): giữ tương thích các nơi gọi cũ. Không còn dùng để dựng dropdown
+                    // (đã thay bằng ô tìm kiếm reg-ten-search), chỉ còn reset DVT/Chỉ tiêu mặc định khi đổi Nhóm thủ công.
                     function filterRegTasks() {
                         if (document.getElementById('reg-is-custom').checked) return; // ignore if custom
-
-                        const nhom = document.getElementById('reg-loai').value;
-                        const sel = document.getElementById('reg-ten-select');
-                        sel.innerHTML = '<option value="">-- Chọn công việc trong danh mục --</option>';
-
-                        Object.keys(masterTasks).forEach(k => {
-                            const t = masterTasks[k];
-                            if (t.nhomNhiemVu === nhom) {
-                                sel.appendChild(new Option(t.tenNhiemVu, k));
-                            }
-                        });
-                        // reset DVT and ChiTieu
                         document.getElementById('reg-dvt').value = '%';
                         document.getElementById('reg-chitieu').value = '100';
                     }
 
-                    function onSelectRegTask() {
-                        const selId = document.getElementById('reg-ten-select').value;
-                        if (!selId) return;
-                        const t = masterTasks[selId];
-                        if (t) {
-                            document.getElementById('reg-dvt').value = t.donViTinh;
-                            document.getElementById('reg-chitieu').value = t.chiTieuMacDinh || (t.donViTinh === '%' ? '100' : '1');
-                            document.getElementById('reg-uutien').value = t.uutienMacDinh;
+                    // === [Tìm kiếm nhiệm vụ] Gõ không dấu để tìm nhiệm vụ đã có trong danh mục (mọi nhóm) ===
+                    window.onRegTenSearchInput = function () {
+                        const input = document.getElementById('reg-ten-search');
+                        const list = document.getElementById('reg-ten-search-list');
+                        const term = vnNoTone(input.value);
+
+                        // Gõ lại tên coi như chưa chọn xong — bắt buộc chọn lại từ danh sách gợi ý
+                        document.getElementById('reg-ten-select').value = '';
+
+                        let matches = Object.entries(masterTasks)
+                            .filter(([k, t]) => vnNoTone(t.tenNhiemVu).includes(term));
+                        matches.sort((a, b) => a[1].tenNhiemVu.localeCompare(b[1].tenNhiemVu, 'vi'));
+
+                        if (matches.length === 0) {
+                            list.innerHTML = term
+                                ? '<div style="padding:10px;color:var(--gray);font-size:0.85rem;">Không tìm thấy nhiệm vụ phù hợp trong danh mục. Tích "Công việc khác" để nhập mới.</div>'
+                                : '';
+                            list.style.display = term ? 'block' : 'none';
+                            return;
                         }
-                    }
+
+                        const shown = matches.slice(0, 50);
+                        list.innerHTML = '';
+                        shown.forEach(([key, t]) => {
+                            const div = document.createElement('div');
+                            div.classList.add('autocomplete-item');
+                            div.innerHTML = `<i class="fas fa-tasks" style="color:var(--primary); margin-right:5px; font-size:0.8rem;"></i> ${esc(t.tenNhiemVu)} <span style="float:right; color:var(--gray); font-size:0.78rem;">${esc(t.nhomNhiemVu)}</span>`;
+                            div.addEventListener('click', function (e) {
+                                e.stopPropagation();
+                                selectRegTenSearchItem(key);
+                            });
+                            list.appendChild(div);
+                        });
+                        if (matches.length > shown.length) {
+                            const more = document.createElement('div');
+                            more.style.cssText = 'padding:6px 10px;color:var(--gray);font-size:0.78rem;text-align:center;';
+                            more.innerText = `... và ${matches.length - shown.length} kết quả khác, gõ thêm để thu hẹp`;
+                            list.appendChild(more);
+                        }
+                        list.style.display = 'block';
+                    };
+
+                    // Chọn 1 nhiệm vụ từ ô tìm kiếm → tự gán Nhóm/Phân loại + DVT + Chỉ tiêu + Ưu tiên mặc định
+                    window.selectRegTenSearchItem = function (key) {
+                        const t = masterTasks[key];
+                        if (!t) return;
+                        document.getElementById('reg-ten-select').value = key;
+                        document.getElementById('reg-ten-search').value = t.tenNhiemVu;
+                        document.getElementById('reg-loai').value = t.nhomNhiemVu;
+                        document.getElementById('reg-dvt').value = t.donViTinh;
+                        document.getElementById('reg-chitieu').value = t.chiTieuMacDinh || (t.donViTinh === '%' ? '100' : '1');
+                        document.getElementById('reg-uutien').value = t.uutienMacDinh || 'Trung bình';
+                        document.getElementById('reg-ten-search-list').style.display = 'none';
+                        checkRegDuplicateLive();
+                    };
+
+                    document.addEventListener('click', function (e) {
+                        const input = document.getElementById('reg-ten-search');
+                        const list = document.getElementById('reg-ten-search-list');
+                        if (list && input && e.target !== input && !list.contains(e.target)) {
+                            list.style.display = 'none';
+                        }
+                    });
 
                     function toggleCustomRegTask() {
                         const isCustom = document.getElementById('reg-is-custom').checked;
+                        const searchInput = document.getElementById('reg-ten-search');
                         const sel = document.getElementById('reg-ten-select');
                         const inp = document.getElementById('reg-ten-input');
                         const dvt = document.getElementById('reg-dvt');
@@ -4189,8 +4299,9 @@
                         const uutien = document.getElementById('reg-uutien');
 
                         if (isCustom) {
-                            sel.style.display = 'none';
-                            sel.removeAttribute('required');
+                            searchInput.style.display = 'none';
+                            document.getElementById('reg-ten-search-list').style.display = 'none';
+                            sel.value = '';
                             inp.style.display = 'block';
                             inp.setAttribute('required', 'true');
 
@@ -4203,8 +4314,7 @@
                         } else {
                             inp.style.display = 'none';
                             inp.removeAttribute('required');
-                            sel.style.display = 'block';
-                            sel.setAttribute('required', 'true');
+                            searchInput.style.display = 'block';
 
                             dvt.readOnly = true;
                             chitieu.readOnly = true;
@@ -4213,6 +4323,40 @@
                             filterRegTasks();
                         }
                     }
+
+                    // === [Kiểm tra nhiệm vụ trùng] Trả về danh sách cán bộ đã có nhiệm vụ cùng tên trong ngày đang chọn ===
+                    function getRegDuplicatePersons(tenCV, phuTrachArr, excludeId) {
+                        const tenCVNorm = (tenCV || '').trim().toLowerCase();
+                        if (!tenCVNorm || !phuTrachArr || phuTrachArr.length === 0) return [];
+                        return phuTrachArr.filter(pt =>
+                            tempRegTasks.some(t =>
+                                t.id !== excludeId &&
+                                t.nguoiPhuTrach === pt &&
+                                (t.tenCongViec || '').trim().toLowerCase() === tenCVNorm
+                            )
+                        );
+                    }
+
+                    // Cảnh báo trực tiếp (không chặn) ngay khi đang nhập tên việc / chọn cán bộ, trước khi bấm Thêm
+                    window.checkRegDuplicateLive = function () {
+                        const warnBox = document.getElementById('reg-dup-warning');
+                        const warnText = document.getElementById('reg-dup-warning-text');
+                        if (!warnBox || !warnText) return;
+
+                        const isCustom = document.getElementById('reg-is-custom').checked;
+                        const tenCV = isCustom
+                            ? document.getElementById('reg-ten-input').value
+                            : (masterTasks[document.getElementById('reg-ten-select').value]?.tenNhiemVu || '');
+                        const phuTrachArr = (document.getElementById('reg-phutrach').value || '').split(',').filter(Boolean);
+
+                        const dupPersons = getRegDuplicatePersons(tenCV, phuTrachArr, editingRegTaskId);
+                        if (dupPersons.length > 0) {
+                            warnText.innerText = `Nhiệm vụ "${tenCV.trim()}" đã có trong kế hoạch ngày của: ${dupPersons.join(', ')}.`;
+                            warnBox.style.display = 'block';
+                        } else {
+                            warnBox.style.display = 'none';
+                        }
+                    };
 
                     function handleAddRegTask(e) {
                         e.preventDefault();
@@ -4257,6 +4401,13 @@
                         if (phuTrachArr.length === 0) {
                             showToast('Vui lòng chọn ít nhất một cán bộ phụ trách!', 'warning');
                             return;
+                        }
+
+                        // === [Cảnh báo nhiệm vụ trùng] So với các nhiệm vụ đã có trong kế hoạch ngày (cùng tên + cùng người phụ trách) ===
+                        const dupPersons = getRegDuplicatePersons(tenCV, phuTrachArr, editingRegTaskId);
+                        if (dupPersons.length > 0) {
+                            const msg = `⚠️ Nhiệm vụ "${tenCV}" đã có trong kế hoạch ngày ${formatDMY(dateStr)} của: ${dupPersons.join(', ')}.\n\nBạn có chắc muốn thêm trùng nhiệm vụ này không?`;
+                            if (!confirm(msg)) return;
                         }
 
                         if (document.getElementById('reg-uutien').value === 'Cao') {
@@ -4327,10 +4478,17 @@
 
                         // clear partial inputs
                         if (!editingRegTaskId) {
-                            if (isCustom) document.getElementById('reg-ten-input').value = '';
+                            if (isCustom) {
+                                document.getElementById('reg-ten-input').value = '';
+                            } else {
+                                document.getElementById('reg-ten-search').value = '';
+                                document.getElementById('reg-ten-select').value = '';
+                            }
                             document.getElementById('reg-diadiem').value = '';
                             document.getElementById('reg-ghichu').value = '';
                         }
+                        const dupWarnEl = document.getElementById('reg-dup-warning');
+                        if (dupWarnEl) dupWarnEl.style.display = 'none';
                     }
 
                     window.editRegTask = function (id) {
@@ -4358,6 +4516,7 @@
                             document.getElementById('reg-ten-input').value = task.tenCongViec;
                         } else {
                             document.getElementById('reg-ten-select').value = matchedKey;
+                            document.getElementById('reg-ten-search').value = task.tenCongViec;
                         }
 
                         document.getElementById('reg-dvt').value = task.dvt || '%';
@@ -4386,6 +4545,7 @@
                         if (regTargetDate) { regTargetDate.value = task.targetDate || getTodayYMD(); regTargetDate.min = ''; }
 
                         document.getElementById('form-dang-ky').scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        checkRegDuplicateLive();
                     };
 
                     window.cancelEditRegTask = function () {
@@ -4402,6 +4562,7 @@
                         document.getElementById('reg-is-custom').checked = false;
                         toggleCustomRegTask();
                         document.getElementById('reg-ten-select').value = '';
+                        document.getElementById('reg-ten-search').value = '';
                         document.getElementById('reg-ten-input').value = '';
                         document.getElementById('reg-dvt').value = '%';
                         document.getElementById('reg-chitieu').value = '100';
@@ -4418,6 +4579,9 @@
                         document.getElementById('reg-phoihop').value = '';
                         document.getElementById('reg-diadiem').value = '';
                         document.getElementById('reg-ghichu').value = '';
+
+                        const dupWarnEl = document.getElementById('reg-dup-warning');
+                        if (dupWarnEl) dupWarnEl.style.display = 'none';
                     };
 
                     function renderRegTable() {
