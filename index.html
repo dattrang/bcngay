@@ -2092,7 +2092,8 @@
                                     <input type="text" id="reg-ten-search"
                                         placeholder="Gõ để tìm nhiệm vụ đã có trong danh mục (không cần dấu)..."
                                         autocomplete="off" oninput="onRegTenSearchInput()"
-                                        onfocus="onRegTenSearchInput()">
+                                        onfocus="onRegTenSearchInput()"
+                                        onclick="clearRegTenSearchOnClick()">
                                     <div id="reg-ten-search-list" class="autocomplete-items"></div>
                                     <input type="hidden" id="reg-ten-select">
                                     <input type="text" id="reg-ten-input"
@@ -3366,7 +3367,14 @@
                             searchRow.innerHTML = `<input type="text" id="multi-staff-search" placeholder="Tìm cán bộ (gõ không dấu cũng được)..." autocomplete="off"
                                 style="width:100%; padding:7px 9px; border:1px solid var(--border); border-radius:6px; font-size:0.85rem; box-sizing:border-box;">`;
                             const searchInput = searchRow.querySelector('input');
-                            searchInput.addEventListener('click', (e) => e.stopPropagation());
+                            searchInput.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                // Xóa text khi click để tìm mới ngay lập tức
+                                if (searchInput.value) {
+                                    searchInput.value = '';
+                                    filterMultiStaffList();
+                                }
+                            });
                             searchInput.addEventListener('input', filterMultiStaffList);
                             topBar.appendChild(searchRow);
 
@@ -4264,6 +4272,18 @@
                             list.appendChild(more);
                         }
                         list.style.display = 'block';
+                    };
+
+                    // Xóa text khi click vào ô tìm kiếm đã có giá trị được chọn → cho phép tìm mới ngay lập tức
+                    window.clearRegTenSearchOnClick = function () {
+                        const sel = document.getElementById('reg-ten-select');
+                        const input = document.getElementById('reg-ten-search');
+                        if (sel && sel.value) {
+                            // Đã có lựa chọn trước → xóa để tìm mới
+                            sel.value = '';
+                            input.value = '';
+                            onRegTenSearchInput();
+                        }
                     };
 
                     // Chọn 1 nhiệm vụ từ ô tìm kiếm → tự gán Nhóm/Phân loại + DVT + Chỉ tiêu + Ưu tiên mặc định
