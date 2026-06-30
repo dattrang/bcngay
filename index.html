@@ -1543,6 +1543,81 @@
         </div>
     </div>
 
+    <div id="eval-edit-task-overlay"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center;">
+        <div
+            style="background:white; padding:25px; border-radius:10px; width:90%; max-width:600px; max-height:90vh; overflow-y:auto; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="color:var(--primary); margin-bottom:15px; border-bottom:1px solid #eee; padding-bottom:10px;">
+                <i class="fas fa-edit"></i> Sửa Nhiệm vụ
+            </h3>
+            <input type="hidden" id="eval-edit-id">
+            <input type="hidden" id="eval-edit-datestr">
+            <div class="form-row">
+                <div class="form-group full">
+                    <label>Tên công việc <span>*</span></label>
+                    <input type="text" id="eval-edit-ten" placeholder="Tên công việc...">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1">
+                    <label>Nhóm / Phân loại <span>*</span></label>
+                    <select id="eval-edit-loai" required></select>
+                </div>
+                <div class="form-group autocomplete-wrapper" style="flex:1">
+                    <label>Người phụ trách <span>*</span></label>
+                    <input type="text" id="eval-edit-nguoi" placeholder="Chọn cán bộ..." autocomplete="off">
+                    <div id="eval-edit-nguoi-list" class="autocomplete-items"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1">
+                    <label>Người phối hợp</label>
+                    <input type="text" id="eval-edit-phoihop" placeholder="Người phối hợp...">
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label>Chỉ tiêu <span>*</span></label>
+                    <input type="number" step="1" id="eval-edit-chitieu" value="1">
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label>Đơn vị tính <span>*</span></label>
+                    <input type="text" id="eval-edit-dvt" value="lượt">
+                </div>
+                <div class="form-group" style="flex:1">
+                    <label>Mức độ Ưu tiên <span>*</span></label>
+                    <select id="eval-edit-uutien">
+                        <option value="Cao">Cao</option>
+                        <option value="Trung bình" selected>Trung bình</option>
+                        <option value="Thấp">Thấp</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group full">
+                    <label>Ghi chú</label>
+                    <input type="text" id="eval-edit-ghichu" placeholder="Ghi chú...">
+                </div>
+            </div>
+
+            <div
+                style="background:#fff5f5; border-left:4px solid var(--danger); padding:10px; margin-top:10px; margin-bottom:15px; border-radius:4px;">
+                <p style="font-size:0.85rem; color:#991b1b; margin:0;"><i class="fas fa-exclamation-triangle"></i>
+                    Chỉ Admin được sửa/xóa nhiệm vụ tại đây. Xóa nhiệm vụ sẽ xóa luôn dữ liệu đánh giá liên quan và
+                    không thể hoàn tác.</p>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; gap:10px; margin-top:20px;">
+                <button type="button" class="btn btn-danger" onclick="deleteEvalTaskFromModal()"><i
+                        class="fas fa-trash-alt"></i> Xóa nhiệm vụ</button>
+                <div style="display:flex; gap:10px;">
+                    <button type="button" class="btn btn-secondary" onclick="closeEditEvalTask()"><i
+                            class="fas fa-times"></i> Hủy</button>
+                    <button type="button" class="btn btn-primary" onclick="saveEditEvalTask()"><i
+                            class="fas fa-save"></i> Lưu thay đổi</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Audit Log Modal -->
     <div id="audit-log-overlay"
         style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9000; align-items:center; justify-content:center;">
@@ -2100,8 +2175,8 @@
                                 <select id="reg-filter-sync" onchange="renderRegTable()"
                                     style="padding: 6px 12px; font-size: 0.85rem; border: 1px solid var(--border); border-radius: 6px;">
                                     <option value="">-- Tất cả trạng thái --</option>
-                                    <option value="synced">Đã đồng bộ</option>
-                                    <option value="unsynced">Chưa đồng bộ</option>
+                                    <option value="synced">Đã duyệt / đồng bộ</option>
+                                    <option value="unsynced">Chưa duyệt / chưa đồng bộ</option>
                                 </select>
                                 <div class="form-group autocomplete-wrapper"
                                     style="max-width: 250px; margin-bottom: 0;">
@@ -2168,6 +2243,16 @@
                                 <label>Nhóm công việc</label>
                                 <select id="eval-filter-type" onchange="filterEvalList()">
                                     <option value="">-- Tất cả các nhóm --</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="eval-filter-duyet-wrap" style="max-width: 230px; display:none;">
+                                <label>Trạng thái duyệt</label>
+                                <select id="eval-filter-duyet" onchange="filterEvalList()">
+                                    <option value="">-- Tất cả trạng thái --</option>
+                                    <option value="da_duyet">Đã duyệt kết quả</option>
+                                    <option value="chua_duyet">Chờ duyệt kết quả</option>
+                                    <option value="cho_duyet_nv_moi">Chờ duyệt nhiệm vụ mới (phát sinh)</option>
+                                    <option value="nv_moi_da_duyet">Nhiệm vụ mới đã duyệt</option>
                                 </select>
                             </div>
                             <button type="button" class="btn btn-primary" id="btn-load-eval"><i
@@ -3133,6 +3218,7 @@
                         setupAutocomplete('eval-filter-staff', true);
                         setupAutocomplete('rpt-filter-staff', true);
                         setupAutocomplete('ps-nguoi', false);
+                        setupAutocomplete('eval-edit-nguoi', false);
                         setupAutocomplete('ps-nhom', false, TASK_CATEGORIES);
 
                         if (!IS_ADMIN && DEVICE_USER) {
@@ -3158,24 +3244,18 @@
                             const adminBtn = document.querySelector('.nav-btn[data-tab="quan-tri"]');
                             if (adminBtn) adminBtn.style.display = 'none';
 
-                            // [RBAC] Ẩn form thêm công việc — chỉ Admin mới được thêm nhiệm vụ
+                            // [RBAC] Cán bộ vẫn được tự thêm nhiệm vụ vào kế hoạch ngày, nhưng phải chờ Admin duyệt
                             const formDangKy = document.getElementById('form-dang-ky');
                             if (formDangKy) {
-                                formDangKy.style.display = 'none';
                                 // Thêm banner thông báo
                                 const notice = document.createElement('div');
-                                notice.style.cssText = 'padding:14px 18px; background:#e0f2fe; border:1px solid #7dd3fc; border-radius:8px; font-size:0.9rem; color:#0369a1; margin-bottom:14px; display:flex; align-items:center; gap:10px;';
-                                notice.innerHTML = '<i class="fas fa-info-circle" style="font-size:1.3rem;"></i><span><strong>Thêm nhiệm vụ do Admin thực hiện.</strong> Bạn có thể xem kế hoạch được giao và đánh giá kết quả trong tab <strong>Đánh Giá Kết Quả</strong>.</span>';
+                                notice.style.cssText = 'padding:14px 18px; background:#fef9c3; border:1px solid #fde047; border-radius:8px; font-size:0.9rem; color:#78350f; margin-bottom:14px; display:flex; align-items:center; gap:10px;';
+                                notice.innerHTML = '<i class="fas fa-clock" style="font-size:1.3rem; color:#b45309;"></i><span><strong>Bạn có thể tự thêm nhiệm vụ vào kế hoạch ngày.</strong> Nhiệm vụ do bạn nhập sẽ ở trạng thái <em>Chờ duyệt</em> cho đến khi Admin phê duyệt mới chính thức có hiệu lực.</span>';
                                 formDangKy.parentNode.insertBefore(notice, formDangKy);
                             }
-                            // Ẩn nút nhập nhanh và từ hôm qua
-                            const btnQuickImport = document.querySelector('[onclick="toggleQuickImport()"]');
-                            if (btnQuickImport) btnQuickImport.style.display = 'none';
-                            const btnCloneYest = document.getElementById('btn-clone-yesterday');
-                            if (btnCloneYest) btnCloneYest.style.display = 'none';
-                            // Ẩn nút Lưu kế hoạch lên hệ thống
+                            // Nút "Lưu kế hoạch lên hệ thống" vẫn hiện để cán bộ gửi kế hoạch chờ duyệt
                             const btnSaveFirebase = document.getElementById('btn-save-firebase');
-                            if (btnSaveFirebase) btnSaveFirebase.style.display = 'none';
+                            if (btnSaveFirebase) btnSaveFirebase.innerHTML = '<i class="fas fa-paper-plane"></i> GỬI KẾ HOẠCH (CHỜ DUYỆT)';
 
                             // [RBAC] Hiển thị banner thông báo kết quả cần Admin duyệt ở tab Đánh giá
                             const evalCard = document.querySelector('#danh-gia .card:last-child') || document.querySelector('#danh-gia .card');
@@ -3195,6 +3275,8 @@
                             if (btnAdminAutoFail) btnAdminAutoFail.style.display = 'inline-block';
                             const adminTargetDateWrap = document.getElementById('admin-target-date-wrap');
                             if (adminTargetDateWrap) adminTargetDateWrap.style.display = 'flex';
+                            const evalDuyetWrap = document.getElementById('eval-filter-duyet-wrap');
+                            if (evalDuyetWrap) evalDuyetWrap.style.display = 'block';
                         }
 
                         loadSavedViews();
@@ -4135,12 +4217,7 @@
                     function handleAddRegTask(e) {
                         e.preventDefault();
 
-                        // [RBAC] Chỉ Admin mới được thêm nhiệm vụ
-                        if (!IS_ADMIN) {
-                            showToast('Chỉ Admin mới có quyền thêm nhiệm vụ!', 'error');
-                            return;
-                        }
-
+                        // [RBAC] Admin thêm → tự duyệt ngay; Cán bộ thêm → chờ Admin duyệt (xem daDuyetKeHoach bên dưới)
                         const isCustom = document.getElementById('reg-is-custom').checked;
                         let tenCV = '';
 
@@ -4211,6 +4288,8 @@
                                     mucDoUuTien: document.getElementById('reg-uutien').value,
                                     ghiChu: document.getElementById('reg-ghichu').value,
                                     isSynced: false,
+                                    // [RBAC] Cán bộ sửa lại → đưa về trạng thái chờ duyệt lại; Admin sửa → tự duyệt
+                                    daDuyetKeHoach: DEVICE_USER === 'Admin',
                                     targetDate: dateStr
                                 };
                                 showToast('Đã cập nhật công việc!');
@@ -4233,6 +4312,8 @@
                                     mucDoUuTien: document.getElementById('reg-uutien').value,
                                     ghiChu: document.getElementById('reg-ghichu').value,
                                     trangThai: 'dang_thuc_hien',
+                                    // [RBAC] Admin thêm → tự duyệt; cán bộ thêm → chờ Admin duyệt
+                                    daDuyetKeHoach: DEVICE_USER === 'Admin',
                                     targetDate: dateStr
                                 };
 
@@ -4363,12 +4444,12 @@
                             displayTasks = displayTasks.filter(t => (t.nguoiPhuTrach || '').toLowerCase().includes(filterStaff));
                         }
 
-                        // Lọc theo trạng thái đồng bộ
+                        // Lọc theo trạng thái duyệt / đồng bộ
                         const filterSync = document.getElementById('reg-filter-sync')?.value || '';
                         if (filterSync === 'synced') {
-                            displayTasks = displayTasks.filter(t => t.isSynced === true);
+                            displayTasks = displayTasks.filter(t => t.isSynced === true && t.daDuyetKeHoach !== false);
                         } else if (filterSync === 'unsynced') {
-                            displayTasks = displayTasks.filter(t => t.isSynced !== true);
+                            displayTasks = displayTasks.filter(t => t.isSynced !== true || t.daDuyetKeHoach === false);
                         }
 
                         document.getElementById('reg-total-count').innerText = `${displayTasks.length} / ${tempRegTasks.length}`;
@@ -4385,11 +4466,17 @@
                             const dateBadge = isFuture
                                 ? `<span style="display:inline-block;font-size:0.72rem;font-weight:600;background:#e0f2fe;color:#0369a1;border-radius:4px;padding:1px 6px;margin-left:4px;vertical-align:middle;"><i class="fas fa-calendar-day"></i> ${formatDMY(t.targetDate)}</span>`
                                 : '';
+                            const choDuyetKH = t.daDuyetKeHoach === false;
+                            const duyetKHBadge = choDuyetKH
+                                ? (IS_ADMIN
+                                    ? `<span style="display:inline-block;font-size:0.72rem;font-weight:600;background:#fee2e2;color:#991b1b;border-radius:4px;padding:1px 6px;margin-left:4px;vertical-align:middle;cursor:pointer;" onclick="event.stopPropagation(); approveRegTask('${t.id}','${t.targetDate || today}')" title="Nhấn để duyệt kế hoạch"><i class="fas fa-hourglass-half"></i> Chờ duyệt — Duyệt ngay</span>`
+                                    : `<span style="display:inline-block;font-size:0.72rem;font-weight:600;background:#fee2e2;color:#991b1b;border-radius:4px;padding:1px 6px;margin-left:4px;vertical-align:middle;"><i class="fas fa-hourglass-half"></i> Chờ Admin duyệt</span>`)
+                                : (t.isSynced ? `<span style="display:inline-block;font-size:0.72rem;font-weight:600;background:#dcfce7;color:#166534;border-radius:4px;padding:1px 6px;margin-left:4px;vertical-align:middle;"><i class="fas fa-check"></i> Đã duyệt</span>` : '');
                             tbody.innerHTML += `
                     <tr style="cursor:pointer;${isFuture ? 'opacity:0.85;' : ''}" onclick="switchAndJumpToEval('${t.id}', event)" title="${isFuture ? `Kế hoạch cho ${formatDMY(t.targetDate)} — nhấn để xem chi tiết` : 'Nhấn để chuyển sang Đánh giá'}">
                         <td>${i + 1}</td>
                         <td>
-                            <strong>${esc(t.tenCongViec)}</strong>${dateBadge} ${t.isSynced ? '<i class="fas fa-check-circle" style="color:var(--success); font-size:0.85rem;" title="Đã đồng bộ lên hệ thống"></i>' : '<i class="fas fa-exclamation-circle" style="color:var(--warning); font-size:0.85rem;" title="Chưa đồng bộ"></i>'}<br>
+                            <strong>${esc(t.tenCongViec)}</strong>${dateBadge}${duyetKHBadge} ${t.isSynced ? '<i class="fas fa-check-circle" style="color:var(--success); font-size:0.85rem;" title="Đã đồng bộ lên hệ thống"></i>' : '<i class="fas fa-exclamation-circle" style="color:var(--warning); font-size:0.85rem;" title="Chưa đồng bộ"></i>'}<br>
                             <span style="font-size:0.8rem; color:var(--gray)">${esc(t.loaiCongViec)}</span>
                             ${t.ghiChu ? `<br><span style="font-size:0.8rem; color:#856404; background:#fff3cd; padding:2px 4px; border-radius:3px; display:inline-block; margin-top:3px;"><i class="fas fa-comment-dots"></i> ${esc(t.ghiChu)}</span>` : ''}
                         </td>
@@ -4473,6 +4560,17 @@
                         showLoader(false);
                     };
 
+                    // [RBAC] Admin duyệt kế hoạch ngày do cán bộ tự nhập
+                    window.approveRegTask = async function (id, dateStr) {
+                        try {
+                            await update(ref(db), { [`keHoachNgay/${dateStr}/${id}/daDuyetKeHoach`]: true });
+                            const t = tempRegTasks.find(x => x.id === id);
+                            if (t) { t.daDuyetKeHoach = true; t.isSynced = true; }
+                            renderRegTable();
+                            showToast('Đã duyệt kế hoạch ngày!', 'success');
+                        } catch (e) { showToast('Lỗi khi duyệt kế hoạch.', 'error'); }
+                    };
+
                     async function cloneYesterdayTasks() {
                         const yest = new Date(); yest.setDate(yest.getDate() - 1);
                         const yDateStr = formatLocalYMD(yest);
@@ -4498,7 +4596,7 @@
                                     if (todayTasks.some(existing => existing.tenCongViec === t.tenCongViec && existing.nguoiPhuTrach === t.nguoiPhuTrach)) continue;
 
                                     const newId = `CV-${dateStr.replace(/-/g, '')}-${Date.now().toString().slice(-6) + count}`;
-                                    tempRegTasks.push({ ...t, id: newId, trangThai: 'dang_thuc_hien', danhGia: null, isSynced: false });
+                                    tempRegTasks.push({ ...t, id: newId, trangThai: 'dang_thuc_hien', danhGia: null, isSynced: false, daDuyetKeHoach: DEVICE_USER === 'Admin' });
                                     count++;
                                 }
                                 renderRegTable();
@@ -4943,6 +5041,8 @@
                                 mucDoUuTien: uutien,
                                 trangThai: 'dang_thuc_hien', // ← Yêu cầu đánh giá kết quả sau (không tự hoàn thành 100%)
                                 isPhatSinh: true,
+                                // [RBAC] Admin thêm → tự duyệt nhiệm vụ mới; cán bộ thêm → chờ Admin phê duyệt
+                                daDuyetNhiemVu: DEVICE_USER === 'Admin',
                                 danhGia: null // ← Cán bộ phải đánh giá qua giao diện bình thưỜng
                             };
 
@@ -4950,7 +5050,9 @@
                             updates[`keHoachNgay/${dateStr}/${newId}`] = newTask;
                             await update(ref(db), updates);
 
-                            showToast("Ghi nhận thành công! Hãy đánh giá kết quả ở danh sách đánh giá.");
+                            showToast(DEVICE_USER === 'Admin'
+                                ? "Ghi nhận thành công! Hãy đánh giá kết quả ở danh sách đánh giá."
+                                : "Đã gửi nhiệm vụ mới! Đang chờ Admin phê duyệt.");
                             closePhatSinhModal();
                             loadTasksForEval(); // Reload UI
                         } catch (e) {
@@ -4964,6 +5066,7 @@
                         const staff = document.getElementById('eval-filter-staff').value;
                         const typeFilter = document.getElementById('eval-filter-type') ? document.getElementById('eval-filter-type').value : '';
                         const groupFilter = document.getElementById('eval-filter-group') ? document.getElementById('eval-filter-group').value : '';
+                        const duyetFilter = document.getElementById('eval-filter-duyet') ? document.getElementById('eval-filter-duyet').value : '';
 
                         for (let key in currentEvalTasks) {
                             const task = currentEvalTasks[key];
@@ -4981,7 +5084,18 @@
                                     }
                                 }
 
-                                if (matchStaff && matchType && matchGroup) {
+                                let matchDuyet = true;
+                                if (duyetFilter) {
+                                    const ketQuaDaDuyet = task.danhGia?.daDuyet === true;
+                                    const isPhatSinhChoNV = task.isPhatSinh === true && task.daDuyetNhiemVu !== true;
+                                    const isPhatSinhDaDuyetNV = task.isPhatSinh === true && task.daDuyetNhiemVu === true;
+                                    if (duyetFilter === 'da_duyet') matchDuyet = ketQuaDaDuyet;
+                                    else if (duyetFilter === 'chua_duyet') matchDuyet = !ketQuaDaDuyet;
+                                    else if (duyetFilter === 'cho_duyet_nv_moi') matchDuyet = isPhatSinhChoNV;
+                                    else if (duyetFilter === 'nv_moi_da_duyet') matchDuyet = isPhatSinhDaDuyetNV;
+                                }
+
+                                if (matchStaff && matchType && matchGroup && matchDuyet) {
                                     wrap.style.display = 'block';
                                 } else {
                                     wrap.style.display = 'none';
@@ -5019,6 +5133,15 @@
 
                         const phatSinhBadge = task.isPhatSinh
                             ? `<span class="badge" style="background:#fff3cd;color:#856404;border:1px solid #ffeeba;"><i class="fas fa-bolt"></i> Phát sinh</span>` : '';
+                        const choDuyetNV = task.isPhatSinh === true && task.daDuyetNhiemVu !== true;
+                        const nvMoiBadge = task.isPhatSinh
+                            ? (choDuyetNV
+                                ? (IS_ADMIN
+                                    ? `<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca; cursor:pointer;" onclick="event.stopPropagation(); approveNhiemVuMoi('${task.id}')" title="Nhấn để duyệt nhiệm vụ mới"><i class="fas fa-user-clock"></i> Duyệt nhiệm vụ mới</span>
+                                       <span class="badge" style="background:#fff; color:#991b1b; border:1px solid #fecaca; cursor:pointer;" onclick="event.stopPropagation(); rejectNhiemVuMoi('${task.id}')" title="Từ chối nhiệm vụ mới"><i class="fas fa-times"></i></span>`
+                                    : `<span class="badge" style="background:#fee2e2;color:#991b1b;border:1px solid #fecaca;"><i class="fas fa-hourglass-half"></i> Chờ Admin duyệt nhiệm vụ mới</span>`)
+                                : `<span class="badge" style="background:#dcfce7;color:#166534;border:1px solid #bbf7d0;"><i class="fas fa-check"></i> Nhiệm vụ mới đã duyệt</span>`)
+                            : '';
                         const soLanChuyen = task.soLanChuyen || 0;
                         const ngayGocLabel = task.ngayGoc ? ` | Gốc: ${formatDMY(task.ngayGoc)}` : '';
                         const chuyenTiepBadge = task.tenCongViec && task.tenCongViec.includes('[Chuyển tiếp]')
@@ -5050,10 +5173,14 @@
                 <div class="eval-card-header" onclick="toggleEvalForm('${task.id}')">
                     <div class="eval-task-title">
                         <span>${index}. ${esc(task.tenCongViec).replace('[Chuyển tiếp] ', '')}</span>
-                        ${phatSinhBadge} ${chuyenTiepBadge}
+                        ${phatSinhBadge} ${nvMoiBadge} ${chuyenTiepBadge}
                         <span style="font-size:0.8rem;color:var(--primary);font-weight:500;">(CT: ${chiTieu} ${dvt})</span>
                         <span class="eval-percent-badge" id="eval-pct-badge-${task.id}" style="margin-left:auto;color:${pctColor};">${rawPct > 100 ? rawPct + '% <span title="Vượt chỉ tiêu!" style="color:#f59e0b;">\u2b50</span>' : rawPct + '%'}</span>
                         <i class="fas fa-info-circle" style="color:var(--gray);font-size:0.95rem; margin-left: 5px;" onclick="event.stopPropagation(); showAuditLog('${task.id}')" title="Xem lịch sử thay đổi"></i>
+                        ${IS_ADMIN ? `
+                        <i class="fas fa-edit" style="color:var(--primary);font-size:0.95rem; margin-left: 8px;" onclick="event.stopPropagation(); openEditEvalTask('${task.id}')" title="Sửa nhiệm vụ"></i>
+                        <i class="fas fa-trash-alt" style="color:var(--danger);font-size:0.95rem; margin-left: 8px;" onclick="event.stopPropagation(); deleteEvalTask('${task.id}')" title="Xóa nhiệm vụ"></i>
+                        ` : ''}
                         <i class="fas fa-chevron-down" style="color:var(--gray);font-size:0.85rem; margin-left: 5px;"></i>
                     </div>
                     <div class="eval-progress-bar-wrap">
@@ -5656,6 +5783,155 @@
                             showToast("Lỗi khi bỏ duyệt.", "error");
                         }
                     }
+
+                    // [RBAC] Admin phê duyệt việc cán bộ thêm nhiệm vụ mới (phát sinh)
+                    window.approveNhiemVuMoi = async function (taskId) {
+                        const task = currentEvalTasks[taskId];
+                        if (!task) return;
+                        const taskDateStr = task.dateStr || document.getElementById('eval-date').value;
+                        try {
+                            await update(ref(db), {
+                                [`keHoachNgay/${taskDateStr}/${taskId}/daDuyetNhiemVu`]: true
+                            });
+                            showToast("Đã duyệt nhiệm vụ mới!", "success");
+                            const isInboxMode = document.getElementById('eval-date').dataset.inboxMode === 'true';
+                            if (isInboxMode) await loadInboxEvals();
+                            else await loadTasksForEval();
+                        } catch (e) {
+                            showToast("Lỗi khi duyệt nhiệm vụ mới.", "error");
+                        }
+                    }
+
+                    window.rejectNhiemVuMoi = async function (taskId) {
+                        if (!confirm("Từ chối và xóa nhiệm vụ phát sinh này? Hành động không thể hoàn tác.")) return;
+                        const task = currentEvalTasks[taskId];
+                        if (!task) return;
+                        const taskDateStr = task.dateStr || document.getElementById('eval-date').value;
+                        try {
+                            await update(ref(db), {
+                                [`keHoachNgay/${taskDateStr}/${taskId}`]: null
+                            });
+                            showToast("Đã từ chối nhiệm vụ mới!", "success");
+                            const isInboxMode = document.getElementById('eval-date').dataset.inboxMode === 'true';
+                            if (isInboxMode) await loadInboxEvals();
+                            else await loadTasksForEval();
+                        } catch (e) {
+                            showToast("Lỗi khi từ chối nhiệm vụ mới.", "error");
+                        }
+                    }
+
+                    // [RBAC] Admin được sửa / xóa trực tiếp nhiệm vụ ngay trong màn hình Đánh giá kết quả
+                    window.openEditEvalTask = function (taskId) {
+                        if (!IS_ADMIN) { showToast('Chỉ Admin mới có quyền sửa nhiệm vụ!', 'error'); return; }
+                        const task = currentEvalTasks[taskId];
+                        if (!task) return;
+
+                        document.getElementById('eval-edit-id').value = taskId;
+                        document.getElementById('eval-edit-datestr').value = task.dateStr || document.getElementById('eval-date').value;
+                        document.getElementById('eval-edit-ten').value = task.tenCongViec || '';
+
+                        // Populate nhóm/loại, giữ lại giá trị hiện tại của task kể cả khi không nằm trong danh mục
+                        const loaiSel = document.getElementById('eval-edit-loai');
+                        const groupSet = new Set(TASK_CATEGORIES);
+                        if (task.loaiCongViec) groupSet.add(task.loaiCongViec);
+                        loaiSel.innerHTML = '';
+                        Array.from(groupSet).sort().forEach(g => loaiSel.appendChild(new Option(g, g)));
+                        loaiSel.value = task.loaiCongViec || '';
+
+                        document.getElementById('eval-edit-nguoi').value = task.nguoiPhuTrach || '';
+                        document.getElementById('eval-edit-phoihop').value = task.nguoiPhoiHop || '';
+                        document.getElementById('eval-edit-chitieu').value = task.chiTieu || 1;
+                        document.getElementById('eval-edit-dvt').value = task.dvt || 'lượt';
+                        document.getElementById('eval-edit-uutien').value = task.mucDoUuTien || 'Trung bình';
+                        document.getElementById('eval-edit-ghichu').value = task.ghiChu || '';
+
+                        document.getElementById('eval-edit-task-overlay').style.display = 'flex';
+                    };
+
+                    window.closeEditEvalTask = function () {
+                        document.getElementById('eval-edit-task-overlay').style.display = 'none';
+                    };
+
+                    window.saveEditEvalTask = async function () {
+                        if (!IS_ADMIN) { showToast('Chỉ Admin mới có quyền sửa nhiệm vụ!', 'error'); return; }
+
+                        const id = document.getElementById('eval-edit-id').value;
+                        const dateStr = document.getElementById('eval-edit-datestr').value;
+                        if (!id || !dateStr) return;
+
+                        const ten = document.getElementById('eval-edit-ten').value.trim();
+                        const loai = document.getElementById('eval-edit-loai').value;
+                        const nguoi = document.getElementById('eval-edit-nguoi').value.trim();
+                        const phoihop = document.getElementById('eval-edit-phoihop').value.trim();
+                        const chitieu = parseFloat(document.getElementById('eval-edit-chitieu').value) || 1;
+                        const dvt = document.getElementById('eval-edit-dvt').value.trim() || 'lượt';
+                        const uutien = document.getElementById('eval-edit-uutien').value;
+                        const ghichu = document.getElementById('eval-edit-ghichu').value.trim();
+
+                        if (!ten || !loai || !nguoi) {
+                            showToast('Vui lòng nhập đủ Tên công việc, Nhóm và Người phụ trách!', 'warning');
+                            return;
+                        }
+                        if (!STAFFS.some(s => s.ten === nguoi)) {
+                            showToast('Cán bộ không hợp lệ!', 'error');
+                            return;
+                        }
+
+                        showLoader(true);
+                        try {
+                            await update(ref(db), {
+                                [`keHoachNgay/${dateStr}/${id}/tenCongViec`]: ten,
+                                [`keHoachNgay/${dateStr}/${id}/loaiCongViec`]: loai,
+                                [`keHoachNgay/${dateStr}/${id}/nguoiPhuTrach`]: nguoi,
+                                [`keHoachNgay/${dateStr}/${id}/nguoiPhoiHop`]: phoihop,
+                                [`keHoachNgay/${dateStr}/${id}/chiTieu`]: chitieu,
+                                [`keHoachNgay/${dateStr}/${id}/dvt`]: dvt,
+                                [`keHoachNgay/${dateStr}/${id}/mucDoUuTien`]: uutien,
+                                [`keHoachNgay/${dateStr}/${id}/ghiChu`]: ghichu
+                            });
+                            showToast('Đã cập nhật nhiệm vụ!', 'success');
+                            closeEditEvalTask();
+                            const isInboxMode = document.getElementById('eval-date').dataset.inboxMode === 'true';
+                            if (isInboxMode) await loadInboxEvals();
+                            else await loadTasksForEval();
+                        } catch (e) {
+                            console.error(e);
+                            showToast('Lỗi khi cập nhật nhiệm vụ.', 'error');
+                        }
+                        showLoader(false);
+                    };
+
+                    window.deleteEvalTask = async function (taskId, dateStrParam) {
+                        if (!IS_ADMIN) { showToast('Chỉ Admin mới có quyền xóa nhiệm vụ!', 'error'); return false; }
+                        const task = currentEvalTasks[taskId];
+                        const dateStr = dateStrParam || task?.dateStr || document.getElementById('eval-date').value;
+                        if (!dateStr) return false;
+
+                        if (!confirm(`Bạn có chắc muốn XÓA nhiệm vụ "${task?.tenCongViec || ''}"?\nHành động này sẽ xóa luôn dữ liệu đánh giá liên quan và KHÔNG THỂ hoàn tác.`)) return false;
+
+                        showLoader(true);
+                        try {
+                            await update(ref(db), { [`keHoachNgay/${dateStr}/${taskId}`]: null });
+                            showToast('Đã xóa nhiệm vụ!', 'success');
+                            const isInboxMode = document.getElementById('eval-date').dataset.inboxMode === 'true';
+                            if (isInboxMode) await loadInboxEvals();
+                            else await loadTasksForEval();
+                            showLoader(false);
+                            return true;
+                        } catch (e) {
+                            console.error(e);
+                            showToast('Lỗi khi xóa nhiệm vụ.', 'error');
+                            showLoader(false);
+                            return false;
+                        }
+                    };
+
+                    window.deleteEvalTaskFromModal = async function () {
+                        const id = document.getElementById('eval-edit-id').value;
+                        const dateStr = document.getElementById('eval-edit-datestr').value;
+                        const ok = await deleteEvalTask(id, dateStr);
+                        if (ok) closeEditEvalTask();
+                    };
 
                     // ================= MODULE 3: BÁO CÁO =================
                     window.loadSavedViews = function () {
