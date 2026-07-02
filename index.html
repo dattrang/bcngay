@@ -4757,6 +4757,11 @@
                         const evalBtn = document.querySelector('.nav-btn[data-tab="danh-gia"]');
                         if (evalBtn) evalBtn.click();
 
+                        // [FIX] Đặt đúng ngày của nhiệm vụ (không phải ngày đang có sẵn trên ô eval-date) rồi mới tải dữ liệu đánh giá
+                        const targetDateStr = task.targetDate || getTodayYMD();
+                        document.getElementById('eval-date').value = targetDateStr;
+                        loadTasksForEval();
+
                         setTimeout(() => {
                             const el = document.getElementById(`eval-wrap-${taskId}`);
                             if (el) {
@@ -5584,6 +5589,13 @@
                         </div>
                     </div>
 
+                    <div class="form-row">
+                        <div class="form-group full">
+                            <label>Ghi chú thêm <span style="font-size:0.78rem;color:var(--gray);font-weight:400;">(không bắt buộc — cán bộ giải thích/bổ sung thêm thông tin cho nhiệm vụ)</span></label>
+                            <textarea id="eval-ghichuthem-${task.id}" rows="2" placeholder="Ghi chú, giải thích thêm..." ${disAttr}>${esc(dg.ghiChuThem || '')}</textarea>
+                        </div>
+                    </div>
+
                     <div class="form-row" id="eval-subreason-row-${task.id}" style="${showSubreason ? '' : 'display:none;'}">
                         <div class="form-group" style="flex:1;">
                             <label>Nguyên nhân</label>
@@ -5918,7 +5930,7 @@
                             const entryDateStr = t.dateStr || defaultDateStr;
                             if (nvxnIsEntryLocked(t, entryDateStr)) continue;
 
-                            let res, thucTe, prog, reason, transDate;
+                            let res, thucTe, prog, reason, transDate, ghiChuThem;
                             let nguyenNhanKhachQuan = false, nguyenNhanChuQuan = false, baiHocKinhNghiem = '';
 
                             if (isHidden) {
@@ -5933,6 +5945,7 @@
                                 nguyenNhanKhachQuan = dg.nguyenNhanKhachQuan || false;
                                 nguyenNhanChuQuan = dg.nguyenNhanChuQuan || false;
                                 baiHocKinhNghiem = dg.baiHocKinhNghiem || '';
+                                ghiChuThem = dg.ghiChuThem || '';
                             } else {
                                 // Task đang hiển thị — đọc từ DOM
                                 const resEl = document.getElementById(`eval-res-${id}`);
@@ -5943,6 +5956,8 @@
                                 prog = parseInt(document.getElementById(`eval-prog-${id}`)?.value) || 0;
                                 const reasonEl = document.getElementById(`eval-reason-${id}`);
                                 reason = reasonEl ? reasonEl.value : '';
+                                const ghiChuThemEl = document.getElementById(`eval-ghichuthem-${id}`);
+                                ghiChuThem = ghiChuThemEl ? ghiChuThemEl.value : '';
                                 const transDateEl = document.getElementById(`eval-transfer-${id}`);
                                 transDate = transDateEl ? transDateEl.value : '';
 
@@ -5988,6 +6003,7 @@
                                 (oldDg.tiLeHoanThanh || 0) !== prog ||
                                 (oldDg.soLuongThucTe || 0) !== thucTe ||
                                 (oldDg.lyDoKhongDat || '') !== reason ||
+                                (oldDg.ghiChuThem || '') !== ghiChuThem ||
                                 (oldDg.chuyenSangNgay || '') !== transDate ||
                                 (oldDg.nguyenNhanKhachQuan || false) !== nguyenNhanKhachQuan ||
                                 (oldDg.nguyenNhanChuQuan || false) !== nguyenNhanChuQuan ||
@@ -6010,7 +6026,7 @@
                             if (isChanged) {
                                 updates[`keHoachNgay/${taskDateStr}/${key}/danhGia`] = {
                                     ketQua: res, tiLeHoanThanh: prog, soLuongThucTe: thucTe,
-                                    lyDoKhongDat: reason,
+                                    lyDoKhongDat: reason, ghiChuThem,
                                     nguyenNhanKhachQuan, nguyenNhanChuQuan, baiHocKinhNghiem,
                                     chuyenSangNgay: res === 'Chuyển sang ngày khác' ? transDate : '',
                                     thoiDiemDanhGia: thoiDiem,
