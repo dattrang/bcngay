@@ -5311,11 +5311,33 @@
                         return '#d32f2f';
                     }
 
+                    // ── Helper: kiểm tra entry NVXN có bị khóa chốt chưa ──
+                    // Điều kiện: có nvxnLinkId + taskDate < hôm nay + đã qua 12:00 ngày (taskDate + 1)
+                    function nvxnIsEntryLocked(task, taskDateStr) {
+                        if (!task.nvxnLinkId) return false;
+                        const todayStr = getTodayYMD();
+                        const evalDate = taskDateStr || document.getElementById('eval-date').value;
+                        if (!evalDate || evalDate >= todayStr) return false; // Chưa qua ngày → chưa chốt
+                        // Kiểm tra đã qua 12:00 ngày hôm sau chưa
+                        const lockDay = new Date(evalDate + 'T12:00:00');
+                        lockDay.setDate(lockDay.getDate() + 1); // 12:00 ngày (evalDate + 1)
+                        return new Date() >= lockDay;
+                    }
+
                     function renderEvalItem(task, index, container) {
                         const dg = task.danhGia || { ketQua: 'Chưa thực hiện', tiLeHoanThanh: 0, soLuongThucTe: 0 };
                         let badgeClass = task.mucDoUuTien === 'Cao' ? 'badge-high' : (task.mucDoUuTien === 'Thấp' ? 'badge-low' : 'badge-medium');
 
-                        const isUnevaluated = !dg.thoiDiemDanhGia || (dg.tiLeHoanThanh < 100 && dg.ketQua !== 'Chuyển sang ngày khác');
+                        // [NVXN LOCK] Kiểm tra entry dài ngày đã bị chốt (sau 12:00 ngày hôm sau)
+                        const taskDateStr = task.dateStr || document.getElementById('eval-date').value;
+                        const isNvxnLocked = nvxnIsEntryLocked(task, taskDateStr);
+                        // isOneTimeNVXN đã chốt → không tính là chưa hoàn thành (không bị phạt)
+                        const isNvxnOneTimeLocked = isNvxnLocked && (task.isOneTimeNVXN === true);
+
+                        // Nếu là NVXN đã chốt 1 lần: không hiển thị cảnh báo "chưa đánh giá"
+                        const isUnevaluated = isNvxnOneTimeLocked
+                            ? false
+                            : (!dg.thoiDiemDanhGia || (dg.tiLeHoanThanh < 100 && dg.ketQua !== 'Chuyển sang ngày khác'));
 
                         const chiTieu = task.chiTieu || 100;
                         const dvt = task.dvt || '%';
@@ -5358,20 +5380,29 @@
                             : (IS_ADMIN
                                 ? `<span class="badge" style="background:#e2e8f0; color:#334155; border:1px solid #cbd5e1; cursor:pointer;" onclick="event.stopPropagation(); approveTask('${task.id}')"><i class="fas fa-check"></i> Duyệt</span>`
                                 : `<span class="badge" style="background:#e2e8f0; color:#64748b;">Chưa duyệt</span>`);
-                        const disAttr = isApproved ? 'disabled' : '';
+                        // [NVXN LOCK] entry bị khóa → disable tất cả controls (ưu tiên cao hơn isApproved)
+                        const disAttr = (isNvxnLocked || isApproved) ? 'disabled' : '';
+
+                        // Badge "Đã chốt" cho entry NVXN bị khóa
+                        const nvxnLockedBadge = isNvxnLocked
+                            ? `<span class="badge" style="background:#7c3aed;color:white;border:1px solid #6d28d9;" title="Nhiệm vụ dài ngày đã chốt sang ngày hôm sau — không thể cập nhật đánh giá"><i class="fas fa-lock"></i> Đã chốt${isNvxnOneTimeLocked ? ' (không tính chỉ tiêu)' : ''}</span>`
+                            : '';
 
                         const div = document.createElement('div');
                         div.id = `eval-wrap-${task.id}`;
                         div.className = 'eval-card';
-                        div.style = `border:1px solid ${isUnevaluated ? 'var(--danger)' : 'var(--border)'}; border-left:4px solid ${pctColor}; background:${isUnevaluated ? '#fff8f8' : (isApproved ? '#f0fdf4' : 'white')};`;
+                        // [NVXN LOCK] card bị khóa: nền tím nhạt thay vì đỏ
+                        const cardBg = isNvxnLocked ? '#faf5ff' : (isUnevaluated ? '#fff8f8' : (isApproved ? '#f0fdf4' : 'white'));
+                        const cardBorder = isNvxnLocked ? '#7c3aed' : (isUnevaluated ? 'var(--danger)' : 'var(--border)');
+                        div.style = `border:1px solid ${cardBorder}; border-left:4px solid ${isNvxnLocked ? '#7c3aed' : pctColor}; background:${cardBg};`;
 
                         div.innerHTML = `
                 <div class="eval-card-header" onclick="toggleEvalForm('${task.id}')">
                     <div class="eval-task-title">
                         <span>${index}. ${esc(task.tenCongViec).replace('[Chuyển tiếp] ', '')}</span>
-                        ${phatSinhBadge} ${nvMoiBadge} ${chuyenTiepBadge}
+                        ${phatSinhBadge} ${nvMoiBadge} ${chuyenTiepBadge} ${nvxnLockedBadge}
                         <span style="font-size:0.8rem;color:var(--primary);font-weight:500;">(CT: ${chiTieu} ${dvt})</span>
-                        <span class="eval-percent-badge" id="eval-pct-badge-${task.id}" style="margin-left:auto;color:${pctColor};">${rawPct > 100 ? rawPct + '% <span title="Vượt chỉ tiêu!" style="color:#f59e0b;">\u2b50</span>' : rawPct + '%'}</span>
+                        <span class="eval-percent-badge" id="eval-pct-badge-${task.id}" style="margin-left:auto;color:${isNvxnLocked ? '#7c3aed' : pctColor};">${rawPct > 100 ? rawPct + '% <span title="Vượt chỉ tiêu!" style="color:#f59e0b;">\u2b50</span>' : rawPct + '%'}</span>
                         <i class="fas fa-info-circle" style="color:var(--gray);font-size:0.95rem; margin-left: 5px;" onclick="event.stopPropagation(); showAuditLog('${task.id}')" title="Xem lịch sử thay đổi"></i>
                         ${IS_ADMIN ? `
                         <i class="fas fa-edit" style="color:var(--primary);font-size:0.95rem; margin-left: 8px;" onclick="event.stopPropagation(); openEditEvalTask('${task.id}')" title="Sửa nhiệm vụ"></i>
@@ -5381,7 +5412,7 @@
                     </div>
                     <div class="eval-progress-bar-wrap">
                         <div class="eval-progress-bar-fill" id="eval-bar-${task.id}"
-                             style="width:${Math.min(pct, 100)}%;background:${pctColor};"></div>
+                             style="width:${Math.min(pct, 100)}%;background:${isNvxnLocked ? '#7c3aed' : pctColor};"></div>
                     </div>
                     <div class="eval-meta-row">
                         <span><i class="fas fa-user"></i> ${esc(task.nguoiPhuTrach)}</span>
@@ -5390,6 +5421,7 @@
                         ${task.dateStr ? `<span style="color:#64748b;background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:0.8rem;"><i class="far fa-calendar-alt"></i> ${formatDMY(task.dateStr)}</span>` : ''}
                         ${task.ghiChu ? `<span style="color:#856404;background:#fff3cd;padding:2px 6px;border-radius:4px;"><i class="fas fa-comment-dots"></i> ${esc(task.ghiChu)}</span>` : ''}
                     </div>
+                    ${isNvxnLocked ? `<div style="font-size:0.8rem;color:#7c3aed;background:#f5f3ff;padding:4px 10px;border-radius:4px;margin-top:4px;"><i class="fas fa-lock"></i> Nhiệm vụ dài ngày đã chốt sang ngày hôm sau vào lúc 12:00. Không thể cập nhật đánh giá.${isNvxnOneTimeLocked ? ' Entry này không được tính vào chỉ tiêu không hoàn thành.' : ''}</div>` : ''}
                 </div>
 
                 <div class="eval-quick-actions">
@@ -5760,6 +5792,10 @@
                             const id = t.id || key;
                             const wrap = document.getElementById(`eval-wrap-${id}`);
                             const isHidden = wrap && wrap.style.display === 'none';
+
+                            // [NVXN LOCK] Bỏ qua hoàn toàn entry NVXN đã bị chốt — không lưu gì cả
+                            const entryDateStr = t.dateStr || defaultDateStr;
+                            if (nvxnIsEntryLocked(t, entryDateStr)) continue;
 
                             let res, thucTe, prog, reason, transDate;
                             let nguyenNhanKhachQuan = false, nguyenNhanChuQuan = false, baiHocKinhNghiem = '';
@@ -7598,6 +7634,18 @@
                                         const isOneTimeNVXN = t.isOneTimeNVXN || (t.nvxnLinkId && t.ghiChu && t.ghiChu.includes('tích Hoàn thành'));
                                         if (isOneTimeNVXN && !isDone && t.hanHoanThanh && dStr < t.hanHoanThanh) {
                                             return; // Bỏ qua task này, không cộng vào tongCV hay tính điểm
+                                        }
+
+                                        // [NVXN LOCK] isOneTimeNVXN đã chốt (đã sinh entry ngày mới sau 12:00)
+                                        // → không tính vào tongCV hoặc "không hoàn thành" trong giai đoạn
+                                        if (isOneTimeNVXN && !isDone) {
+                                            // Kiểm tra: đã qua 12:00 ngày (dStr + 1) chưa?
+                                            const lockThreshold = new Date(dStr + 'T12:00:00');
+                                            lockThreshold.setDate(lockThreshold.getDate() + 1);
+                                            if (new Date() >= lockThreshold) {
+                                                // Đã chốt → bỏ qua, không phạt
+                                                return;
+                                            }
                                         }
 
                                         // [FIX] Chuyển ngày → chỉ đếm daChuyenNgay, KHÔNG tính vào tongCV/sumWP
