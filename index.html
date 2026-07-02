@@ -1490,11 +1490,13 @@
                     <label>Nhóm / Phân loại <span>*</span></label>
                     <select id="ps-loai" required onchange="filterPSTasks()"></select>
                 </div>
-                <div class="form-group" style="flex: 2">
+                <div class="form-group autocomplete-wrapper" style="flex: 2">
                     <label>Tên công việc phát sinh <span>*</span></label>
-                    <select id="ps-ten-select" required onchange="onSelectPSTask()">
-                        <option value="">-- Chọn công việc --</option>
-                    </select>
+                    <input type="text" id="ps-ten-search"
+                        placeholder="Gõ để tìm nhiệm vụ đã có trong danh mục (không cần dấu)..." autocomplete="off"
+                        oninput="onPSTenSearchInput()" onfocus="onPSTenSearchInput()" onclick="onPSTenSearchClick()">
+                    <div id="ps-ten-search-list" class="autocomplete-items"></div>
+                    <input type="hidden" id="ps-ten-select">
                     <input type="text" id="ps-ten-input" placeholder="Nhập tên công việc ngoài danh mục..."
                         style="display:none;">
                     <div style="margin-top: 6px;">
@@ -2761,6 +2763,15 @@
                         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
                         .replace(/đ/gi, 'd')
                         .toLowerCase().trim();
+                    // Tìm kiếm "không cần gõ liên tiếp": tách từ khóa người dùng gõ thành nhiều từ,
+                    // chỉ cần TẤT CẢ các từ đó có xuất hiện (ở bất kỳ vị trí/thứ tự nào) trong tên công việc là khớp.
+                    // VD: nhiệm vụ "Lập hồ sơ quản lý cơ sở" -> gõ "hồ sơ cơ sở" hoặc "lập cơ sở" đều tìm ra được.
+                    window.vnMultiWordMatch = (text, query) => {
+                        const t = vnNoTone(text);
+                        const tokens = vnNoTone(query).split(/\s+/).filter(Boolean);
+                        if (tokens.length === 0) return true;
+                        return tokens.every(tok => t.includes(tok));
+                    };
                     const getPriorityWeight = (prio) => { if (prio === 'Cao') return 3; if (prio === 'Trung bình') return 2; if (prio === 'Thấp') return 1; return 2; };
 
                     // INIT
@@ -4244,6 +4255,11 @@
                         if (document.getElementById('reg-is-custom').checked) return; // ignore if custom
                         document.getElementById('reg-dvt').value = '%';
                         document.getElementById('reg-chitieu').value = '100';
+                        // Nếu danh sách gợi ý đang mở (đang gõ tìm/đang xem theo nhóm), cập nhật lại theo nhóm mới chọn
+                        const list = document.getElementById('reg-ten-search-list');
+                        if (list && list.style.display === 'block') {
+                            onRegTenSearchInput();
+                        }
                     }
 
                     // Click vào ô tìm kiếm khi đã có sẵn text (do vừa chọn 1 nhiệm vụ) → xóa text, mở lại toàn bộ dropdown để tìm nhiệm vụ mới
@@ -4257,24 +4273,47 @@
                         onRegTenSearchInput();
                     };
 
-                    // === [Tìm kiếm nhiệm vụ] Gõ không dấu để tìm nhiệm vụ đã có trong danh mục (mọi nhóm) ===
+                    // === [Tìm kiếm nhiệm vụ] Gõ không dấu, không cần liên tiếp/đúng thứ tự để tìm nhiệm vụ đã có trong danh mục.
+                    // Nếu đã chọn sẵn Nhóm/Phân loại mà chưa gõ gì thì hiển thị luôn các nhiệm vụ thuộc nhóm đó để chọn nhanh.
                     window.onRegTenSearchInput = function () {
                         const input = document.getElementById('reg-ten-search');
                         const list = document.getElementById('reg-ten-search-list');
-                        const term = vnNoTone(input.value);
+                        const rawTerm = input.value.trim();
+                        const selectedGroup = document.getElementById('reg-loai').value;
 
                         // Gõ lại tên coi như chưa chọn xong — bắt buộc chọn lại từ danh sách gợi ý
                         document.getElementById('reg-ten-select').value = '';
 
-                        let matches = Object.entries(masterTasks)
-                            .filter(([k, t]) => vnNoTone(t.tenNhiemVu).includes(term));
-                        matches.sort((a, b) => a[1].tenNhiemVu.localeCompare(b[1].tenNhiemVu, 'vi'));
+                        let matches;
+                        if (!rawTerm) {
+                            // Chưa gõ tìm kiếm: nếu đã chọn Nhóm/Phân loại, gợi ý sẵn các nhiệm vụ của nhóm đó
+                            if (!selectedGroup) {
+                                list.innerHTML = '';
+                                list.style.display = 'none';
+                                return;
+                            }
+                            matches = Object.entries(masterTasks).filter(([k, t]) => t.nhomNhiemVu === selectedGroup);
+                        } else {
+                            // Đã gõ tìm kiếm: khớp theo từng từ khóa (không cần gõ liên tiếp, không cần đúng thứ tự)
+                            matches = Object.entries(masterTasks)
+                                .filter(([k, t]) => vnMultiWordMatch(t.tenNhiemVu, rawTerm));
+                        }
+
+                        // Ưu tiên nhiệm vụ thuộc đúng Nhóm/Phân loại đang chọn lên đầu danh sách, sau đó sắp theo alphabet
+                        matches.sort((a, b) => {
+                            if (selectedGroup) {
+                                const aIn = a[1].nhomNhiemVu === selectedGroup ? 0 : 1;
+                                const bIn = b[1].nhomNhiemVu === selectedGroup ? 0 : 1;
+                                if (aIn !== bIn) return aIn - bIn;
+                            }
+                            return a[1].tenNhiemVu.localeCompare(b[1].tenNhiemVu, 'vi');
+                        });
 
                         if (matches.length === 0) {
-                            list.innerHTML = term
+                            list.innerHTML = rawTerm
                                 ? '<div style="padding:10px;color:var(--gray);font-size:0.85rem;">Không tìm thấy nhiệm vụ phù hợp trong danh mục. Tích "Công việc khác" để nhập mới.</div>'
                                 : '';
-                            list.style.display = term ? 'block' : 'none';
+                            list.style.display = rawTerm ? 'block' : 'none';
                             return;
                         }
 
@@ -5075,34 +5114,114 @@
                     window.filterPSTasks = function () {
                         if (document.getElementById('ps-is-custom').checked) return;
 
-                        const nhom = document.getElementById('ps-loai').value;
-                        const sel = document.getElementById('ps-ten-select');
-                        sel.innerHTML = '<option value="">-- Chọn công việc trong danh mục --</option>';
+                        // Đổi Nhóm/Phân loại: reset lựa chọn đang gõ, để người dùng tìm/chọn lại theo nhóm mới
+                        document.getElementById('ps-ten-search').value = '';
+                        document.getElementById('ps-ten-select').value = '';
+                        const list = document.getElementById('ps-ten-search-list');
+                        list.style.display = 'none';
 
-                        Object.keys(masterTasks).forEach(k => {
-                            const t = masterTasks[k];
-                            if (t.nhomNhiemVu === nhom) {
-                                sel.appendChild(new Option(t.tenNhiemVu, k));
-                            }
-                        });
                         document.getElementById('ps-dvt').value = 'lượt';
                         document.getElementById('ps-chitieu').value = '1';
                         document.getElementById('ps-uutien').value = 'Trung bình';
                     }
 
-                    window.onSelectPSTask = function () {
-                        const selId = document.getElementById('ps-ten-select').value;
-                        if (!selId) return;
-                        const t = masterTasks[selId];
-                        if (t) {
-                            document.getElementById('ps-dvt').value = t.donViTinh;
-                            document.getElementById('ps-chitieu').value = t.chiTieuMacDinh || (t.donViTinh === '%' ? '100' : '1');
-                            document.getElementById('ps-uutien').value = t.uutienMacDinh;
+                    // Click vào ô tìm kiếm khi đã có sẵn text (do vừa chọn 1 nhiệm vụ) → xóa text, mở lại toàn bộ dropdown để tìm nhiệm vụ mới
+                    window.onPSTenSearchClick = function () {
+                        const input = document.getElementById('ps-ten-search');
+                        if (!input) return;
+                        if (input.value) {
+                            input.value = '';
+                            document.getElementById('ps-ten-select').value = '';
                         }
-                    }
+                        onPSTenSearchInput();
+                    };
+
+                    // === [Tìm kiếm nhiệm vụ phát sinh] Gõ không dấu, không cần liên tiếp/đúng thứ tự để tìm nhiệm vụ đã có trong danh mục.
+                    // Nếu đã chọn sẵn Nhóm/Phân loại mà chưa gõ gì thì hiển thị luôn các nhiệm vụ thuộc nhóm đó để chọn nhanh.
+                    window.onPSTenSearchInput = function () {
+                        const input = document.getElementById('ps-ten-search');
+                        const list = document.getElementById('ps-ten-search-list');
+                        const rawTerm = input.value.trim();
+                        const selectedGroup = document.getElementById('ps-loai').value;
+
+                        document.getElementById('ps-ten-select').value = '';
+
+                        let matches;
+                        if (!rawTerm) {
+                            if (!selectedGroup) {
+                                list.innerHTML = '';
+                                list.style.display = 'none';
+                                return;
+                            }
+                            matches = Object.entries(masterTasks).filter(([k, t]) => t.nhomNhiemVu === selectedGroup);
+                        } else {
+                            matches = Object.entries(masterTasks)
+                                .filter(([k, t]) => vnMultiWordMatch(t.tenNhiemVu, rawTerm));
+                        }
+
+                        matches.sort((a, b) => {
+                            if (selectedGroup) {
+                                const aIn = a[1].nhomNhiemVu === selectedGroup ? 0 : 1;
+                                const bIn = b[1].nhomNhiemVu === selectedGroup ? 0 : 1;
+                                if (aIn !== bIn) return aIn - bIn;
+                            }
+                            return a[1].tenNhiemVu.localeCompare(b[1].tenNhiemVu, 'vi');
+                        });
+
+                        if (matches.length === 0) {
+                            list.innerHTML = rawTerm
+                                ? '<div style="padding:10px;color:var(--gray);font-size:0.85rem;">Không tìm thấy nhiệm vụ phù hợp trong danh mục. Tích "Công việc khác" để nhập mới.</div>'
+                                : '';
+                            list.style.display = rawTerm ? 'block' : 'none';
+                            return;
+                        }
+
+                        const shown = matches.slice(0, 50);
+                        list.innerHTML = '';
+                        shown.forEach(([key, t]) => {
+                            const div = document.createElement('div');
+                            div.classList.add('autocomplete-item');
+                            div.innerHTML = `<i class="fas fa-tasks" style="color:var(--warning); margin-right:5px; font-size:0.8rem;"></i> ${esc(t.tenNhiemVu)} <span style="float:right; color:var(--gray); font-size:0.78rem;">${esc(t.nhomNhiemVu)}</span>`;
+                            div.addEventListener('click', function (e) {
+                                e.stopPropagation();
+                                selectPSTenSearchItem(key);
+                            });
+                            list.appendChild(div);
+                        });
+                        if (matches.length > shown.length) {
+                            const more = document.createElement('div');
+                            more.style.cssText = 'padding:6px 10px;color:var(--gray);font-size:0.78rem;text-align:center;';
+                            more.innerText = `... và ${matches.length - shown.length} kết quả khác, gõ thêm để thu hẹp`;
+                            list.appendChild(more);
+                        }
+                        list.style.display = 'block';
+                    };
+
+                    // Chọn 1 nhiệm vụ từ ô tìm kiếm → tự gán Nhóm/Phân loại + DVT + Chỉ tiêu + Ưu tiên mặc định
+                    window.selectPSTenSearchItem = function (key) {
+                        const t = masterTasks[key];
+                        if (!t) return;
+                        document.getElementById('ps-ten-select').value = key;
+                        document.getElementById('ps-ten-search').value = t.tenNhiemVu;
+                        document.getElementById('ps-loai').value = t.nhomNhiemVu;
+                        document.getElementById('ps-dvt').value = t.donViTinh;
+                        document.getElementById('ps-chitieu').value = t.chiTieuMacDinh || (t.donViTinh === '%' ? '100' : '1');
+                        document.getElementById('ps-uutien').value = t.uutienMacDinh || 'Trung bình';
+                        document.getElementById('ps-ten-search-list').style.display = 'none';
+                    };
+
+                    document.addEventListener('click', function (e) {
+                        const input = document.getElementById('ps-ten-search');
+                        const list = document.getElementById('ps-ten-search-list');
+                        if (list && input && e.target !== input && !list.contains(e.target)) {
+                            list.style.display = 'none';
+                        }
+                    });
 
                     window.toggleCustomPSTask = function () {
                         const isCustom = document.getElementById('ps-is-custom').checked;
+                        const searchInput = document.getElementById('ps-ten-search');
+                        const list = document.getElementById('ps-ten-search-list');
                         const sel = document.getElementById('ps-ten-select');
                         const inp = document.getElementById('ps-ten-input');
                         const dvt = document.getElementById('ps-dvt');
@@ -5110,7 +5229,9 @@
                         const uutien = document.getElementById('ps-uutien');
 
                         if (isCustom) {
-                            sel.style.display = 'none';
+                            searchInput.style.display = 'none';
+                            list.style.display = 'none';
+                            sel.value = '';
                             inp.style.display = 'block';
 
                             dvt.readOnly = false;
@@ -5121,7 +5242,7 @@
                             if (!chitieu.value) chitieu.value = '1';
                         } else {
                             inp.style.display = 'none';
-                            sel.style.display = 'block';
+                            searchInput.style.display = 'block';
 
                             dvt.readOnly = true;
                             chitieu.readOnly = false; // [FIX] Cho phép sửa chỉ tiêu khối lượng đã làm
