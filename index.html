@@ -5352,6 +5352,19 @@
                         showLoader(true);
                         try {
                             const newId = `PS-${dateStr.replace(/-/g, '')}-${Date.now().toString().slice(-6)}`;
+
+                            // [AUTO-COMPLETE] Admin thêm → tự đánh giá hoàn thành 100% ngay khi lưu
+                            const autoComplete = DEVICE_USER === 'Admin';
+                            const autoDanhGia = autoComplete ? {
+                                tiLeHoanThanh: 100,
+                                soLuongThucTe: chiTieu,
+                                ketQua: 'Hoàn thành',
+                                lyDoKhongDat: '',
+                                thoiDiemDanhGia: Date.now(),
+                                nguoiDanhGia: 'Admin',
+                                tuDongChot: false
+                            } : null;
+
                             const newTask = {
                                 id: newId,
                                 tenCongViec: ten,
@@ -5361,28 +5374,27 @@
                                 nguoiPhuTrach: nguoi,
                                 nguoiPhoiHop: '',
                                 mucDoUuTien: uutien,
-                                trangThai: 'dang_thuc_hien', // ← Yêu cầu đánh giá kết quả sau (không tự hoàn thành 100%)
+                                trangThai: autoComplete ? 'hoan_thanh' : 'dang_thuc_hien',
                                 isPhatSinh: true,
-                                // [RBAC] Admin thêm → tự duyệt nhiệm vụ mới; cán bộ thêm → chờ Admin phê duyệt
-                                daDuyetNhiemVu: DEVICE_USER === 'Admin',
-                                danhGia: null // ← Cán bộ phải đánh giá qua giao diện bình thưỜng
+                                daDuyetNhiemVu: autoComplete,
+                                danhGia: autoDanhGia
                             };
 
                             const updates = {};
                             updates[`keHoachNgay/${dateStr}/${newId}`] = newTask;
                             await update(ref(db), updates);
 
-                            showToast(DEVICE_USER === 'Admin'
-                                ? "Ghi nhận thành công! Hãy đánh giá kết quả ở danh sách đánh giá."
-                                : "Đã gửi nhiệm vụ mới! Đang chờ Admin phê duyệt.");
+                            showToast(autoComplete
+                                ? '✅ Ghi nhận và xác nhận hoàn thành thành công!'
+                                : 'Đã gửi nhiệm vụ mới! Đang chờ Admin phê duyệt.');
                             closePhatSinhModal();
                             loadTasksForEval(); // Reload UI
                         } catch (e) {
                             console.error(e);
-                            showToast("Lỗi khi ghi nhận công việc phát sinh", "error");
+                            showToast('Lỗi khi ghi nhận công việc phát sinh', 'error');
                         }
                         showLoader(false);
-                    }
+                    }
 
                     window.filterEvalList = function () {
                         const staff = document.getElementById('eval-filter-staff').value;
