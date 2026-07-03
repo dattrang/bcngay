@@ -7767,14 +7767,15 @@
                                         const w = t.mucDoUuTien === 'Cao' ? 3 : t.mucDoUuTien === 'Thấp' ? 1 : 2;
                                         const isDone = pct >= 100 || dg.ketQua === 'Hoàn thành';
 
-                                        // BỎ QUA nếu là nhiệm vụ Dài ngày - Tích 1 lần mà CHƯA ĐẾN HẠN và chưa làm
-                                        // Nếu ĐÃ QUA HẠN → vẫn tính bình thường (sẽ bị phạt là "chưa thực hiện")
+                                        // BỎ QUA hoàn toàn nếu là nhiệm vụ Dài ngày - Tích 1 lần mà CHƯA ĐẾN HẠN
+                                        // (dù đã tích hay chưa → đều không tính vào tổng chỉ tiêu)
+                                        // Chỉ tính điểm khi dStr >= hanHoanThanh:
+                                        //   - Hoàn thành đúng/quá hạn → cộng điểm bình thường
+                                        //   - Chưa làm khi quá hạn    → bị phạt (chuaThucHien)
                                         const isOneTimeNVXN = t.isOneTimeNVXN || (t.nvxnLinkId && t.ghiChu && t.ghiChu.includes('tích Hoàn thành'));
-                                        if (isOneTimeNVXN && !isDone && t.hanHoanThanh && dStr < t.hanHoanThanh) {
-                                            return; // Chưa đến hạn, chưa làm → bỏ qua, không tính điểm
+                                        if (isOneTimeNVXN && t.hanHoanThanh && dStr < t.hanHoanThanh) {
+                                            return; // Chưa đến hạn → bỏ qua hoàn toàn, không tính điểm
                                         }
-                                        // [NVXN LOCK] Nếu đã bị chốt (dStr >= hanHoanThanh hoặc qua 12:00 ngày kế)
-                                        // nhưng vẫn chưa hoàn thành → KHÔNG bỏ qua, để code bên dưới tính là quá hạn (phạt)
 
                                         // [FIX] Chuyển ngày → chỉ đếm daChuyenNgay, KHÔNG tính vào tongCV/sumWP
                                         const isTransferred = dg.ketQua === 'Chuyển sang ngày khác';
