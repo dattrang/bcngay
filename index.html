@@ -5352,19 +5352,6 @@
                         showLoader(true);
                         try {
                             const newId = `PS-${dateStr.replace(/-/g, '')}-${Date.now().toString().slice(-6)}`;
-
-                            // [AUTO-COMPLETE] Admin thêm → tự đánh giá hoàn thành 100% ngay khi lưu
-                            const autoComplete = DEVICE_USER === 'Admin';
-                            const autoDanhGia = autoComplete ? {
-                                tiLeHoanThanh: 100,
-                                soLuongThucTe: chiTieu,
-                                ketQua: 'Hoàn thành',
-                                lyDoKhongDat: '',
-                                thoiDiemDanhGia: Date.now(),
-                                nguoiDanhGia: 'Admin',
-                                tuDongChot: false
-                            } : null;
-
                             const newTask = {
                                 id: newId,
                                 tenCongViec: ten,
@@ -5374,27 +5361,43 @@
                                 nguoiPhuTrach: nguoi,
                                 nguoiPhoiHop: '',
                                 mucDoUuTien: uutien,
-                                trangThai: autoComplete ? 'hoan_thanh' : 'dang_thuc_hien',
+                                trangThai: 'hoan_thanh', // [FIX] Nhiệm vụ phát sinh mặc định coi là đã làm xong khi ghi nhận
                                 isPhatSinh: true,
-                                daDuyetNhiemVu: autoComplete,
-                                danhGia: autoDanhGia
+                                // [RBAC] Admin thêm → tự duyệt nhiệm vụ mới; cán bộ thêm → chờ Admin phê duyệt
+                                daDuyetNhiemVu: DEVICE_USER === 'Admin',
+                                // [FIX] Tự động xác nhận hoàn thành 100% ngay khi thêm — không bắt đánh giá lại thủ công
+                                danhGia: {
+                                    ketQua: 'Hoàn thành',
+                                    tiLeHoanThanh: 100,
+                                    soLuongThucTe: chiTieu,
+                                    lyDoKhongDat: '',
+                                    ghiChuThem: '',
+                                    nguyenNhanKhachQuan: false,
+                                    nguyenNhanChuQuan: false,
+                                    baiHocKinhNghiem: '',
+                                    chuyenSangNgay: '',
+                                    thoiDiemDanhGia: Date.now(),
+                                    lichSu: [{ thoiGian: new Date().toLocaleString('vi-VN'), hanhDong: 'Ghi nhận nhiệm vụ phát sinh — tự động xác nhận hoàn thành' }],
+                                    daChuyenTiep: false,
+                                    daDuyet: DEVICE_USER === 'Admin' // Admin thêm → duyệt luôn; cán bộ thêm → chờ Admin duyệt kết quả
+                                }
                             };
 
                             const updates = {};
                             updates[`keHoachNgay/${dateStr}/${newId}`] = newTask;
                             await update(ref(db), updates);
 
-                            showToast(autoComplete
-                                ? '✅ Ghi nhận và xác nhận hoàn thành thành công!'
-                                : 'Đã gửi nhiệm vụ mới! Đang chờ Admin phê duyệt.');
+                            showToast(DEVICE_USER === 'Admin'
+                                ? "Ghi nhận thành công! Nhiệm vụ đã được tự động xác nhận hoàn thành."
+                                : "Đã gửi nhiệm vụ mới (đã tự xác nhận hoàn thành)! Đang chờ Admin phê duyệt.");
                             closePhatSinhModal();
                             loadTasksForEval(); // Reload UI
                         } catch (e) {
                             console.error(e);
-                            showToast('Lỗi khi ghi nhận công việc phát sinh', 'error');
+                            showToast("Lỗi khi ghi nhận công việc phát sinh", "error");
                         }
                         showLoader(false);
-                    }
+                    }
 
                     window.filterEvalList = function () {
                         const staff = document.getElementById('eval-filter-staff').value;
@@ -5794,6 +5797,15 @@
                             const progEl = document.getElementById(`eval-prog-${id}`);
                             let prog = progEl ? (parseInt(progEl.value) || 0) : 0;
                             if (prog > 100) prog = 100; // Cập nhật: Chỉ tính tối đa 100% vào điểm trung bình
+
+                            // [FIX] Nhiệm vụ dài ngày - Tích 1 lần: nếu CHƯA hoàn thành và CHƯA quá hạn
+                            // → chưa tính vào điểm ngày hôm nay (không bị phạt vì "chưa tới hạn")
+                            const isOneTimeNVXN = t.isOneTimeNVXN || (t.nvxnLinkId && t.ghiChu && t.ghiChu.includes('tích Hoàn thành'));
+                            if (isOneTimeNVXN && prog < 100 && curKQ !== 'Hoàn thành' && t.hanHoanThanh) {
+                                const evalDateStr = document.getElementById('eval-date') ? document.getElementById('eval-date').value : getTodayYMD();
+                                if (evalDateStr < t.hanHoanThanh) continue; // Chưa quá hạn, chưa làm → bỏ qua, không tính điểm
+                            }
+
                             sumWeight += w; sumWeightedProg += (prog * w);
                         }
                         let avg = sumWeight > 0 ? Math.round(sumWeightedProg / sumWeight) : 0;
@@ -6070,7 +6082,7 @@
                                     updates[`keHoachNgay/${taskDateStr}/${key}/danhGia`].daChuyenTiep = true;
                                 }
 
-                                if (res === 'Hoàn thành' && t.nvxnLinkId) {
+                                if (t.nvxnLinkId) {
                                     if (!nvxnCompletions.includes(t.nvxnLinkId)) nvxnCompletions.push(t.nvxnLinkId);
                                 }
                             }
@@ -6084,7 +6096,7 @@
                             // không làm sập luồng lưu đánh giá chính
                             for (const linkId of nvxnCompletions) {
                                 try {
-                                    await nvxnHandleCompletion(linkId);
+                                    await nvxnRecalcAfterEval(linkId);
                                 } catch (nvxnErr) {
                                     console.error('[NVDN] Lỗi writeback linkId', linkId, nvxnErr);
                                 }
@@ -7779,15 +7791,14 @@
                                         const w = t.mucDoUuTien === 'Cao' ? 3 : t.mucDoUuTien === 'Thấp' ? 1 : 2;
                                         const isDone = pct >= 100 || dg.ketQua === 'Hoàn thành';
 
-                                        // BỎ QUA hoàn toàn nếu là nhiệm vụ Dài ngày - Tích 1 lần mà CHƯA ĐẾN HẠN
-                                        // (dù đã tích hay chưa → đều không tính vào tổng chỉ tiêu)
-                                        // Chỉ tính điểm khi dStr >= hanHoanThanh:
-                                        //   - Hoàn thành đúng/quá hạn → cộng điểm bình thường
-                                        //   - Chưa làm khi quá hạn    → bị phạt (chuaThucHien)
+                                        // BỎ QUA nếu là nhiệm vụ Dài ngày - Tích 1 lần mà CHƯA ĐẾN HẠN và chưa làm
+                                        // Nếu ĐÃ QUA HẠN → vẫn tính bình thường (sẽ bị phạt là "chưa thực hiện")
                                         const isOneTimeNVXN = t.isOneTimeNVXN || (t.nvxnLinkId && t.ghiChu && t.ghiChu.includes('tích Hoàn thành'));
-                                        if (isOneTimeNVXN && t.hanHoanThanh && dStr < t.hanHoanThanh) {
-                                            return; // Chưa đến hạn → bỏ qua hoàn toàn, không tính điểm
+                                        if (isOneTimeNVXN && !isDone && t.hanHoanThanh && dStr < t.hanHoanThanh) {
+                                            return; // Chưa đến hạn, chưa làm → bỏ qua, không tính điểm
                                         }
+                                        // [NVXN LOCK] Nếu đã bị chốt (dStr >= hanHoanThanh hoặc qua 12:00 ngày kế)
+                                        // nhưng vẫn chưa hoàn thành → KHÔNG bỏ qua, để code bên dưới tính là quá hạn (phạt)
 
                                         // [FIX] Chuyển ngày → chỉ đếm daChuyenNgay, KHÔNG tính vào tongCV/sumWP
                                         const isTransferred = dg.ketQua === 'Chuyển sang ngày khác';
@@ -8434,6 +8445,104 @@
                                 showToast(`✅ "${task.tenCongViec}" đã hoàn thành — không hiện lại nữa.`);
                             }
                         } catch (e) { console.error('[NVDN] Lỗi xử lý hoàn thành:', e); }
+                    }
+
+                    // ── Gọi sau MỌI lần lưu đánh giá của 1 đầu việc có nvxnLinkId (kể cả sửa đánh giá
+                    //    ngày cũ / trễ hạn) — tính lại chỉ tiêu hôm nay & dọn việc phát sinh thừa ──
+                    async function nvxnRecalcAfterEval(linkId) {
+                        try {
+                            const snap = await get(child(ref(db), `nhiemVuDaiHan/${linkId}`));
+                            if (!snap.exists()) return;
+                            const task = { id: linkId, ...snap.val() };
+                            if (task.trangThai === 'hoan_thanh' && !nvxnIsQtyMode(task)) return; // đã chốt xong từ trước, không cần xử lý thêm
+                            const todayStr = getTodayYMD();
+
+                            if (nvxnIsQtyMode(task)) {
+                                // ── Tính lại tổng đã hoàn thành (từ ngày bắt đầu → hôm nay) ──
+                                const startD = task.ngayBatDau || todayStr;
+                                const qSnap = await get(query(ref(db, 'keHoachNgay'), orderByKey(), startAt(startD), endAt(todayStr)));
+                                let daHoanThanh = 0;
+                                if (qSnap.exists()) {
+                                    Object.values(qSnap.val()).forEach(dayData => {
+                                        Object.values(dayData || {}).forEach(dt => {
+                                            if (dt?.nvxnLinkId === linkId && dt.danhGia?.soLuongThucTe !== undefined) {
+                                                daHoanThanh += parseFloat(dt.danhGia.soLuongThucTe) || 0;
+                                            }
+                                        });
+                                    });
+                                }
+                                daHoanThanh = Math.min(daHoanThanh, task.tongSoLuong);
+                                const remaining = Math.max(0, task.tongSoLuong - daHoanThanh);
+
+                                // Tìm entry hôm nay (nếu có, chưa đánh giá) để cập nhật lại hoặc xóa
+                                const todaySnap = await get(child(ref(db), `keHoachNgay/${todayStr}`));
+                                const todayData = todaySnap.exists() ? todaySnap.val() : {};
+                                const todayEntryKey = Object.keys(todayData).find(k => todayData[k]?.nvxnLinkId === linkId && !todayData[k]?.danhGia?.thoiDiemDanhGia);
+
+                                if (remaining <= 0) {
+                                    // Đã đủ chỉ tiêu (nhờ tích bổ sung của ngày trước) → đóng nhiệm vụ,
+                                    // xóa luôn việc phát sinh hôm nay nếu có mà chưa đánh giá
+                                    const updates = {};
+                                    if (task.lapLai && task.lapLai !== 'khong') {
+                                        const nextDeadline = nvxnNextCycleDate(task.hanHoanThanh, task.lapLai);
+                                        const hist = task.lichSu || [];
+                                        hist.push({ thoiGian: new Date().toLocaleString('vi-VN'), hanhDong: `Hoàn thành chu kỳ (${task.tongSoLuong} ${task.dvt}) — do cập nhật đánh giá ngày trước — chu kỳ mới: ${formatDMY(nextDeadline)}` });
+                                        updates[`nhiemVuDaiHan/${linkId}/ngayBatDau`] = todayStr;
+                                        updates[`nhiemVuDaiHan/${linkId}/hanHoanThanh`] = nextDeadline;
+                                        updates[`nhiemVuDaiHan/${linkId}/lichSu`] = hist;
+                                        await nvxnWriteBackQlcv(task.qlcvTaskId, 'todo');
+                                    } else if (task.trangThai !== 'hoan_thanh') {
+                                        updates[`nhiemVuDaiHan/${linkId}/trangThai`] = 'hoan_thanh';
+                                        await nvxnWriteBackQlcv(task.qlcvTaskId, 'done');
+                                    }
+                                    if (todayEntryKey) updates[`keHoachNgay/${todayStr}/${todayEntryKey}`] = null;
+                                    if (Object.keys(updates).length) await update(ref(db), updates);
+                                    if (todayEntryKey) showToast(`ℹ️ "${task.tenCongViec}" đã đủ chỉ tiêu nhờ đánh giá vừa cập nhật — đã xóa việc phát sinh hôm nay.`);
+                                } else if (todayEntryKey) {
+                                    // Còn thiếu → tính lại chỉ tiêu hôm nay theo remaining mới
+                                    const daysLeft = Math.max(1, nvxnDaysBetween(todayStr, task.hanHoanThanh) + 1);
+                                    const todayTarget = Math.max(1, Math.ceil(remaining / daysLeft));
+                                    const overdue = todayStr > task.hanHoanThanh;
+                                    if (todayTarget !== todayData[todayEntryKey].chiTieu) {
+                                        await update(ref(db), {
+                                            [`keHoachNgay/${todayStr}/${todayEntryKey}/chiTieu`]: todayTarget,
+                                            [`keHoachNgay/${todayStr}/${todayEntryKey}/ghiChu`]: overdue
+                                                ? `⚠ Đã quá hạn — còn thiếu ${remaining}/${task.tongSoLuong} ${task.dvt || ''} (hạn ${formatDMY(task.hanHoanThanh)})`
+                                                : `Còn lại ${remaining}/${task.tongSoLuong} ${task.dvt || ''} — hạn ${formatDMY(task.hanHoanThanh)}`
+                                        });
+                                        showToast(`🔄 Đã tính lại chỉ tiêu hôm nay của "${task.tenCongViec}": ${todayTarget} ${task.dvt || ''}.`);
+                                    }
+                                }
+                            } else {
+                                // ── TÍCH 1 LẦN ──
+                                // Kiểm tra xem có bản ghi nào (kể cả ngày trước) đã đánh giá "Hoàn thành" chưa
+                                const startCheck = task.ngayBatDau || '2000-01-01';
+                                const qSnap = await get(query(ref(db, 'keHoachNgay'), orderByKey(), startAt(startCheck), endAt(todayStr)));
+                                let dayDone = false;
+                                if (qSnap.exists()) {
+                                    Object.values(qSnap.val()).forEach(dayData => {
+                                        Object.values(dayData || {}).forEach(dt => {
+                                            if (dt?.nvxnLinkId === linkId && dt.danhGia?.ketQua === 'Hoàn thành') dayDone = true;
+                                        });
+                                    });
+                                }
+
+                                if (dayDone) {
+                                    if (task.trangThai !== 'hoan_thanh') {
+                                        await nvxnHandleCompletion(linkId);
+                                    }
+                                    // Xóa việc phát sinh hôm nay nếu đã lỡ sinh ra nhưng chưa đánh giá,
+                                    // vì nhiệm vụ đã được tích hoàn thành ở một ngày trước đó
+                                    const todaySnap = await get(child(ref(db), `keHoachNgay/${todayStr}`));
+                                    const todayData = todaySnap.exists() ? todaySnap.val() : {};
+                                    const staleKey = Object.keys(todayData).find(k => todayData[k]?.nvxnLinkId === linkId && !todayData[k]?.danhGia?.thoiDiemDanhGia);
+                                    if (staleKey) {
+                                        await update(ref(db), { [`keHoachNgay/${todayStr}/${staleKey}`]: null });
+                                        showToast(`ℹ️ Đã xóa việc "${task.tenCongViec}" phát sinh hôm nay vì đã hoàn thành trước đó.`);
+                                    }
+                                }
+                            }
+                        } catch (e) { console.error('[NVDN] Lỗi tính lại sau đánh giá:', e); }
                     }
 
                     function nvxnStatusInfoSimple(task) {
