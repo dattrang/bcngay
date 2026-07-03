@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -5522,7 +5522,8 @@
                                 ? `<span class="badge" style="background:#e2e8f0; color:#334155; border:1px solid #cbd5e1; cursor:pointer;" onclick="event.stopPropagation(); approveTask('${task.id}')"><i class="fas fa-check"></i> Duyệt</span>`
                                 : `<span class="badge" style="background:#e2e8f0; color:#64748b;">Chưa duyệt</span>`);
                         // [NVXN LOCK] entry bị khóa → disable tất cả controls (ưu tiên cao hơn isApproved)
-                        const disAttr = (isNvxnLocked || isApproved) ? 'disabled' : '';
+                        // Admin van duoc chinh sua ke ca khi da duyet; Non-Admin moi bi khoa khi da duyet
+                        const disAttr = (isNvxnLocked || (isApproved && !IS_ADMIN)) ? 'disabled' : '';
 
                         // Badge "Đã chốt" cho entry NVXN bị khóa
                         const nvxnLockedBadge = isNvxnLocked
@@ -5567,20 +5568,20 @@
 
                 <div class="eval-quick-actions">
                     <button class="eval-quick-btn ${btnDoneClass}" id="qbtn-done-${task.id}" ${disAttr}
-                            onclick="${isApproved ? 'event.stopPropagation();' : `onQuickAction('${task.id}',${chiTieu},'done');event.stopPropagation();`}">
+                            onclick="${(!isApproved || IS_ADMIN) ? `onQuickAction('${task.id}',${chiTieu},'done');event.stopPropagation();` : 'event.stopPropagation();'}">
                         ✅ Hoàn thành
                     </button>
                     <button class="eval-quick-btn ${btnPartClass}" id="qbtn-part-${task.id}" ${disAttr}
-                            onclick="${isApproved ? 'event.stopPropagation();' : `onQuickAction('${task.id}',${chiTieu},'part');event.stopPropagation();`}">
+                            onclick="${(!isApproved || IS_ADMIN) ? `onQuickAction('${task.id}',${chiTieu},'part');event.stopPropagation();` : 'event.stopPropagation();'}">
                         ⏳ Một phần
                     </button>
                     <button class="eval-quick-btn ${btnNoneClass}" id="qbtn-none-${task.id}" ${disAttr}
-                            onclick="${isApproved ? 'event.stopPropagation();' : `onQuickAction('${task.id}',${chiTieu},'none');event.stopPropagation();`}">
+                            onclick="${(!isApproved || IS_ADMIN) ? `onQuickAction('${task.id}',${chiTieu},'none');event.stopPropagation();` : 'event.stopPropagation();'}">
                         ❌ Chưa TH
                     </button>
                     ${IS_ADMIN ? `
                     <button class="eval-quick-btn ${btnMoveClass}" id="qbtn-move-${task.id}" ${disAttr}
-                            onclick="${isApproved ? 'event.stopPropagation();' : `onQuickAction('${task.id}',${chiTieu},'move');event.stopPropagation();`}">
+                            onclick="${(!isApproved || IS_ADMIN) ? `onQuickAction('${task.id}',${chiTieu},'move');event.stopPropagation();` : 'event.stopPropagation();'}">
                         📅 Chuyển ngày
                     </button>
                     ` : ''}
