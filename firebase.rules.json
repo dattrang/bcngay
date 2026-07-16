@@ -23,6 +23,10 @@
       "autoLockFlags": {
         ".read": true,
         ".write": true  // Mở ghi cho cờ giao dịch chống xung đột lúc 12:00
+      },
+      "aiApiKey": {
+        ".read": true,
+        ".write": true
       }
     }
   }
