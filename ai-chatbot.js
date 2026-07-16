@@ -147,8 +147,10 @@ function findInTasks(name,obj){
   let best=null,sc=0;
   for(const[id,t]of Object.entries(obj||{})){
     const s=fuzz(name,t.tenCongViec||'');
-    if(s>sc&&s>=0.28){best={id,t};sc=s;}
+    if(s>sc&&s>=0.2){best={id,t};sc=s;}
   }
+  if(best) console.log('[AI] findInTasks "'+name+'" → "'+best.t.tenCongViec+'" score='+sc.toFixed(2));
+  else console.warn('[AI] findInTasks "'+name+'" → KHÔNG KHỚP (max score='+sc.toFixed(2)+')');
   return best;
 }
 function findInMaster(name){
@@ -156,8 +158,10 @@ function findInMaster(name){
   let best=null,sc=0;
   for(const[id,t]of Object.entries(getMasterTasks()||{})){
     const s=fuzz(name,t.tenNhiemVu||'');
-    if(s>sc&&s>=0.28){best={id,t};sc=s;}
+    if(s>sc&&s>=0.2){best={id,t};sc=s;}
   }
+  if(best) console.log('[AI] findInMaster "'+name+'" → "'+best.t.tenNhiemVu+'" score='+sc.toFixed(2));
+  else console.warn('[AI] findInMaster "'+name+'" → Không khớp, sẽ tạo mới');
   return best;
 }
 function findStaff(name){
@@ -179,20 +183,26 @@ async function buildActions(parsed){
   const sMap={done:'Hoàn thành',partial:'Hoàn thành một phần',not_done:'Chưa thực hiện'};
   
   // Xác định người phụ trách mặc định
-  const defaultNguoi = getIS_ADMIN() ? 'Admin' : (getDeviceUser() || '');
-  const fallbackDate = getTodayYMD ? getTodayYMD() : new Date().toISOString().slice(0,10);
+  const isAdmin = typeof getIS_ADMIN === 'function' ? getIS_ADMIN() : getIS_ADMIN;
+  const deviceUser = typeof getDeviceUser === 'function' ? getDeviceUser() : getDeviceUser;
+  const defaultNguoi = isAdmin ? 'Admin' : (deviceUser || '');
+  const fallbackDate = typeof getTodayYMD === 'function' ? getTodayYMD() : new Date().toISOString().slice(0,10);
+
+  console.log('[AI] buildActions - isAdmin:',isAdmin,' deviceUser:',deviceUser,' fallbackDate:',fallbackDate);
+  console.log('[AI] parsed.results:',parsed.results?.length,'parsed.plans:',parsed.plans?.length);
 
   for(const r of(parsed.results||[])){
     if(!r.date) r.date = fallbackDate;
     let dt={};
     try{
       const s=await get(child(ref(db),'keHoachNgay/'+r.date));
-      if(s.exists())dt=s.val();
-    }catch(e){}
+      if(s.exists()){dt=s.val();console.log('[AI] Firebase keHoachNgay/'+r.date+': tìm thấy',Object.keys(dt).length,'task');}
+      else{console.warn('[AI] Firebase keHoachNgay/'+r.date+': KHÔNG CÓ DỮ LIỆU');}
+    }catch(e){console.error('[AI] Lỗi đọc Firebase:',e);}
     const m=findInTasks(r.taskName,dt);
     
     // Gán cán bộ
-    const finalNguoi = getIS_ADMIN() ? (findStaff(r.assignee) || findStaff(parsed.globalAssignee) || 'Admin') : (getDeviceUser() || '');
+    const finalNguoi = isAdmin ? (findStaff(r.assignee) || findStaff(parsed.globalAssignee) || 'Admin') : (deviceUser || '');
     
     if(m){
       acts.push({type:'EVAL',date:r.date,id:m.id,taskName:m.t.tenCongViec,
@@ -263,8 +273,9 @@ function renderPreview(acts){
 
 // ── Execute to Firebase ──
 window.aiExecute=async function(){
-  const { db, ref, update, getIS_ADMIN, getDeviceUser, showLoader, showToast, nvxnSyncDailyEntries } = getAiGlobals();
+  const { db, ref, get, child, update, getIS_ADMIN, getDeviceUser, showLoader, showToast, nvxnSyncDailyEntries, getTodayYMD } = getAiGlobals();
   if(!_pending)return;
+  console.log('[AI] aiExecute - _pending:',JSON.stringify(_pending,null,2));
   $('ai-preview').style.display='none';
   showLoader(true);
   const updates={},now=Date.now();
@@ -312,6 +323,8 @@ window.aiExecute=async function(){
         };
       }
     }
+    console.log('[AI] updates object keys:',Object.keys(updates));
+    console.log('[AI] updates chi tiết:',JSON.stringify(updates,null,2));
     await update(ref(db),updates);
     const ev=_pending.filter(a=>a.type==='EVAL').length;
     const ps=_pending.filter(a=>a.type==='PHAT_SINH').length;
