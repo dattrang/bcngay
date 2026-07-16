@@ -81,12 +81,18 @@ window.toggleAIKey=function(){$('ai-key-row').classList.toggle('show');};
 async function callDeepSeek(text){
   const { getTodayYMD } = getAiGlobals();
   if(!_aiKey)throw new Error('Chưa có API key. Nhấn ⚙️ để nhập!');
-  const sys='Phân tích báo cáo công tác PCCC tiếng Việt. Hôm nay: '+getTodayYMD()+'.\n'
-    +'Trích xuất: results (từ "Kết quả công tác") và plans (từ "Chương trình công tác"). Nếu văn bản không có tiêu đề rõ ràng, tự suy luận ngữ cảnh.\n'
-    +'Nếu người dùng yêu cầu đổi/sửa tên nhiệm vụ (vd: "nhiệm vụ A sửa thành B"), hãy lấy tên mới (B) làm "taskName". Nếu có yêu cầu sửa đổi, BẮT BUỘC TRẢ VỀ TOÀN BỘ JSON TỪ ĐẦU đã cập nhật.\n'
-    +'LƯU Ý CỰC KỲ QUAN TRỌNG: Nếu có lệnh giao việc chung (vd: "giao cho [Tên]"), BẮT BUỘC điền vào "globalAssignee".\n'
-    +'BẠN ĐANG TRONG CHẾ ĐỘ THINKING. HÃY TRẢ VỀ ĐÚNG CẤU TRÚC JSON DƯỚI ĐÂY (không giải thích thêm):\n'
-    +'{"globalAssignee":"Tên cán bộ nếu có","results":[{"date":"YYYY-MM-DD","taskName":"Tên cv","quantity":null,"unit":"lượt","status":"done","assignee":null}],"plans":[{"date":"YYYY-MM-DD","taskName":"Tên cv","quantity":null,"unit":"lượt","assignee":null}]}';
+  const sys='Bạn là trợ lý AI thông minh chuyên phân tích báo cáo công tác PCCC tiếng Việt. Hôm nay: '+getTodayYMD()+'.\n\n'
+    +'## NĂNG LỰC TƯ DUY VÀ SUY LUẬN:\n'
+    +'- Nếu văn bản KHÔNG có tiêu đề rõ ràng "Kết quả" hay "Chương trình", hãy SUY LUẬN ngữ cảnh: nội dung đã xảy ra = results, nội dung chưa xảy ra/dự kiến = plans.\n'
+    +'- Nếu ngày không được nêu rõ, suy luận: "hôm nay"/"sáng nay"/"chiều nay" = ngày hiện tại, "ngày mai"/"tuần tới" = ngày phù hợp.\n'
+    +'- Nếu số lượng không rõ (vd: "xong rồi", "đã làm", "hoàn thành"), suy luận status="done", quantity=null.\n'
+    +'- Nếu nội dung là câu hỏi hoặc yêu cầu sửa đổi (không phải báo cáo), hãy trả về {"results":[], "plans":[], "message": "<phản hồi bằng tiếng Việt>"}\n'
+    +'- Nếu người dùng yêu cầu đổi/sửa tên nhiệm vụ (vd: "nhiệm vụ A sửa thành B"), hãy lấy tên mới (B) làm "taskName". Nếu có yêu cầu sửa đổi, BẮT BUỘC TRẢ VỀ TOÀN BỘ JSON TỪ ĐẦU đã cập nhật.\n\n'
+    +'## QUY TẮC BẮT BUỘC:\n'
+    +'- Nếu có lệnh giao việc chung (vd: "giao cho [Tên]", "[Tên] phụ trách"), BẮT BUỘC điền vào "globalAssignee".\n'
+    +'- Nếu status không rõ: có chữ "chưa", "không", "bỏ sót" = not_done; có chữ "một phần", "đang", "còn" = partial; còn lại = done.\n'
+    +'- Trả về ĐÚNG CẤU TRÚC JSON (không giải thích thêm, không markdown ngoài JSON):\n'
+    +'{"globalAssignee":"Tên cán bộ nếu có","results":[{"date":"YYYY-MM-DD","taskName":"Tên cv","quantity":null,"unit":"lượt","status":"done","assignee":null}],"plans":[{"date":"YYYY-MM-DD","taskName":"Tên cv","quantity":null,"unit":"lượt","assignee":null}],"message":null}';
   
   if(_chatHistory.length === 0){
     _chatHistory.push({role:'system',content:sys});
@@ -121,6 +127,15 @@ async function callDeepSeek(text){
     _chatHistory.push({role:'assistant',content:jsonStr.trim()}); // Lưu vào history dạng JSON chuẩn
     return parsed;
   } catch(err) {
+    // Thử parse một phần nếu AI trả về text kèm JSON
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if(jsonMatch){
+      try{
+        const parsed2 = JSON.parse(jsonMatch[0]);
+        _chatHistory.push({role:'assistant',content:jsonMatch[0]});
+        return parsed2;
+      }catch(e2){}
+    }
     _chatHistory.pop(); // Xóa tin nhắn user vừa rồi nếu AI lỗi
     console.error('Lỗi parse JSON:', jsonStr);
     throw new Error('AI trả về sai định dạng. Vui lòng thử lại!');
@@ -310,6 +325,8 @@ window.aiExecute=async function(){
     _chatHistory=[]; // Xóa phiên khi đã thành công
     showToast('Chatbot AI đã cập nhật xong!','success');
     try{await nvxnSyncDailyEntries();}catch(e){}
+    // Kiểm tra công việc chưa đánh giá sau khi lưu
+    setTimeout(()=>checkUnevaluatedTasks(db,ref,get,child,getTodayYMD),1200);
   }catch(e){addMsg('bot','❌ Lỗi: '+window.esc(e.message));}
   showLoader(false);
 };
@@ -319,6 +336,56 @@ window.aiCancel=function(){
   _pending=null;
   _chatHistory=[]; // Hủy là bắt đầu lại từ đầu
   addMsg('bot','Đã hủy. Bạn có thể dán lại báo cáo mới.');
+};
+
+// ── Kiểm tra công việc chưa đánh giá ──
+async function checkUnevaluatedTasks(db,ref,get,child,getTodayYMD){
+  try{
+    const today = getTodayYMD();
+    const snap = await get(child(ref(db),'keHoachNgay/'+today));
+    if(!snap.exists()) return;
+    const data = snap.val();
+    const unevaluated = [];
+    for(const [id,task] of Object.entries(data||{})){
+      const ten = task.tenCongViec || '';
+      if(!ten) continue;
+      // Công việc chưa có đánh giá hoặc đánh giá trống
+      const dg = task.danhGia;
+      const chuaDanhGia = !dg || !dg.ketQua || dg.ketQua === '';
+      if(chuaDanhGia){
+        unevaluated.push(ten);
+      }
+    }
+    if(unevaluated.length === 0) return;
+    // Hiển thị cảnh báo
+    let warn = '⚠️ <strong>Còn '+unevaluated.length+' công việc hôm nay chưa được đánh giá kết quả:</strong><br><ul style="margin:6px 0 8px 0;padding-left:18px">';
+    unevaluated.slice(0,5).forEach(t=>{ warn += '<li style="margin:2px 0">'+window.esc(t)+'</li>'; });
+    if(unevaluated.length > 5) warn += '<li style="color:#94a3b8">...và '+(unevaluated.length-5)+' công việc khác</li>';
+    warn += '</ul>';
+    warn += '💡 Bạn có muốn tôi hỗ trợ đánh giá các công việc này không?<br>';
+    warn += '<div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">';
+    warn += '<button onclick="aiPromptEvaluate()" style="background:#f59e0b;color:#fff;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.82rem;font-weight:600">📝 Đánh giá ngay</button>';
+    warn += '<button onclick="aiDismissWarn(this)" style="background:#e2e8f0;color:#475569;border:none;border-radius:6px;padding:6px 14px;cursor:pointer;font-size:.82rem">Bỏ qua</button>';
+    warn += '</div>';
+    addMsg('bot', warn);
+  }catch(e){ console.warn('checkUnevaluatedTasks lỗi:', e); }
+}
+
+// Gợi ý người dùng điền kết quả đánh giá
+window.aiPromptEvaluate = function(){
+  const inp = $('ai-inp');
+  if(inp){
+    inp.value = 'Các công việc hôm nay: [Hãy liệt kê kết quả từng việc, ví dụ]\n- Kiểm tra CT10: Hoàn thành\n- Kích hoạt định danh mức 2: 5 lượt';
+    inp.focus();
+    inp.select();
+    addMsg('bot','📋 Hãy điền kết quả vào ô bên dưới theo mẫu trên rồi nhấn <strong>Gửi</strong>.');
+  }
+};
+
+window.aiDismissWarn = function(btn){
+  const msgEl = btn?.closest('.aib');
+  if(msgEl) msgEl.innerHTML += '<br><span style="color:#94a3b8;font-size:.78rem">✓ Đã bỏ qua cảnh báo.</span>';
+  btn.closest('div').style.display='none';
 };
 
 // ── Main send handler ──
@@ -332,11 +399,16 @@ window.aiSend=async function(){
     const parsed=await callDeepSeek(text);
     hideTyping();
     const rc=parsed.results?.length||0,pc=parsed.plans?.length||0;
-    if(!rc&&!pc){
-      addMsg('bot','ℹ️ Không tìm thấy kết quả/kế hoạch trong văn bản. Kiểm tra lại định dạng.');
+    // Nếu AI trả về message (câu hỏi, hội thoại, không phải báo cáo)
+    if(parsed.message){
+      addMsg('bot','🤖 '+window.esc(parsed.message));
       $('ai-send').disabled=false;return;
     }
-    addMsg('bot','🔍 Phân tích được: <strong>'+rc+'</strong> kết quả, <strong>'+pc+'</strong> kế hoạch. Đang đối chiếu hệ thống...');
+    if(!rc&&!pc){
+      addMsg('bot','ℹ️ Không tìm thấy kết quả/kế hoạch trong văn bản.<br>💡 Gợi ý: Đảm bảo văn bản có mô tả công việc và kết quả rõ ràng, hoặc thêm ghi chú ngày tháng.');
+      $('ai-send').disabled=false;return;
+    }
+    addMsg('bot','🧠 <strong>Đã phân tích:</strong> <strong>'+rc+'</strong> kết quả, <strong>'+pc+'</strong> kế hoạch. Đang đối chiếu hệ thống...');
     showTyping();
     _pending=await buildActions(parsed);
     hideTyping();
