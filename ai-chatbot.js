@@ -188,11 +188,25 @@ async function buildActions(parsed){
   const defaultNguoi = isAdmin ? 'Admin' : (deviceUser || '');
   const fallbackDate = typeof getTodayYMD === 'function' ? getTodayYMD() : new Date().toISOString().slice(0,10);
 
+  // Chuẩn hóa ngày: chuyển 16/7/2026 hoặc 16-7-2026 → 2026-07-16
+  function normalizeDate(d) {
+    if(!d) return fallbackDate;
+    // Nếu đã đúng YYYY-MM-DD
+    if(/^\d{4}-\d{2}-\d{2}$/.test(d)) return d;
+    // Nếu dạng DD/MM/YYYY hoặc D/M/YYYY
+    const m1 = d.match(/^(\d{1,2})[/\-](\d{1,2})[/\-](\d{4})$/);
+    if(m1) return m1[3]+'-'+m1[2].padStart(2,'0')+'-'+m1[1].padStart(2,'0');
+    // Nếu dạng YYYY/MM/DD
+    const m2 = d.match(/^(\d{4})[/\-](\d{1,2})[/\-](\d{1,2})$/);
+    if(m2) return m2[1]+'-'+m2[2].padStart(2,'0')+'-'+m2[3].padStart(2,'0');
+    return fallbackDate;
+  }
+
   console.log('[AI] buildActions - isAdmin:',isAdmin,' deviceUser:',deviceUser,' fallbackDate:',fallbackDate);
   console.log('[AI] parsed.results:',parsed.results?.length,'parsed.plans:',parsed.plans?.length);
 
   for(const r of(parsed.results||[])){
-    if(!r.date) r.date = fallbackDate;
+    r.date = normalizeDate(r.date);
     let dt={};
     try{
       const s=await get(child(ref(db),'keHoachNgay/'+r.date));
@@ -201,13 +215,17 @@ async function buildActions(parsed){
     }catch(e){console.error('[AI] Lỗi đọc Firebase:',e);}
     const m=findInTasks(r.taskName,dt);
     
-    // Gán cán bộ
-    const finalNguoi = isAdmin ? (findStaff(r.assignee) || findStaff(parsed.globalAssignee) || 'Admin') : (deviceUser || '');
+    // Gán cán bộ: ưu tiên r.assignee → globalAssignee → tên người dùng/Admin
+    const finalNguoi = isAdmin
+      ? (findStaff(r.assignee) || findStaff(parsed.globalAssignee) || deviceUser || 'Admin')
+      : (deviceUser || '');
     
     if(m){
       acts.push({type:'EVAL',date:r.date,id:m.id,taskName:m.t.tenCongViec,
         chiTieu:m.t.chiTieu||1,dvt:m.t.dvt||'lượt',
-        qty:r.quantity,unit:r.unit,status:r.status,label:sMap[r.status]||'Hoàn thành',nguoi:finalNguoi});
+        qty:r.quantity,unit:r.unit,status:r.status,label:sMap[r.status]||'Hoàn thành',
+        nguoi:finalNguoi,
+        nguoiGoc:m.t.nguoiPhuTrach||finalNguoi});
     }else{
       const mm=findInMaster(r.taskName);
       acts.push({type:'PHAT_SINH',date:r.date,
@@ -219,9 +237,11 @@ async function buildActions(parsed){
     }
   }
   for(const p of(parsed.plans||[])){
-    if(!p.date) p.date = fallbackDate;
+    p.date = normalizeDate(p.date);
     const m=findInMaster(p.taskName);
-    const finalNguoi = getIS_ADMIN() ? (findStaff(p.assignee) || findStaff(parsed.globalAssignee) || 'Admin') : (getDeviceUser() || '');
+    const finalNguoiP = isAdmin
+      ? (findStaff(p.assignee) || findStaff(parsed.globalAssignee) || deviceUser || 'Admin')
+      : (deviceUser || '');
     acts.push({type:'PLAN',date:p.date,
       taskName: m ? m.t.tenNhiemVu : p.taskName,
       qty:p.quantity!=null?p.quantity:(m?.t?.chiTieuMacDinh??1),
@@ -229,7 +249,7 @@ async function buildActions(parsed){
       loai:m?.t?.nhomNhiemVu||'Công việc khác',
       priority:m?.t?.uutienMacDinh||'Trung bình',
       isNewMaster: !m,
-      nguoi:finalNguoi});
+      nguoi:finalNguoiP});
   }
   return acts;
 }
@@ -245,15 +265,20 @@ function renderPreview(acts){
     if(a.type==='EVAL'){
       icon=a.status==='done'?'✅':a.status==='partial'?'⏳':'❌';
       tc='r';tt='Cập nhật KQ';
-      det=a.label+(a.qty!=null?', TT: '+a.qty+' '+(a.unit||a.dvt):'');
+      // Hiển thị cả tên người phụ trách
+      const nguoiHT = a.nguoiGoc || a.nguoi || '';
+      det='<span style="color:#1e40af;font-weight:600">👤 '+window.esc(nguoiHT)+'</span>'
+        +(a.qty!=null?' · TT: '+a.qty+' '+(a.unit||a.dvt):'');
     }else if(a.type==='PHAT_SINH'){
       icon='⚡';tc='ps';
       tt=a.isNewMaster ? 'Đề xuất mới (PS)' : 'Phát sinh';
-      det=a.label+' · '+a.qty+' '+a.unit+(a.nguoi?' · '+a.nguoi:'');
+      det='<span style="color:#b45309;font-weight:600">👤 '+window.esc(a.nguoi||'Chưa gán')+'</span>'
+        +' · '+a.label+' · '+a.qty+' '+a.unit;
     }else{
       icon='📅';tc='pl';
       tt=a.isNewMaster ? 'Đề xuất mới' : 'Kế hoạch';
-      det='CT: '+a.qty+' '+a.unit+(a.nguoi?' · '+a.nguoi:'');
+      det='<span style="color:#065f46;font-weight:600">👤 '+window.esc(a.nguoi||'Chưa gán')+'</span>'
+        +' · CT: '+a.qty+' '+a.unit;
     }
     h+='<div class="ai-pv-item">'
       +'<span>'+icon+'</span>'
@@ -295,15 +320,16 @@ window.aiExecute=async function(){
           daDuyet:getIS_ADMIN()
         };
       }else if(a.type==='PHAT_SINH'){
-        const nid='PS-'+a.date.replace(/-/g,'')+'-'+now.toString().slice(-6);
+        // Dùng index i để ID unique, tránh trùng khi có nhiều phát sinh cùng ngày
+        const nid='PS-'+a.date.replace(/-/g,'')+'-'+now.toString().slice(-5)+String(_pending.indexOf(a)).padStart(2,'0');
         updates['keHoachNgay/'+a.date+'/'+nid]={
           id:nid,tenCongViec:a.taskName,loaiCongViec:a.loai,
           chiTieu:a.qty,dvt:a.unit,
           nguoiPhuTrach:a.nguoi,
           nguoiPhoiHop:'',mucDoUuTien:'Trung bình',
           trangThai:'hoan_thanh',isPhatSinh:true,
-          daDuyetNhiemVu:getIS_ADMIN(),targetDate:a.date,
-          danhGia:{ketQua:a.label,tiLeHoanThanh:100,soLuongThucTe:a.qty,
+          daDuyetNhiemVu:typeof getIS_ADMIN==='function'?getIS_ADMIN():getIS_ADMIN,targetDate:a.date,
+          danhGia:{ketQua:a.label,tiLeHoanThanh:a.label==='Hoàn thành'?100:(a.label==='Hoàn thành một phần'?50:0),soLuongThucTe:a.qty,
             lyDoKhongDat:'',ghiChuThem:'(Chatbot AI)',
             nguyenNhanKhachQuan:false,nguyenNhanChuQuan:false,baiHocKinhNghiem:'',
             chuyenSangNgay:'',thoiDiemDanhGia:now,daChuyenTiep:false,
