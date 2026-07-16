@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 
 <head>
@@ -4862,6 +4862,22 @@
                                 const taskDate = t.targetDate || dateStr;
                                 const taskToSave = { ...t };
                                 delete taskToSave.isSynced;
+                                // [AUDIT LOG] Ghi lịch sử tạo/cập nhật kế hoạch
+                                if (!t.isSynced) {
+                                    // Task mới (chưa sync lên Firebase)
+                                    taskToSave.lichSuTao = [{
+                                        thoiGian: new Date().toLocaleString('vi-VN'),
+                                        hanhDong: `Tạo mới kế hoạch bởi ${DEVICE_USER || 'Admin'}`
+                                    }];
+                                } else {
+                                    // Task đã tồn tại — ghi log cập nhật vào lichSuTao
+                                    const existing = Array.isArray(taskToSave.lichSuTao) ? taskToSave.lichSuTao : [];
+                                    existing.push({
+                                        thoiGian: new Date().toLocaleString('vi-VN'),
+                                        hanhDong: `Cập nhật kế hoạch bởi ${DEVICE_USER || 'Admin'}`
+                                    });
+                                    taskToSave.lichSuTao = existing;
+                                }
                                 updates[`keHoachNgay/${taskDate}/${t.id}`] = taskToSave;
                             });
 
@@ -6273,7 +6289,21 @@
 
                         showLoader(true);
                         try {
-                            await update(ref(db), {
+                            // [AUDIT LOG] So sánh giá trị cũ vs mới để ghi chi tiết thay đổi
+                            const oldTask = currentEvalTasks[id];
+                            const changes = [];
+                            if (oldTask) {
+                                if ((oldTask.tenCongViec || '') !== ten) changes.push(`tên: "${oldTask.tenCongViec}" → "${ten}"`);
+                                if ((oldTask.loaiCongViec || '') !== loai) changes.push(`nhóm: "${oldTask.loaiCongViec}" → "${loai}"`);
+                                if ((oldTask.nguoiPhuTrach || '') !== nguoi) changes.push(`người PT: "${oldTask.nguoiPhuTrach}" → "${nguoi}"`);
+                                if ((oldTask.nguoiPhoiHop || '') !== phoihop) changes.push(`phối hợp: "${oldTask.nguoiPhoiHop}" → "${phoihop}"`);
+                                if ((oldTask.chiTieu || 1) !== chitieu) changes.push(`chỉ tiêu: ${oldTask.chiTieu} → ${chitieu}`);
+                                if ((oldTask.dvt || 'lượt') !== dvt) changes.push(`ĐVT: "${oldTask.dvt}" → "${dvt}"`);
+                                if ((oldTask.mucDoUuTien || 'Trung bình') !== uutien) changes.push(`ưu tiên: "${oldTask.mucDoUuTien}" → "${uutien}"`);
+                                if ((oldTask.ghiChu || '') !== ghichu) changes.push(`ghi chú thay đổi`);
+                            }
+
+                            const editUpdates = {
                                 [`keHoachNgay/${dateStr}/${id}/tenCongViec`]: ten,
                                 [`keHoachNgay/${dateStr}/${id}/loaiCongViec`]: loai,
                                 [`keHoachNgay/${dateStr}/${id}/nguoiPhuTrach`]: nguoi,
@@ -6282,7 +6312,19 @@
                                 [`keHoachNgay/${dateStr}/${id}/dvt`]: dvt,
                                 [`keHoachNgay/${dateStr}/${id}/mucDoUuTien`]: uutien,
                                 [`keHoachNgay/${dateStr}/${id}/ghiChu`]: ghichu
-                            });
+                            };
+
+                            // Ghi log vào danhGia.lichSu nếu có thay đổi
+                            if (changes.length > 0) {
+                                const history = [...(oldTask?.danhGia?.lichSu || [])];
+                                history.push({
+                                    thoiGian: new Date().toLocaleString('vi-VN'),
+                                    hanhDong: `Admin sửa (${DEVICE_USER || 'Admin'}): ${changes.join(', ')}`
+                                });
+                                editUpdates[`keHoachNgay/${dateStr}/${id}/danhGia/lichSu`] = history;
+                            }
+
+                            await update(ref(db), editUpdates);
                             showToast('Đã cập nhật nhiệm vụ!', 'success');
                             closeEditEvalTask();
                             const isInboxMode = document.getElementById('eval-date').dataset.inboxMode === 'true';
@@ -6305,7 +6347,23 @@
 
                         showLoader(true);
                         try {
-                            await update(ref(db), { [`keHoachNgay/${dateStr}/${taskId}`]: null });
+                            // [AUDIT LOG] Ghi log xóa vào auditLog trước khi xóa dữ liệu
+                            const deleteLogUpdates = {};
+                            if (task) {
+                                deleteLogUpdates[`auditLog/${dateStr}/${taskId}`] = {
+                                    thoiGian: new Date().toLocaleString('vi-VN'),
+                                    hanhDong: 'Admin xóa nhiệm vụ',
+                                    nguoi: DEVICE_USER || 'Admin',
+                                    tenCongViec: task.tenCongViec || '',
+                                    nguoiPhuTrach: task.nguoiPhuTrach || '',
+                                    loaiCongViec: task.loaiCongViec || '',
+                                    chiTieu: task.chiTieu || '',
+                                    trangThai: task.danhGia?.ketQua || 'Chưa đánh giá',
+                                    tiLeHoanThanh: task.danhGia?.tiLeHoanThanh || 0
+                                };
+                            }
+                            deleteLogUpdates[`keHoachNgay/${dateStr}/${taskId}`] = null;
+                            await update(ref(db), deleteLogUpdates);
                             showToast('Đã xóa nhiệm vụ!', 'success');
                             const isInboxMode = document.getElementById('eval-date').dataset.inboxMode === 'true';
                             if (isInboxMode) await loadInboxEvals();
